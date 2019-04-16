@@ -1,0 +1,7 @@
+#toolbar {
+  button {
+    @media all and (max-width: $screen-xs-max) {
+      margin-bottom: 1rem;
+    }
+  }
+}

@@ -1,0 +1,171 @@
+#modal {
+  .modal-title {
+    text-transform: capitalize;
+  }
+
+  .modal-toolbar {
+    width: 100%;
+  }
+
+  pre {
+    padding: 5px;
+
+    @media all and (max-width: 480px) {
+      font-size: 0.9rem;
+    }
+  }
+
+  .table {
+    font-family: "Source Code Pro", sans-serif;
+    font-weight: 400;
+
+    tr, td, th {
+      vertical-align: middle;
+    }
+
+    pre {
+      margin: 0;
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    &.events {
+      tr {
+        height: 32px;
+      }
+      td, th {
+        text-align: center;
+
+        input.vol-time {
+          display: block;
+          text-align: center;
+          padding: 0;
+          margin-top: -5px;
+          margin-bottom: -5px;
+          margin-left: 0px;
+          margin-right: 0px;
+          border: 0;
+          width: 100%;
+          height: 26px;
+          font-size: 100%;
+        }
+
+        &.action {
+            width: 1px;
+        }
+
+        &.summary {
+          text-align: left;
+
+          .from, .to {
+            font-weight: bold;
+          }
+
+          .remove-button {
+            height: 30px;
+            width: 30px;
+            margin-top: -5px;
+            margin-bottom: -5px;
+            margin-left: -5px;
+          }
+
+          .event.label {
+              display: inline-block;
+              /* height: 20px; */
+              padding: .3em .6em;
+              line-height: inherit;
+          }
+
+          select {
+            font-size: 75%;
+            border-radius: .25em;
+          }
+        }
+
+        &.realise {
+          text-align: right;
+        }
+
+        &.description {
+          div {
+            height: 2rem;
+            overflow: hidden;
+
+            p {
+              margin: 0;
+            }
+          }
+
+          &.expand {
+            div {
+              height: auto;
+            }
+          }
+        }
+
+        &.remove {
+          width: 34px;
+          padding: 2px;
+
+          button {
+            margin: 0;
+          }
+        }
+      }
+    }
+
+    &.airports {
+      table-layout: fixed;
+
+      td:first-child {
+        width: 4rem;
+        text-align: center;
+        font-weight: bold;
+      }
+    }
+
+    &.crew {
+      table-layout: fixed;
+
+      td {
+        text-align: left;
+      }
+
+      td.trigramme {
+        text-align: center;
+        width: 4rem;
+        color: $gray-light;
+      }
+
+      td.fonction {
+        text-align: center;
+        width: 4rem;
+        font-weight: bold;
+      }
+    }
+
+    &.svdata {
+      table-layout: fixed;
+
+      th, td {
+        text-align: center;
+      }
+
+      th:first-child {
+        text-align: left;
+      }
+    }
+
+    @media all and (max-width: 480px) {
+      font-size: 0.9rem;
+
+      td.description {
+        div {
+          height: 2.1rem;
+        }
+      }
+    }
+  }
+}

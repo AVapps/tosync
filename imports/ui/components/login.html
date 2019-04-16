@@ -1,0 +1,46 @@
+<template name="login">
+	{{#if showStatus }}
+		{{> loggedIn }}
+	{{else}}
+		{{> loggedOut }}
+	{{/if}}
+</template>
+
+<template name="loggedIn">
+	<div class="navbar-right">
+		<p class="navbar-text text-center"><span class="text-capitalize">{{ prenom }}</span> <span class="text-uppercase">{{ nom }}</span></p>
+		{{#if ConnectOnline }}
+			{{> connectButton }}
+		{{else}}
+		<button type="button" class="relogin btn btn-warning navbar-btn" title="Déconnecté de TO.Connect" data-toggle="tooltip" data-placement="bottom"  {{ disabledOnConnectRunning }}>
+			<span class="glyphicon glyphicon-exclamation-sign"></span>
+			<span class="hidden-md hidden-lg">&nbsp;Reconnexion</span>
+		</button>
+		{{/if}}
+		<button type="button" class="logout btn btn-danger navbar-btn" title="Déconnexion" data-toggle="tooltip" data-placement="bottom" {{ disabledOnConnectRunning }}>
+			<span class="glyphicon glyphicon-remove"></span>
+			<span class="hidden-md hidden-lg">&nbsp;Déconnexion</span>
+		</button>
+	</div>
+</template>
+
+<template name="loggedOut">
+	<form class="navbar-form form-inline navbar-right">
+		<div class="form-group">
+			<input name="login" type="text" value="" placeholder="Trigramme" class="form-control" maxlength="3" pattern="[A-Z]{3}" {{ disabledOnLoggingIn }} />
+		</div>
+		<div class="form-group">
+			<input name="password" type="password" value="" placeholder="Mot de passe" class="form-control" {{ disabledOnLoggingIn }} />
+		</div>
+		<button type="submit" class="import btn btn-primary ladda-button" data-style="zoom-out"><span class="ladda-label">Connexion</span></button>
+	</form>
+</template>
+
+<template name="connectButton">
+	<button type="button" class="connect-sync btn btn-success navbar-btn ladda-button" data-style="zoom-out" title="Synchroniser avec TO.Connect" data-toggle="tooltip" data-placement="bottom">
+		<span class="ladda-label">
+			<span class="glyphicon glyphicon-refresh"></span>
+			<span class="hidden-md hidden-lg">&nbsp;Synchroniser</span>
+		</span>
+	</button>
+</template>

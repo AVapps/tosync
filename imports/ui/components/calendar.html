@@ -1,0 +1,139 @@
+<template name="calendar">
+	<div data-spy="affix" data-offset-top="139">
+		<div class="container">
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="fc-controls clndr-controls">
+						<div class="fc-controls-row">
+							<div class="fc-control fc-control-left">
+								<button class="btn btn-link fc-style">
+									<span class="glyphicon {{ displayStyleIcon }}"></span>
+								</button>
+							</div>
+							<div class="fc-control">
+								<div class="fc-header">
+									<div class="btn-group">
+										<button class="clndr-previous-button btn btn-link">
+											<span class="glyphicon glyphicon-chevron-left"></span>
+										</button>
+										<button class="btn btn-link fc-month" disabled>{{ format month 'MMMM YYYY' }}</button>
+										<button class="clndr-next-button btn btn-link">
+											<span class="glyphicon glyphicon-chevron-right"></span>
+										</button>
+									</div>
+								</div>
+							</div>
+							<div class="fc-control fc-control-right">
+								<button type="button" class="btn btn-link remu">
+									<span class="glyphicon glyphicon-stats"></span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{#if hasEvents }}
+	<div id="HC">
+		{{#with remu}}
+		<div class="container text-muted text-center">
+			<span class="label label-default">{{ numFormat real.HC }} HC</span>
+			<span class="label label-success">{{ numFormat real.HS }} HS</span>
+		</div>
+		{{/with}}
+	</div>
+	<div id="planningContent">
+		<div class="container">
+			<div id="calendar" class="fc-calendar-container">
+				<div class="fc-calendar {{ displayStyle }}">
+					<div class="fc-head text-muted">
+						<div class="fc-row fc-small">
+							<span class="fc-cell">Lun.</span>
+							<span class="fc-cell">Mar.</span>
+							<span class="fc-cell">Mer.</span>
+							<span class="fc-cell">Jeu.</span>
+							<span class="fc-cell">Ven.</span>
+							<span class="fc-cell">Sam.</span>
+							<span class="fc-cell">Dim.</span>
+						</div>
+						<div class="fc-row fc-large">
+							<span class="fc-cell">Lundi</span>
+							<span class="fc-cell">Mardi</span>
+							<span class="fc-cell">Mercredi</span>
+							<span class="fc-cell">Jeudi</span>
+							<span class="fc-cell">Vendredi</span>
+							<span class="fc-cell">Samedi</span>
+							<span class="fc-cell">Dimanche</span>
+						</div>
+					</div>
+					<div class="fc-body">
+						{{#each days}}
+							{{> planningCalendarDay }}
+						{{/each}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div><!-- /content -->
+	{{ else }}
+		{{> home }}
+	{{/if}}
+</template>
+
+<template name="planningCalendarDay">
+	<div class="fc-cell {{ classes }}" data-date="{{ format this.date 'YYYY-MM-DD' }}">
+		<span class="fc-weekday text-muted">{{ weekday }}</span>
+		<span class="fc-date text-muted">{{ day }}</span>
+		<div>
+			{{> planningCalendarDayLabel }}
+			{{#with eventsList }}
+			{{#if showEvents }}
+			<ul class="fc-content fc-length-{{ this.length }}">
+				{{#each evt in this }}
+					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
+				{{/each}}
+			</ul>
+			{{/if}}
+			{{/with}}
+		</div>
+	</div>
+</template>
+
+<template name="planningCalendarRotation">
+	<!-- Rotation Event -->
+</template>
+
+<template name="planningCalendarDayLabel">
+	{{#let dayTag=getDayTag }}
+		<div class="fc-title label {{ dayLabelClass dayTag }} {{ spanClass }}"><span>{{ dayLabelText dayTag }}</span></div>
+	{{/let}}
+</template>
+
+<template name="planningCalendarVol">
+	<li class="fc-event fc-flight {{ classes }}">
+		<span class="fc-start">{{ heure start }}</span>
+		<span class="fc-summary">
+			<div class="table-row">
+				<div class="table-cell">
+					<span class="fc-flight-num">{{ num }}</span>
+				</div>
+				<div class="table-cell">
+					<span class="fc-from">{{ from }}</span>
+				</div>
+				<div class="table-cell">
+					<span class="fc-to">{{ to }}</span>
+				</div>
+			</div>
+		</span>
+		<span class="fc-end">{{ heure end }}</span>
+	</li>
+</template>
+
+<template name="planningCalendarEvent">
+	<li class="fc-event {{ classes }}">
+		<span class="fc-start">{{ heure start }}</span>
+		<span class="fc-summary">{{ summary }}</span>
+		<span class="fc-end">{{ heure end }}</span>
+	</li>
+</template>

@@ -1,0 +1,298 @@
+<template name="rotationModalContent">
+	{{> volsTable vols=vols editing=editing }}
+
+	{{> listeEquipageRotationModal equipage }}
+
+	{{#with sv }}
+		{{#if showSv }}
+			{{#if this.real }}
+				<h4>Service Vol <small>réalisé</small></h4>
+				{{> serviceVolTable real }}
+			{{ else }}
+				<h4>Service Vol</h4>
+				{{> serviceVolTable this }}
+			{{/if}}
+		{{/if}}
+	{{/with}}
+
+	{{> rotationTable rotation }}
+</template>
+
+<template name="volsTable">
+	{{#if showTable }}
+	<table class="table events table-bordered table-condensed table-striped">
+		<thead>
+			<tr>
+				<th class="summary">Vol / MEP</th>
+				<th>Dép.</th>
+				<th>Arr.</th>
+				<th>Blk</th>
+				<th>Hcv</th>
+				<th>Hcn</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each vol in vols }}
+				{{> volsTableRow vol=vol editing=editing }}
+			{{/each}}
+		</tbody>
+	</table>
+	{{#each remarks }}<pre>{{ this }}</pre>{{/each}}
+	<table class="table airports table-bordered table-condensed table-striped">
+		<tbody>
+		{{#each airports }}
+			{{#if iata }}
+				<tr>
+					<td>{{ iata }}</td>
+					<td>{{ city }} {{ name }} ({{ country }}) - {{ oaci }} ({{ altitude }}ft)</td>
+				</tr>
+			{{/if}}
+			{{#if code }}
+				<tr>
+					<td>{{ code }}</td>
+					<td>{{ nom }}</td>
+				</tr>
+			{{/if}}
+		{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+</template>
+
+<template name="volsTableRow">
+	<tr>
+		<td class="summary">
+			{{#if editing }}
+				<button type="button" class="btn btn-sm btn-link remove-button">
+					<span class="glyphicon glyphicon-minus-sign"></span>
+				</button>
+			{{/if}}
+			{{#if is 'vol'}}
+				<span class="num">{{ vol.num }}</span>
+				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+				<span class="tz">{{ vol.tz }}</span>
+			{{else}}
+				{{> eventLabel vol }}
+				<span class="title">{{ vol.title }}</span>
+				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+			{{/if}}
+		</td>
+		<td class="start">{{> volTimeField vol=vol field='start' editing=editing }}</td>
+		<td class="end">{{> volTimeField vol=vol field='end' editing=editing }}</td>
+		<td class="block">{{#if is 'vol'}}{{ duree vol.tv }}{{ else }}{{ duree vol.mep }}{{/if}}</td>
+		<td  class="hcv">{{ numFormat vol.Hcv }}</td>
+		<td  class="hcn">{{ numFormat vol.Hcn }}</td>
+	</tr>
+	{{#if showReal }}
+		<tr>
+			<td class="realise text-muted text-right">
+				réalisé
+			</td>
+			<td class="start">{{> volTimeField vol=vol field='real.start' editing=editing }}</td>
+			<td class="end">{{> volTimeField vol=vol field='real.end' editing=editing }}</td>
+			<td class="block">{{ duree vol.real.tv }}</td>
+			<td  class="hcv">{{ numFormat vol.real.Hcv }}</td>
+			<td  class="hcn">{{ numFormat vol.real.Hcn }}</td>
+		</tr>
+	{{/if}}
+</template>
+
+<template name="volTimeField">
+	{{#if editing }}
+		<input type="time" name="{{ field }}" class="vol-time form-control" value="{{ fieldValue }}"/>
+	{{ else }}
+		{{ fieldValue }}
+	{{/if}}
+</template>
+
+<template name="listeEquipageRotationModal">
+	{{#if showList }}
+	<h4>Equipage</h4>
+	<table class="table crew table-bordered table-condensed table-striped">
+		<tbody>
+			{{#each pnt}}
+				<tr>
+					<td class="trigramme">{{ trigramme }}</td>
+					<td class="fonction">{{ fonction }}</td>
+					<td>{{ nom }} {{ prenom }}</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	<table class="table crew table-bordered table-condensed table-striped">
+		<tbody>
+			{{#each pnc}}
+				<tr>
+					<td class="trigramme">{{ trigramme }}</td>
+					<td class="fonction">{{ fonction }}</td>
+					<td><span class="text-uppercase">{{ nom }}</span> <span class="text-capitalize">{{ prenom }}</span></td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+</template>
+
+<template name="serviceVolTable">
+	<div class="row">
+		<div class="col-sm-6">
+			<table class="table table-bordered table-condensed table-striped svdata">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Début</th>
+						<th>Fin</th>
+						<th>Durée</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>TS</th>
+						<td>{{ format tsStart 'HH:mm' }}</td>
+						<td>{{ format tsEnd 'HH:mm' }}</td>
+						<td>{{ diffH tsStart tsEnd }}</td>
+					</tr>
+					<tr>
+						<th>TSV</th>
+						<td>{{ format tsvStart 'HH:mm' }}</td>
+						<td>{{ format tsvEnd 'HH:mm' }}</td>
+						<td>{{ diffH tsvStart tsvEnd }}</td>
+					</tr>
+					<tr>
+						<th>HDV</th>
+						<td></td>
+						<td></td>
+						<td>{{ numFormat tvt }}</td>
+					</tr>
+					<tr>
+						<th>MEP</th>
+						<td></td>
+						<td></td>
+						<td>{{ numFormat mep }}</td>
+					</tr>
+					<tr>
+						<th>HDVnuit</th>
+						<td></td>
+						<td></td>
+						<td>{{ numFormat hdn }}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="col-sm-6">
+			<table class="table table-bordered table-condensed table-striped svdata">
+				<tbody>
+					<tr>
+						<th>TME</th>
+						<td>{{ numFormat tme }}</td>
+					</tr>
+					<tr>
+						<th>CMT</th>
+						<td>{{ numFormat cmt }}</td>
+					</tr>
+					<tr>
+						<th>HCv</th>
+						<td>{{ numFormat Hcv }}</td>
+					</tr>
+					<tr>
+						<th>HCt</th>
+						<td>{{ numFormat Hct }}</td>
+					</tr>
+					<tr>
+						<th>H1</th>
+						<td>{{ numFormat H1 }}</td>
+					</tr>
+					<tr>
+						<th>HCnuit</th>
+						<td>{{ numFormat Hcn }}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</template>
+
+<template name="rotationTable">
+	<h4>Rotation</h4>
+	{{#if this.real }}
+	<table class="table table-bordered table-condensed table-striped svdata">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Prog.</th>
+				<th>Réal.</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th>HDV</th>
+				<td>{{ numFormat tvt }}</td>
+				<td>{{ numFormat real.tvt }}</td>
+			</tr>
+			<tr>
+				<th>HDVnuit</th>
+				<td>{{ numFormat hdn }}</td>
+				<td>{{ numFormat real.hdn }}</td>
+			</tr>
+			<tr>
+				<th>MEP</th>
+				<td>{{ numFormat mep }}</td>
+				<td>{{ numFormat mep }}</td>
+			</tr>
+			<tr>
+				<th>HCa</th>
+				<td>{{ numFormat Hca }}</td>
+				<td>{{ numFormat real.Hca }}</td>
+			</tr>
+			<tr>
+				<th>&sum;H1</th>
+				<td>{{ numFormat H1 }}</td>
+				<td>{{ numFormat real.H1 }}</td>
+			</tr>
+			<tr>
+				<th>H2</th>
+				<td>{{ numFormat H2 }}</td>
+				<td>{{ numFormat real.H2 }}</td>
+			</tr>
+			<tr>
+				<th>HCnuit</th>
+				<td>{{ numFormat Hcn }}</td>
+				<td>{{ numFormat real.Hcn }}</td>
+			</tr>
+		</tbody>
+	</table>
+{{else}}
+	<table class="table table-bordered table-condensed table-striped svdata">
+		<tbody>
+			<tr>
+				<th>HDV</th>
+				<td>{{ numFormat tvt }}</td>
+			</tr>
+			<tr>
+				<th>HDVnuit</th>
+				<td>{{ numFormat hdn }}</td>
+			</tr>
+			<tr>
+				<th>MEP</th>
+				<td>{{ numFormat mep }}</td>
+			</tr>
+			<tr>
+				<th>HCa</th>
+				<td>{{ numFormat Hca }}</td>
+			</tr>
+			<tr>
+				<th>&sum;H1</th>
+				<td>{{ numFormat H1 }}</td>
+			</tr>
+			<tr>
+				<th>H2</th>
+				<td>{{ numFormat H2 }}</td>
+			</tr>
+			<tr>
+				<th>HCnuit</th>
+				<td>{{ numFormat Hcn }}</td>
+			</tr>
+		</tbody>
+	</table>
+{{/if}}
+</template>

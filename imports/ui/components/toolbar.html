@@ -1,0 +1,28 @@
+<template name="toolbar">
+	<div id="toolbar">
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-4">
+					<button type="button" class="icsimport btn btn-success btn-block">
+						<span class="glyphicon glyphicon-upload"></span>
+						Importer un fichier ics
+					</button>
+					<input id="filereader" type="file" class="hidden" accept="text/calendar" />
+				</div>
+				<div class="col-sm-4">
+					<button type="button" class="export btn btn-primary btn-block ladda-button ellipsis" data-style="zoom-out">
+						<span class="glyphicon glyphicon-calendar"></span>
+						Exportation iCalendar
+					</button>
+				</div>
+				<div class="col-sm-4">
+					<button type="button" class="google btn btn-danger btn-block ladda-button ellipsis" data-style="zoom-out">
+						<span class="glyphicon glyphicon-cloud-upload"></span>
+						Synchronisation Google
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+</template>

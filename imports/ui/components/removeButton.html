@@ -1,0 +1,9 @@
+<template name="removeButton">
+    <button type="button" class="btn btn-sm {{ buttonClass }} remove-button">
+        {{#if isActive }}
+        Supprimer
+        {{ else }}
+        <span class="glyphicon glyphicon-minus-sign"></span>
+        {{/if}}
+    </button>
+</template>

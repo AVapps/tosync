@@ -1,0 +1,24 @@
+<template name="rotationDescriptionText">
+Départ  : {{ formatUTC start 'llll[Z]'}}
+Arrivée : {{ formatUTC end 'llll[Z]'}}
+
+Temps de vol total : {{ duree tvt }}
+Temps de MEP : {{ duree mep }}
+Nombre de jours : {{ nbjours }}
+
+{{> listeEquipageRotation this }}
+
+Rémunération
+HCa : {{ numFormat Hca }}
+ΣH1 : {{ numFormat H1 }}
+H2  : {{ numFormat H2 }}
+
+Heures de vol de nuit : {{ numFormat hdn }}
+</template>
+
+<template name="listeEquipageRotation">
+Équipage{{#with equipage}}{{#each pnt }}
+| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}
+{{#each pnc }}
+| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}{{/with}}
+</template>

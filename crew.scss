@@ -1,0 +1,78 @@
+@import "sass/_variables";
+
+@import "{reywood:bootstrap3-sass}/bootstrap";
+
+@import "sass/_calendar";
+@import "sass/_colors";
+@import "sass/_firstuse";
+@import "sass/_google";
+@import "sass/_modal";
+@import "sass/_remu";
+@import "sass/_loading";
+@import "sass/_notifications";
+@import "sass/_toolbar";
+
+.table-row {
+  display: table-row;
+}
+
+.table-cell {
+  display: table-cell;
+}
+
+.ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+button, a, button:focus, a:focus {
+  outline: none !important;
+  color: $gray;
+}
+
+.navbar-right {
+  .btn {
+    height: 34px;
+  }
+
+  @media all and (min-width: $screen-sm-min) {
+    input[type=text], input[type=password] {
+      width: 150px;
+    }
+  }
+
+  @media all and (max-width: $screen-xs-max) {
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+.remove-button {
+    padding: 0px 2px;
+
+    &.btn-link {
+        color: $brand-danger;
+
+        &:hover {
+            color: darken($brand-danger, 30%);
+        }
+    }
+
+    &.active {
+        border-radius: 2px;
+    }
+}
+
+footer {
+  display: block;
+  margin-top: 15px;
+
+  .navbar {
+    border-radius: 0;
+    border-right: none;
+    border-left: none;
+    margin-bottom: 0;
+  }
+}

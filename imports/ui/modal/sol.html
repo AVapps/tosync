@@ -1,0 +1,26 @@
+<template name="solModalContent">
+	<table class="events table table-bordered table-condensed table-striped">
+		<thead>
+			<tr>
+				<th>Activité</th>
+				<th>Début</th>
+				<th>Fin</th>
+				<th>Informations</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each this.events}}
+				<tr>
+					<td class="summary">
+						{{ summary }}
+					</td>
+					<td class="start">{{ format start 'HH:mm' }}</td>
+					<td class="end">{{ format end 'HH:mm' }}</td>
+					<td  class="description">
+						<pre>{{ pre description }}</pre>
+					</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</template>

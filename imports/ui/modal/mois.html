@@ -1,0 +1,127 @@
+<template name="monthModalContent">
+	<table class="remu table table-bordered table-condensed table-striped">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Programmé</th>
+				<th>Réalisé</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Heures de vol (HDV)</td>
+				<td>{{ numFormat tvt }}</td>
+				<td>{{ numFormat real.tvt }}</td>
+			</tr>
+			<tr>
+				<td>Temps de mise en place (MEP)</td>
+				<td>{{ numFormat mep }}</td>
+				<td>{{ numFormat mep }}</td>
+			</tr>
+			<tr>
+				<td>Heures créditées vol (Hcv)</td>
+				<td>{{ numFormat H2 }}</td>
+				<td>{{ numFormat real.H2 }}</td>
+			</tr>
+			<tr>
+				<td>Heures de nuit (HDVnuit)</td>
+				<td>{{ numFormat hdn }}</td>
+				<td>{{ numFormat real.hdn }}</td>
+			</tr>
+			<tr>
+				<td>Heures créditées nuit (Hcnuit)</td>
+				<td>{{ numFormat Hcnuit }}</td>
+				<td>{{ numFormat real.Hcnuit }}</td>
+			</tr>
+			{{#if Hcs }}
+			<tr>
+				<td>Heures créditées sol (Hcs)</td>
+				<td>{{ numFormat Hcs }}</td>
+				<td>{{ numFormat Hcs }}</td>
+			</tr>
+			{{/if}}
+			{{#if Hcsi }}
+			<tr>
+				<td>Heures créditées instruction sol (Hcsi)</td>
+				<td>{{ numFormat Hcsi }}</td>
+				<td>{{ numFormat Hcsi }}</td>
+			</tr>
+			{{/if}}
+			{{#if Hcsr }}
+			<tr>
+				<td>Heures créditées représ. pers. (Hcsr)</td>
+				<td>{{ numFormat Hcsr }}</td>
+				<td>{{ numFormat Hcsr }}</td>
+			</tr>
+			{{/if}}
+			{{#if HcSimuInst }}
+			<tr>
+				<td>Heures créditées instruction Simu (HcSimuInst)</td>
+				<td>{{ numFormat HcSimuInst }}</td>
+				<td>{{ numFormat HcSimuInst }}</td>
+			</tr>
+			{{/if}}
+			<tr>
+				<th>Total heures créditées (HC)</th>
+				<td>{{ numFormat HC }}</td>
+				<td>{{ numFormat real.HC }}</td>
+			</tr>
+			<tr>
+				<td>Seuil HS</td>
+				<td>{{ numFormat seuilHS }}</td>
+				<td>{{ numFormat seuilHS }}</td>
+			</tr>
+			<tr>
+				<th>Heures supplémentaires (HS)</th>
+				<td>{{ numFormat HS }}</td>
+				<td>{{ numFormat real.HS }}</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<table class="stats table table-bordered table-condensed table-striped">
+		<tbody>
+			<tr>
+				<td>Nb d'étapes vol</td>
+				<td class="text-center">{{ countVol }}</td>
+			</tr>
+			<tr>
+				<td>Journées sol</td>
+				<td class="text-center">{{ sumJoursSol }}</td>
+			</tr>
+			<tr>
+				<td>Jours de repos</td>
+				<td class="text-center">{{ repos }}</td>
+			</tr>
+			<tr>
+				<td>Jours de congés</td>
+				<td class="text-center">{{ conges }}</td>
+			</tr>
+			{{#if maladie }}
+			<tr>
+				<td>Jours d'arrêt maladie</td>
+				<td class="text-center">{{ maladie }}</td>
+			</tr>
+			{{/if}}
+			{{#if greve }}
+			<tr>
+				<td>Jours de grève</td>
+				<td class="text-center">{{ greve }}</td>
+			</tr>
+			{{/if}}
+			{{#if nbJoursDelegation }}
+			<tr>
+				<td>Jours de délégation syndicale</td>
+				<td class="text-center">{{ nbJoursDelegation }}</td>
+			</tr>
+			{{/if}}
+		</tbody>
+	</table>
+
+	{{#if nbJoursDelegation }}
+	<div class="form-group">
+		<label for="HcsrValue">Hcsr / jour de délégation syndicale</label>
+		<input name="hcsr" type="number" class="form-control" id="HcsrValue" step="0.01" min="3.00" max="9.00" value="{{ configHcsr }}">
+	</div>
+	{{/if}}
+</template>

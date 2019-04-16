@@ -1,0 +1,71 @@
+#google {
+  .progress {
+    height: 4px;
+    margin-bottom: 4px;
+  }
+
+  .modal-body {
+    font-size: 1.1rem;
+
+    h4 {
+      font-size: 1.4rem;
+    }
+
+    @media all and (min-width: $screen-xs-min) {
+      font-size: 1.4rem;
+
+      h4 {
+        font-size: 18px;
+      }
+    }
+
+    table {
+      width: 100%;
+      table-layout: fixed;
+
+      .chosen-drop {
+        z-index: 5000;
+      }
+    }
+
+    th, td {
+      text-overflow: ellipsis;
+      word-wrap: nowrap;
+      -webkit-hyphens: auto;
+      -moz-hyphens: auto;
+      -ms-hyphens: auto;
+      -o-hyphens: auto;
+      hyphens: auto;
+    }
+
+    th {
+      vertical-align: middle;
+
+      h3, h4 {
+        margin: 0;
+      }
+
+      span.label {
+        display: block;
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    td {
+      text-align: center;
+      vertical-align: middle;
+      overflow-y: visible;
+
+      &.input {
+        cursor: pointer;
+      }
+
+      input[type=checkbox] {
+        height: 24px;
+        width: 24px;
+        cursor: pointer;
+      }
+    }
+  }
+}

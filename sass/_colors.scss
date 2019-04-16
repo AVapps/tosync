@@ -1,0 +1,9 @@
+.event.label {
+    &.label-repos {
+        background-color: #4ddec1;
+    }
+
+    &.label-success {
+        background-color: darken(#4ddec1, 30%);
+    }
+}

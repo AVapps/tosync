@@ -1,0 +1,47 @@
+<template name="google">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Fermer</span></button>
+		<h3 class="modal-title">Synchronisation Google Agenda</h3>
+	</div>
+	<div class="modal-body">
+		<h4>Sélectionnez les calendriers Google dans lesquels importer vos évènements de planning</h4>
+		<form id="googleCalendarIds">
+		<table class="table table-bordered table-condensed">
+			<thead>
+				<tr>
+					<th>Calendriers</th>
+					<th class="text-center">Items à synchroniser</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each calendarList }}
+					{{> googleCalendarLine }}
+				{{/each}}
+			</tbody>
+		</table>
+		</form>
+		<button type="button" class="sync btn btn-danger btn-block ladda-button" data-style="zoom-out">Synchroniser</button>
+		<div class="progress">
+			<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+				<span class="sr-only"></span>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="authorize btn btn-primary pull-left">Changer de compte</button>
+		<button type="button" class="btn btn-default" data-dismiss="modal">Annuler</button>
+	</div>
+</template>
+
+<template name="googleCalendarLine">
+	<tr>
+		<th><h4><span class="label label-default" {{ bgColor }}>{{ summary }}</span></h4></th>
+		<td>
+			<select multiple name="{{ id }}">
+				{{#each tag in categories }}
+					<option value="{{ tag }}" {{ selected  id tag }}>{{ categoryLabel tag }}</option>
+				{{/each}}
+			</select>
+		</td>
+	</tr>
+</template>

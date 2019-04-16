@@ -1,0 +1,39 @@
+#remu {
+  button.icsimport {
+    margin-bottom: 1rem;
+  }
+
+  table.table {
+    font-family: "Source Code Pro", $font-family-monospace;
+    font-weight: 400;
+    font-size: 1.1rem;
+
+    @media all and (min-width: $screen-xs-min) {
+      font-size: 1.4rem;
+    }
+
+    th, td {
+      vertical-align: middle;
+    }
+
+    &.remu {
+      tr {
+        td {
+          text-align: right;
+        }
+
+        td:first-child {
+          text-align: left;
+        }
+
+        th + td, th ~ td {
+          font-weight: 600;
+        }
+      }
+    }
+
+    &.stats {
+      table-layout: fixed;
+    }
+  }
+}

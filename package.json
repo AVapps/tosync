@@ -1,0 +1,28 @@
+{
+  "name": "TO.sync",
+  "version": "1.9.6",
+  "description": "Synchronisattion des plannings TO.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:Jahdrien/tosync.git"
+  },
+  "author": "",
+  "license": "GPLv3",
+  "homepage": "https://github.com/Jahdrien/tosync",
+  "dependencies": {
+    "babel-runtime": "^6.20.0",
+    "cheerio": "^0.20.0",
+    "d3-queue": "^3.0.3",
+    "jszip": "^2.6.0",
+    "ladda": "^1.0.0",
+    "lodash": "^4.11.2",
+    "meteor-node-stubs": "^0.2.3",
+    "moment": "^2.13.0",
+    "request": "^2.69.0",
+    "sweetalert2": "^6.6.4"
+  }
+}
