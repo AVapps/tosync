@@ -39,23 +39,27 @@ Template.loginStatusBar.events({
 		Modals.Changes.open()
 	},
 
-  'submit form#login': function (e,t) {
+  'submit form#login': async (e,t) => {
 		e.preventDefault()
 
 		const username = t.$('input[name=login]').val().toUpperCase()
+    const pw = t.$('input[name=password]').val()
 
 		if (username.length !== 3) {
-			App.error('Identifiant invalide !')
-			return;
+			Notify.warn('Identifiant invalide !')
+			return
 		}
+
+    if (!pw.length) {
+      Notify.warn("Vous n'avez pas tapé de mot de passe.")
+			return
+    }
 
 		const l = Ladda.create(t.find('button.login')).start()
 
-		Connect.login(username, t.$('input[name=password]').val(), (error) => {
-			// Session.set('showLogin', false)
-			l.stop()
-			t.$('input[type=password]').val('')
-		})
+		await Connect.login(username, pw)
+		l.stop()
+		t.$('input[type=password]').val('')
 
 		return false
 	}

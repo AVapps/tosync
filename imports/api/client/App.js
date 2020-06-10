@@ -7,9 +7,11 @@ import Swal from 'sweetalert2'
 
 App = {
 	async sync() {
-		const data = await Connect.getSyncData()
-    Sync.process(data)
-    return data
+    if (!Connect.state.get('signNeeded') && !Connect.state.get('changesPending')) {
+      const data = await Connect.getSyncData()
+      Sync.process(data)
+      return data
+    }
 	},
 
   async requestChangesValidation() {

@@ -20,7 +20,7 @@ function wrapPromiseFunction(func, context) {
 export default class TOConnectManager {
   constructor(userId) {
     this._userId = userId || null
-    let session = ""
+    let session = null
   	if (userId) {
       const user = Meteor.users.findOne(userId, {fields: {'services.toconnect.session': 1}})
       if (user && _.has(user, 'services.toconnect.session')) {

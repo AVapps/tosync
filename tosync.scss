@@ -75,6 +75,16 @@ select {
 
 footer {
   display: block;
+  background-color: $success;
+  padding-top: 1rem;
+
+  p, a {
+    color: #fff;
+
+    &.copyright {
+      opacity: 0.7;
+    }
+  }
 
   .navbar {
     border-radius: 0;

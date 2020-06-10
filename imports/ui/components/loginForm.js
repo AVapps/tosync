@@ -3,25 +3,30 @@ import './loginForm.html'
 import * as Ladda from 'ladda'
 
 Template.loginForm.events({
-	'submit form#login': function (e, t) {
+	'submit form#login': async (e, t) => {
 		e.preventDefault()
 
 		const username = t.$('input[name=login]').val().toUpperCase()
+    const pw = t.$('input[name=password]').val()
 
 		if (username.length !== 3) {
-			App.error('Identifiant invalide !')
-			return;
+			Notify.warn('Identifiant invalide !')
+			return
 		}
 
-		const l = Ladda.create(t.find('button.login')).start()
+    if (!pw.length) {
+      Notify.warn("Vous n'avez pas tapé de mot de passe.")
+			return
+    }
 
-		Connect.login(username, t.$('input[name=password]').val(), (error) => {
-			// Session.set('showLogin', false)
-			t.$('input[type=password]').val('')
-      App.sync()
-      l.stop()
-		})
+		const l = Ladda.create(t.find('button.login'))
+    l.start()
 
+		const success = await Connect.login(username, pw)
+    console.log('Connect.login', success)
+    t.$('input[type=password]').val('')
+    l.stop()
+    if (success) App.sync()
 		return false
 	}
 })

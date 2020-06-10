@@ -1,6 +1,6 @@
 {
   "name": "TO.sync",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Synchronisattion des plannings TO.",
   "main": "index.js",
   "scripts": {
@@ -34,6 +34,7 @@
     "meteor-node-stubs": "^1.0.0",
     "moment": "^2.24.0",
     "node-sass": "^4.13.1",
+    "pify": "^5.0.0",
     "popper.js": "^1.16.1",
     "qs": "^6.9.4",
     "request": "^2.88.2",

@@ -22,16 +22,30 @@ export default class TOConnect {
   constructor(session) {
     // console.log('TOConnect.init', session)
     this.cookieJar = new CookieJar()
-    if (session && _.isString(session)) {
-      this.cookieJar.setCookieSync(session, ROOT_URL + LOGIN_URL)
+    this.windowId = null
+    if (session) {
+      if (_.isString(session)) {
+        // console.log('TOConnect.init : session isString', session)
+        this.cookieJar.setCookieSync(session, ROOT_URL + LOGIN_URL)
+      } else if (_.isObject(session)) {
+        // console.log('TOConnect.init : session isObject')
+        if (_.has(session, 'cookie') && _.isString(session.cookie)) {
+          // console.log('TOConnect.init : setting cookieString', session.cookie)
+          this.cookieJar.setCookieSync(session.cookie, ROOT_URL + LOGIN_URL)
+        }
+        if (_.has(session, 'windowId')) {
+          // console.log('TOConnect.init : setting windowId', session.windowId)
+          this.windowId = session.windowId
+        }
+      }
     }
-
   }
 
   async login(login, password) {
     let resp = await this._get(ROOT_URL + LOGIN_URL)
 
 		if (resp  && resp.status === 200 && resp.data) {
+
 			const $ = cheerio.load(resp.data)
 			const data = {}
 
@@ -66,8 +80,17 @@ export default class TOConnect {
 		throw new Meteor.Error(500, "Connexion impossible !")
 	}
 
+  saveWindowId(path) {
+    const url = new URL(ROOT_URL + path)
+    if (url.searchParams.has('windowId')) {
+      this.windowId = url.searchParams.get('windowId')
+      // console.log('windowId found', this.windowId)
+      return this.windowId
+    }
+  }
+
 	async checkSession() {
-		if (!this.getSession()) return { connected: false }
+		if (!this.getSession().cookie) return { connected: false }
 		return this.getState()
 	}
 
@@ -91,7 +114,7 @@ export default class TOConnect {
   }
 
   async getChangesPending() {
-    const resp = await this._get(ROOT_URL + CHANGES_URL)
+    const resp = await this._get(ROOT_URL + CHANGES_URL, { maxRedirects: 0 })
     if (this._checkResponse(resp)) {
       const $ = cheerio.load(resp.data)
       return $('th:contains(BEFORE CHANGE)').closest('table').html() || true
@@ -99,7 +122,7 @@ export default class TOConnect {
   }
 
 	async getUserData() {
-		let resp = await this._get(ROOT_URL + ACCUEIL_URL)
+		let resp = await this._get(ROOT_URL + ACCUEIL_URL, { maxRedirects: 0 })
 
 		if (this._checkResponse(resp) && resp.data.indexOf('accueilDonneesUtilisateur.jsf') !== -1) {
 			let $ = cheerio.load(resp.data)
@@ -107,7 +130,7 @@ export default class TOConnect {
 
 			if (!href) throw new Meteor.Error(500, "Profil introuvable !")
 
-			resp = await this._get(href)
+			resp = await this._get(href, { maxRedirects: 0 })
 
 			if (this._checkResponse(resp)) {
 				$ = cheerio.load(resp.data)
@@ -139,7 +162,7 @@ export default class TOConnect {
 	}
 
 	async getPlanning() {
-		let resp = await this._get(ROOT_URL + PLANNING_URL)
+		let resp = await this._get(ROOT_URL + PLANNING_URL, { maxRedirects: 0 })
 
 		if (this._checkResponse(resp)) {
 			const $ = cheerio.load(resp.data)
@@ -168,9 +191,7 @@ export default class TOConnect {
 					formPlanning_tabListeActivites_selection: '',
 					'javax.faces.ViewState': ''
 				}, data),
-				{
-					maxRedirects: 0
-				}
+				{ maxRedirects: 0 }
 			)
 
 			if (this._checkResponse(resp) && resp.headers['content-type'].indexOf("text/calendar") !== -1) {
@@ -180,6 +201,20 @@ export default class TOConnect {
 			}
 		} else {
 			throw new Meteor.Error(500, "Planning introuvable !", "La page planning de TO Connect est inaccessible.")
+		}
+	}
+
+	async getActivitePN(debut, fin) {
+		const resp = await this._get(ROOT_URL + ACTIVITE_PN_URL, { maxRedirects: 0 })
+
+		if (this._checkResponse(resp)) {
+			const $ = cheerio.load(resp.data)
+			const result = []
+			$('table tr.ui-widget-content')
+				.each((i, tr) => {
+					result.push($(tr).find('td').map((i,td) => $(td).text()).get())
+        })
+			return result
 		}
 	}
 
@@ -203,7 +238,7 @@ export default class TOConnect {
 
   async validate(url, buttonText) {
     let resp = await this._get(url, { maxRedirects: 0 })
-    console.log(resp.status, resp.headers, resp.path)
+
 		if (this._checkResponse(resp)) {
 			const $ = cheerio.load(resp.data)
       const $button = $(`form button:contains(${ buttonText })`)
@@ -231,22 +266,9 @@ export default class TOConnect {
 		}
   }
 
-	async getActivitePN(debut, fin) {
-		const resp = await this._get(ROOT_URL + ACTIVITE_PN_URL)
-
-		if (this._checkResponse(resp)) {
-			const $ = cheerio.load(resp.data)
-			const result = []
-			$('table tr.ui-widget-content')
-				.each((i, tr) => {
-					result.push($(tr).find('td').map((i,td) => $(td).text()).get())
-        })
-			return result
-		}
-	}
-
   getSession() {
-    return this.cookieJar.getCookieStringSync(ROOT_URL + LOGIN_URL)
+    const cookie = this.cookieJar.getCookieStringSync(ROOT_URL + LOGIN_URL)
+    return { cookie, windowId: this.windowId }
   }
 
 	revokeSession() {
@@ -254,12 +276,13 @@ export default class TOConnect {
 	}
 
 	_checkResponse(resp) {
-    console.log('TOConnect._checkResponse', resp.request.method, resp.request.path, resp.status, resp.statusText)
+    console.log(resp.request.method, resp.request.path, resp.status, resp.statusText)
 		if ((resp.data && resp.data.indexOf('TOConnect/login.jsf') !== -1)
 			|| (resp.headers && resp.headers.location && resp.headers.location.indexOf('login.jsf') !== -1)) {
 			this.revokeSession()
 			throw new Meteor.Error(401, "Echec authentification !", "Votre session a expirée.")
 		}
+    if (resp.status == 302) console.log(resp.headers)
 		return resp && resp.status === 200
 	}
 
@@ -275,14 +298,31 @@ export default class TOConnect {
       }
 			// maxRedirects: 5, // default
 		})
+
+    if (this.windowId) {
+      if (_.has(options, 'params') && _.isObject(options.params)) {
+        _.extend(options.params, { windowId: this.windowId })
+      } else {
+        options.params = { windowId: this.windowId }
+      }
+    } else if (_.has(options, 'maxRedirects') && options.maxRedirects === 0) {
+      options.maxRedirects = 1
+    }
+
     let resp
     try {
+      // console.log(method, url, options)
       resp = await axios(_.extend({ url, method }, options))
     } catch (error) {
+      // console.log(method, url, error.response.status, error.response.headers)
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        throw new Meteor.Error(error.response.status, error.response.statusText, _.isFunction(error.toJSON) ? error.toJSON() : undefined)
+        if (error.response.status >= 200 && error.response.status < 400) {
+          resp = error.response
+        } else {
+          throw new Meteor.Error(error.response.status, error.response.statusText, _.isFunction(error.toJSON) ? error.toJSON() : undefined)
+        }
       } else if (error.request) {
         // The request was made but no response was received
         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
@@ -293,6 +333,11 @@ export default class TOConnect {
         throw new Meteor.Error('request-error', "Error during request setup !")
       }
     }
+
+    if (!this.windowId && resp) {
+      this.saveWindowId(resp.request.path)
+    }
+
     return resp
 	}
 

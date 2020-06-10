@@ -1,15 +1,15 @@
 <template name="loginForm">
   <div class="row justify-content-center">
     <div class="col-md-6">
-          <form id="login">
-        		 <input name="login" type="text" value="" placeholder="Trigramme" class="form-control mb-2" maxlength="3" pattern="[A-Z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
+      <form id="login">
+    		<input name="login" type="text" value="" placeholder="Trigramme" class="form-control mb-2" maxlength="3" pattern="[A-Z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
 
-      		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control mb-2" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
+  		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control mb-2" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
 
-      		  <button type="submit" class="btn btn-success btn-block login ladda-button" data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
-              <span class="ladda-label">Connexion</span>
-            </button>
-        	</form>
+  		  <button type="submit" class="btn btn-success btn-block login ladda-button" data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
+          <span class="ladda-label">Connexion</span>
+        </button>
+    	</form>
     </div>
   </div>
 </template>

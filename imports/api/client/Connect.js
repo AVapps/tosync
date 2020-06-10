@@ -2,6 +2,7 @@ import { ReactiveVar } from 'meteor/reactive-var'
 import { ReactiveDict } from 'meteor/reactive-dict'
 import { DateTime } from 'luxon'
 import { TOConnect } from '../toconnect/client/TOConnect.js'
+import pify from 'pify'
 
 const CONNECT_STATE_KEY = "CONNECT_STATE"
 
@@ -18,6 +19,7 @@ Connect = {
   }),
 
 	init() {
+    this.debouncedLogin = _.debounce(this.login, 120000, { leading: true })
     Config.onReady(() => {
       const lastSessionCheck = Config.get('lastSessionCheck')
       const now = +new Date()
@@ -28,23 +30,25 @@ Connect = {
 		return this
 	},
 
-	login(username, password, doneCb) {
+	async login(username, password, doneCb) {
 		check(username, String)
 		check(password, String)
+    // console.log('Connect.login')
 		this.startTask('login')
-		Meteor.loginConnect(username, password, (error) => {
-			if (error) {
-				this._handleError(error)
-				if (_.isFunction(doneCb)) doneCb(error)
-			} else {
-				this.state.set('credentials',[ username, password ])
-				this.state.set('username', username)
-				this.checkSession()
-				if (_.isFunction(doneCb)) doneCb()
-			}
-			this.endTask('login')
-		})
-		return this
+    let state
+    try {
+      await pify(Meteor.loginConnect)(username, password)
+      this.state.set('credentials',[ username, password ])
+      this.state.set('username', username)
+      state = await this.checkSession()
+      if (_.isFunction(doneCb)) doneCb()
+
+    } catch (error) {
+      this._handleError(error)
+      if (_.isFunction(doneCb)) doneCb(error)
+    }
+    this.endTask('login')
+    return (state && _.has(state, 'connected')) ? state.connected : false
 	},
 
 	logout() {
@@ -91,7 +95,6 @@ Connect = {
     } catch (error) {
       this._handleError(error)
     }
-    this.startSession()
     this.endTask('sync_data')
     return data
 	},
@@ -132,35 +135,42 @@ Connect = {
 	},
 
 	startSession() {
+    // console.log('Connect.startSession', this._timeoutHandle)
 		this.clearSession()
 		this._timeoutHandle = Meteor.setTimeout(() => {
+      // console.log('Connect.startSession.Timeout', this._timeoutHandle)
 			this._timeoutHandle = null
 			this.checkSession()
-		}, 600000)
+		}, 300000)
 		return this
 	},
 
 	clearSession() {
+    // console.log('Connect.clearSession', this._timeoutHandle)
 		if (this._timeoutHandle) {
+      // console.log('Connect.clearSession.clearing', this._timeoutHandle)
 			Meteor.clearTimeout(this._timeoutHandle)
 			this._timeoutHandle = null
 		}
 		return this
 	},
 
-	checkSession() {
+	async checkSession() {
 		this.startTask('check_session')
-		Meteor.call('checkSession', (error, result) => {
-			console.log('*** checkSession ***', error, result)
-			if (error) {
-        this._handleError(error)
-      } else if (_.isObject(result) && _.has(result, 'connected')) {
-        this.handleState(result)
-        Config.set('lastSessionCheck', +new Date())
-			}
-			this.endTask('check_session')
-		})
-		return this
+    // console.log('Connect.checkSession.start')
+    let state
+    try {
+      state = await pify(Meteor.call)('checkSession')
+    } catch (error) {
+      this._handleError(error)
+    }
+    console.log('Connect.checkSession', state)
+    if (_.isObject(state) && _.has(state, 'connected')) {
+      this.handleState(state)
+      Config.set('lastSessionCheck', +new Date())
+    }
+    this.endTask('check_session')
+		return state
 	},
 
   handleState(state) {
@@ -186,12 +196,20 @@ Connect = {
   },
 
 	_resetSession() {
+    // console.log('Connect._resetSession()')
 		this.setDisconnedState()
 		this.clearSession()
-    const credentials = this.state.get('credentials')
-		if (_.isArray(credentials)) this.login.apply(this, credentials)
+    this.tryAutoReLogin()
 		return this
 	},
+
+  async tryAutoReLogin() {
+    console.log('Connect.tryAutoReLogin')
+    const credentials = this.state.get('credentials')
+		if (_.isArray(credentials)) {
+      this.debouncedLogin.apply(this, credentials)
+    }
+  },
 
 	_handleError(error) {
     console.log('Connect._handleError', error)

@@ -1,4 +1,4 @@
 TO.Sync
 =======
 
-Synchronisattion des plannings TO.
+Synchronisation des plannings TO.
