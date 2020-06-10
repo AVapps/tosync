@@ -1,39 +1,99 @@
-import moment from 'moment';
-import '../../lib/moment-ejson.js';
-import { TOConnect as Connect } from '../../api/toconnect/server/TOConnect';
+import moment from 'moment'
+import { Meteor } from 'meteor/meteor'
+import '/imports/lib/moment-ejson.js'
+import { TOConnect as Connect } from '/imports/api/toconnect/server/TOConnect'
+import _ from 'lodash'
+
+function isPNT(userId) {
+  const events = Events.find({
+    userId,
+    tag: 'vol'
+  }, {
+    limit: 30,
+    sort: [['updated', 'desc']],
+    fields: { userId: 1, updated: 1, pnt: 1 }
+  }).fetch()
+
+  const username = Meteor.user().username
+  const score = _.reduce(events, (result, evt) => {
+    if (!_.isEmpty(evt.pnt)) {
+      if (_.includes(evt.pnt, username)) {
+        result.isPNT += 1
+      } else {
+        result.isNotPNT += 1
+      }
+    }
+    return result
+  }, { isPNT: 0, isNotPNT: 0 })
+
+  return score.isPNT > score.isNotPNT
+}
 
 Meteor.methods({
-	xlsx: function (pnt) {
-		this.unblock();
-		if (pnt) return Assets.getBinary('ep4.xlsx');
-		return Assets.getBinary('ep4pnc.xlsx');
+	// xlsx: function (pnt) {
+	// 	this.unblock();
+	// 	if (pnt) return Assets.getBinary('ep4.xlsx');
+	// 	return Assets.getBinary('ep4pnc.xlsx');
+	// },
+
+  getPayscale() {
+    check(this.userId, Match.OneOf(String, Object))
+    this.unblock()
+
+    if (isPNT(this.userId)) {
+      return {
+        AF: Meteor.settings.remuAF,
+        TO: Meteor.settings.remuTO
+      }
+    } else {
+      return null
+    }
+  },
+
+  isPNT() {
+    check(this.userId, Match.OneOf(String, Object))
+    // return false
+    // Meteor._sleepForMs(3000)
+    return isPNT(this.userId)
+  },
+
+	async getPlanning() {
+		check(this.userId, Match.OneOf(String, Object))
+		this.unblock()
+		return Connect.getPlanning(this.userId)
 	},
 
-	getPlanning: function () {
-		check(this.userId, Match.OneOf(String, Object));
-		this.unblock();
-		return Connect.getPlanning(this.userId);
+  async validateChanges() {
+		check(this.userId, Match.OneOf(String, Object))
+		this.unblock()
+		return Connect.validateChanges(this.userId)
 	},
 
-	getActivitePN: function () {
-		check(this.userId, Match.OneOf(String, Object));
-		this.unblock();
-		return Connect.getActivitePN(this.userId);
+  async signPlanning() {
+		check(this.userId, Match.OneOf(String, Object))
+		this.unblock()
+		return Connect.signPlanning(this.userId)
 	},
 
-	getSyncData: function () {
-		check(this.userId, Match.OneOf(String, Object));
-		this.unblock();
-		return Connect.getSyncData(this.userId);
+	async getActivitePN() {
+		check(this.userId, Match.OneOf(String, Object))
+		this.unblock()
+		return Connect.getActivitePN(this.userId)
 	},
 
-	checkSession: function () {
-		if (!this.userId) return false;
-		this.unblock();
-		return Connect.checkSession(this.userId);
+	async getSyncData() {
+		check(this.userId, Match.OneOf(String, Object))
+		this.unblock()
+		return Connect.getSyncData(this.userId)
 	},
 
-	findBlockHours: function (numVols) {
+	async checkSession() {
+		if (!this.userId) return false
+		this.unblock()
+		return Connect.checkSession(this.userId)
+	},
+
+	findBlockHours(numVols) {
 		check(numVols, Array);
 		var map = {};
 
@@ -55,33 +115,7 @@ Meteor.methods({
 		return map;
 	},
 
-	updateEvents: function (updated) {
-		check(this.userId, Match.OneOf(String, Object));
-		var result = [];
-		for (var i = 0; i < updated.length; i++) {
-			// var obj = {}, item = updated[i];
-			// obj[item._id] = Events
-			// 	.update({
-			// 		_id: item._id,
-			// 		userId: this.userId
-			// 	}, {
-			// 		'$set': item.set
-			// 	});
-			// result.push(obj);
-
-			// TODO : Cannot update with custom EJSON objects, need to wait for MongoDB 2.5.2 for a fix
-			//        Until then remove then re-insert
-			var item = updated[i];
-			result.push({
-				_id: item._id,
-				deleted: Events.remove({_id: item._id, userId: this.userId}),
-				inserted: Events.insert(_.extend(item.doc, {userId: this.userId}))
-			});
-		}
-		return result;
-	},
-
-	clearInterval: function (start, to) {
+	clearInterval(start, to) {
 		check(this.userId, Match.OneOf(String, Object));
 		start.startOf('day');
 		to.endOf('day');
@@ -92,7 +126,7 @@ Meteor.methods({
 		});
 	},
 
-	getEventsRightBefore: function (date) {
+	getEventsRightBefore(date) {
 		check(this.userId, Match.OneOf(String, Object));
 		return Events.find({
 			userId: this.userId,
@@ -105,7 +139,7 @@ Meteor.methods({
 		}).fetch();
 	},
 
-	getEvents: function (start, end) {
+	getEvents(start, end) {
 		check(this.userId, Match.OneOf(String, Object));
 		let query;
 		if (moment.isMoment(start) && moment.isMoment(end) && start.isBefore(end)) {
@@ -126,7 +160,7 @@ Meteor.methods({
 				}
 			};
 		} else {
-			throw new Meteor.Error(500, "Requète invalide !");
+			throw new Meteor.Error(500, 'Requète invalide !');
 		}
 
 		if (query) {
@@ -136,7 +170,7 @@ Meteor.methods({
 		}
 	},
 
-	getRotation: function (rotationId) {
+	getRotation(rotationId) {
 		check(this.userId, Match.OneOf(String, Object));
 		const rotation = Events.findOne({
 			_id: rotationId,
@@ -147,11 +181,11 @@ Meteor.methods({
 			rotation.vols = Events.find({ rotationId }, { sort: [['start', 'asc']]}).fetch();
 			return rotation;
 		} else {
-			throw new Meteor.Error(403, "Non autorisé !");
+			throw new Meteor.Error(403, 'Non autorisé !');
 		}
 	},
 
-	getAllEventsOfMonth: function (month) {
+	getAllEventsOfMonth(month) {
 		const m = moment(month);
 		const monthStart = moment(month).startOf('month'), monthEnd = moment(month).endOf('month');
 
@@ -181,7 +215,7 @@ Meteor.methods({
 		}).fetch();
 	},
 
-	batchEventsRemove: function (ids) {
+	batchEventsRemove(ids) {
 		check(this.userId, Match.OneOf(String, Object));
 		return Events.remove({
 			_id: {
@@ -191,15 +225,13 @@ Meteor.methods({
 		});
 	},
 
-	batchEventsInsert: function (events) {
-		check(this.userId, Match.OneOf(String, Object));
-		check(events, Array);
-		this.unblock();
-		// var result = [];
-		// for (var i = 0; i < events.length; i++) {
-		// 	result.push( Events.insert(_.extend(events[i], {userId: this.userId})) );
-		// }
-		// return result;
-		return Events.batchInsert(events.map(function(evt) { return _.extend(evt, {userId: this.userId}) }));
+	batchEventsInsert(events) {
+		check(this.userId, Match.OneOf(String, Object))
+		check(events, Array)
+
+    return _.map(events, evt => {
+      evt.userId = this.userId
+      return Events.insert(_.pick(evt, ['start', 'end', 'summary', 'description', 'uid', 'category', 'tag', 'fonction', 'type', 'pnt', 'pnc', 'remark', 'num', 'from', 'to', 'tz', 'svIndex', 'rotationId', 'created', 'userId', 'slug', 'updated', 'real.start', 'real.end', 'base', ]))
+    })
 	}
 });

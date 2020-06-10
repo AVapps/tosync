@@ -1,0 +1,115 @@
+<template name="rotationModalRemuBTab">
+  <h6 class="mt-3">Rému B - Nouveau système de rémunération</h6>
+  <hr>
+  {{#if this.day.etapes.length }}
+	<table class="table events table-bordered table-sm table-striped">
+		<thead>
+			<tr>
+				<th class="summary">Vol / MEP</th>
+        <th>TVref</th>
+        <th>HV100% / MEP</th>
+				<th>HV100%(r)</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each vol in this.day.etapes }}
+				<tr>
+          {{#if is vol 'vol'}}
+          <td class="summary">
+      			<span class="num">{{ vol.num }}</span>
+      			<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+      		</td>
+          <td>{{ duree vol.tvrefAF }}</td>
+          <td>{{ duree vol.hv100AF }}</td>
+      		<td>{{ duree vol.hv100rAF }}</td>
+          {{else}}
+          <td class="summary">
+    				{{> eventLabel vol }}
+    				<span class="title">{{ vol.title }}</span>
+    				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+      		</td>
+          <td></td>
+          <td>{{ duree vol.mep }}</td>
+      		<td></td>
+          {{/if}}
+        </tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+
+  <div class="row">
+    {{#each sv in this.day.svs }}
+    <div class="col-md">
+      <table class="table table-bordered table-sm table-striped svdata stats">
+        <caption>Service de vol {{ num @index }}</caption>
+        <tbody>
+          <tr>
+            <th>Hcv</th>
+            <td>{{ numFormat sv.HcvAF }}</td>
+          </tr>
+          <tr>
+            <th>Hcv(r)</th>
+            <td>{{ numFormat sv.HcvrAF }}</td>
+          </tr>
+          <tr>
+            <th>Hct</th>
+            <td>{{ numFormat sv.HctAF }}</td>
+          </tr>
+          <tr>
+            <th>H1</th>
+            <td>{{ numFormat sv.H1AF }}</td>
+          </tr>
+          <tr>
+            <th>H1(r)</th>
+            <td>{{ numFormat sv.H1rAF }}</td>
+          </tr>
+          <tr>
+            <th>TSV de nuit</th>
+            <td>{{ duree sv.TSVnuit }}</td>
+          </tr>
+          <tr>
+  					<th>TME</th>
+  					<td>{{ numFormat sv.tme }}</td>
+  				</tr>
+  				<tr>
+  					<th>CMT</th>
+  					<td>{{ numFormat sv.cmt }}</td>
+  				</tr>
+        </tbody>
+      </table>
+    </div>
+    {{/each}}
+    <div class="col-md">
+      <table class="table table-bordered table-sm table-striped svdata stats">
+        <caption>Rotation</caption>
+    		<tbody>
+    			<tr>
+    				<th>&sum;H1</th>
+    				<td>{{ numFormat this.day.rotation.H1AF }}</td>
+    			</tr>
+    			<tr>
+    				<th>&sum;H1(r)</th>
+    				<td>{{ numFormat this.day.rotation.H1rAF }}</td>
+    			</tr>
+          <tr>
+    				<th>Hca</th>
+    				<td>{{ numFormat this.day.rotation.HcaAF }}</td>
+    			</tr>
+    			<tr>
+    				<th>H2</th>
+    				<td>{{ numFormat this.day.rotation.H2AF }}</td>
+    			</tr>
+    			<tr>
+    				<th>H2(r)</th>
+    				<td>{{ numFormat this.day.rotation.H2rAF }}</td>
+    			</tr>
+          <tr>
+            <th>TSV de nuit</th>
+            <td>{{ duree this.day.rotation.TSVnuit }}</td>
+          </tr>
+    		</tbody>
+    	</table>
+    </div>
+  </div>
+</template>

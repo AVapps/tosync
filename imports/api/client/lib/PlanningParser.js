@@ -58,12 +58,15 @@ export default class PlanningParser {
 				case 'maladie':
 				case 'greve':
 				case 'sanssolde':
+				case 'absence':
+				case 'blanc':
 					this._completeRotation();
 					this._addAllDayEvent(evt);
 					break;
 				default:
 					this._completeRotation();
 					this.sols.push(evt);
+          this.parsedEvents.push(evt);
 					break;
 			}
 		});

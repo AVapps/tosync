@@ -27,12 +27,13 @@ export default {
             last = planning.lastEvent(),
             hasSols = !!planning.sols.length;
 
-        // console.log(events, planning, first, last, hasSols);
+        console.log('syncCalendarEvents', events, planning, first, last, hasSols)
 
         Meteor.call('getEvents', first.start, options.restrictToLastEventEnd ? last.end : false, (error, savedEvents) => {
             if (error) {
                 Notify.error(error);
             } else if (savedEvents && savedEvents.length) {
+                console.log(savedEvents)
                 console.time('syncEvents');
                 const now = moment();
                 const savedEventsByTag = _.groupBy(savedEvents, 'tag');
@@ -142,15 +143,15 @@ export default {
                         const found = findEvent(evt, savedEventsByTag);
                         if (found) {
                             foundIds.push(found._id);
-                            // console.log('FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt, found);
+                            console.log('FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt, found);
                             if (_.isMatchWith(found, _.pick(evt, 'category', 'summary', 'description', 'start', 'end'), matchMoment)) {
-                                // console.log('MATCHES: nothing to update');
+                                console.log('MATCHES: nothing to update');
                             } else {
-                                // console.log('DOES NOT MATCH: update');
+                                console.log('DOES NOT MATCH: update');
                                 updateLog.update.push({ _id: found._id, modifier: { $set: _normalizeEvent(evt) }});
                             }
                         } else {
-                            // console.log('Not FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt);
+                            console.log('Not FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt);
                             updateLog.insert.push(evt);
                         }
                     });
@@ -192,6 +193,7 @@ export default {
                 _.forEach(updateLog.update, update => Events.update(update._id, _setUpdateTime(update.modifier, now.valueOf())));
 
             } else {
+              console.log('No saved events : inserting !', planning)
                 _saveParsedPlanning(planning);
             }
         });
@@ -334,7 +336,7 @@ export default {
         // Update tag of events
         const slugs = [];
         _.forEach(events, evt => {
-            if (evt.tag == 'autre' && evt.category && _.has(Utils.categories, evt.category)) {
+            if (evt.category && _.has(Utils.categories, evt.category)) {
                 evt.tag = _.get(Utils.categories, evt.category);
                 evt.slug = Utils.slug(evt);
                 if (_.includes(slugs, evt.slug)) {
@@ -401,7 +403,7 @@ export default {
             console.log(planning);
             _.forEach(planning.rotations, rot => {
                 rot.created = now;
-                const rotationId = Events.insert(_completeEvent(rot));
+                const rotationId = Events.insert(_completeEvent(_.omit(rot, 'vols', 'services')));
                 if (rotationId) {
                     _.forEach(rot.vols, vol => {
                         Events.update(vol._id, {
@@ -431,6 +433,10 @@ export default {
 
 function findEvent(evt, eventsByTag) {
     if (!_.has(eventsByTag, evt.tag)) return;
+
+    if (Utils.slug(evt) == 'IEN20200304-SIMU_QT-1005-simu') {
+      console.log(evt, eventsByTag)
+    }
 
     const found = _.find(eventsByTag[evt.tag], { slug: Utils.slug(evt) });
 
@@ -572,7 +578,7 @@ function _recomputeExistingRotation(rotationId) {
 function _recomputeRotations(events, created = +moment()) {
     const rotations = _.groupBy(events, 'rotationId');
     _.forEach(rotations, (vols, rotationId) => {
-        Meteor.call('getRotation', rotationId, (error, rotation) => {
+      Meteor.call('getRotation', rotationId, (error, rotation) => {
             if (error) {
                 Notify.error(error);
             } else if (rotation && _.isArray(rotation.vols)) {
@@ -643,13 +649,10 @@ function _insertEvents(events, created = +moment()) {
         toInsert.push(_completeEvent(evt));
     });
 
-    return Events.batchInsert(toInsert, function (error, result) {
-        if (error) {
-            Notify.error(error);
-        } else if (result && !_.every(result)) {
-            Notify.warn("Attention", "Des évènements n'ont pas été ajoutés ! (Sync::_insertEvents)");
-        }
-    });
+    const inserted = Events.batchInsert(toInsert, function (error, result) {
+      if (error) Notify.error(error)
+    }) // Note: batchInsert method always returns empty result Array but client return is OK
+    return inserted
 }
 
 function _deleteEvents(events) {
@@ -659,7 +662,7 @@ function _deleteEvents(events) {
         if (error) {
             Notify.error(error);
         } else if (result !== events.length) {
-            Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::_deleteEvents)");
+            // Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::_deleteEvents)");
         }
     });
 }

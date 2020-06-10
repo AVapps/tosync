@@ -1,0 +1,190 @@
+<template name="monthModalContentRemuTOTab">
+  <h6 class="mt-3">Rému A - Ancien système de rémunération</h6>
+  <hr>
+  <div class="row">
+    <div class="col-6">
+      <div class="input-group input-group-sm">
+        <div class="input-group-prepend">
+          <label class="input-group-text" for="grille">Grille</label>
+        </div>
+        <select id="grille" class="custom-select custom-select-sm">
+          <option value="OPLA" {{ selectedScale 'OPLA' }} >OPL cat. A</option>
+          <option value="OPLB" {{ selectedScale 'OPLB' }}>OPL cat. B</option>
+          <option value="OPLC" {{ selectedScale 'OPLC' }}>OPL cat. C</option>
+          <option value="CDB" {{ selectedScale 'CDB' }}>CDB</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="input-group input-group-sm">
+        <div class="input-group-prepend">
+          <div class="input-group-text">Année</div>
+        </div>
+        <input type="number" id="annee" class="form-control form-control-sm text-center" min="0" max="20" value="{{ annee }}">
+      </div>
+    </div>
+  </div>
+  <hr>
+  {{#with s=salaire.TO stats=stats }}
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Salaire</caption>
+    <thead>
+      <tr>
+        <th>Libellé</th>
+        <th>Base</th>
+        <th>Taux</th>
+        <th>Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SMMG</td>
+        <td>{{ numFormat 65 }}</td>
+        <td></td>
+        <td>{{ numFormat s.SMMG }}</td>
+      </tr>
+      {{#if s.nbPVcomp }}
+      <tr>
+        <td>Primes de Vol</td>
+        <td>{{ numFormat s.nbPVcomp }}</td>
+        <td>{{ numFormat s.PV }}</td>
+        <td>{{ numFormat s.PVcomp }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.HS }}
+      <tr>
+        <td>Heures supplémentaires</td>
+        <td>{{ numFormat stats.TO.HS }}</td>
+        <td>{{ numFormat s.tauxHS }}</td>
+        <td>{{ numFormat s.HS }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.NJabs }}
+      <tr>
+        <td>Absences</td>
+        <td>{{ numFormat stats.TO.NJabs }}</td>
+        <td>{{ numFormat s.tauxSMMG }}</td>
+        <td>{{ numFormat s.retraitTrentiemes }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.maladie }}
+      <tr>
+        <td>Maladie</td>
+        <td>{{ numFormat stats.count.maladie }}</td>
+        <td>{{ numFormat s.tauxSMMG }}</td>
+        <td>{{ numFormat s.maladie }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.NJstage }}
+      <tr>
+        <td>Stage</td>
+        <td>{{ numFormat stats.TO.NJstage }}</td>
+        <td>{{ numFormat s.tauxSMMG }}</td>
+        <td>{{ numFormat s.stage }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.conges }}
+      <tr>
+        <td>Congés (estimation)</td>
+        <td>{{ numFormat stats.count.conges }}</td>
+        <td>~{{ numFormat s.tauxConges }}</td>
+        <td>{{ numFormat s.conges }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <th>Total brut hors indemnités</th>
+        <th></th>
+        <th></th>
+        <th>{{ numFormat s.brut }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HC</caption>
+    <tbody>
+      <tr>
+        <td>Heures créditées vol (H2)</td>
+        <td>{{ numFormat stats.TO.H2 }}</td>
+      </tr>
+      <tr>
+        <td>Heures créditées nuit (Hcnuit)</td>
+        <td>{{ numFormat stats.TO.Hcnuit }}</td>
+      </tr>
+      {{#if stats.TO.Hcs }}
+      <tr>
+        <td>Heures créditées sol (Hcs)</td>
+        <td>{{ numFormat stats.TO.Hcs }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.Hcsi }}
+      <tr>
+        <td>Heures créditées instruction sol (Hcsi)</td>
+        <td>{{ numFormat stats.TO.Hcsi }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.HcSimuInst }}
+      <tr>
+        <td>Heures créditées instruction Simu (HcSimuInst)</td>
+        <td>{{ numFormat stats.TO.HcSimuInst }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.Hcsr }}
+      <tr>
+        <td>Heures créditées représ. pers. (Hcsr)</td>
+        <td>{{ numFormat stats.TO.Hcsr }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td>Heures créditées (HCm)</td>
+        <td>{{ numFormat stats.TO.HCm }}</td>
+      </tr>
+      <tr>
+        <td>HC garanties (HCgm)</td>
+        <td>{{ numFormat stats.TO.HCgm }}</td>
+      </tr>
+      <tr>
+        <th>HC rémunérées (HCrm)</th>
+        <th>{{ numFormat stats.TO.HCrm }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HS</caption>
+    <tbody>
+      <tr>
+        <td>Trentièmes</td>
+        <td>{{ stats.TO.trentiemes }}</td>
+      </tr>
+      <tr>
+        <td>Seuil HS</td>
+        <td>{{ numFormat stats.TO.seuilHS }}</td>
+      </tr>
+      <tr>
+        <th>Total HS</th>
+        <th>{{ numFormat stats.TO.HS }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>SMMG</caption>
+    <tbody>
+      <tr>
+        <td>PV SMMG</td>
+        <td>{{ numFormat s.PVSMMG }}</td>
+      </tr>
+      <tr>
+        <th>PV complémentaires</th>
+        <th>{{ numFormat s.nbPVcomp }}</th>
+      </tr>
+    </tbody>
+  </table>
+  {{/with}}
+  <hr>
+  <div class="custom-control custom-switch mt-3">
+    <input type="checkbox" class="custom-control-input" id="eHSconfigA" checked={{ eHSchecked }}>
+    <label class="custom-control-label" for="eHSconfigA">Afficher l'écart aux heures supplémentaires du calendrier (eHS) selon les règles de rémunération « A »</label>
+  </div>
+</template>

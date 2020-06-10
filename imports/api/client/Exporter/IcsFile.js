@@ -1,10 +1,12 @@
-import './Blob.js';
-import saveAs from './FileSaver.js';
-import Utils from '../lib/Utils.js';
+import './Blob.js'
+import { saveAs } from 'file-saver'
+import Utils from '/imports/api/client/lib/Utils.js'
+import Export from '/imports/api/client/lib/Export.js'
+import TemplatesIndex from '/imports/api/client/lib/TemplatesIndex.js'
 
 export const IcsFile = {
 	generate(events) {
-		var calArray = [
+		const calArray = [
 			"BEGIN:VCALENDAR",
 			"VERSION:2.0",
 			"METHOD:PUBLISH",
@@ -29,151 +31,128 @@ export const IcsFile = {
 			// "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
 			// "END:STANDARD",
 			// "END:VTIMEZONE"
-		];
+		]
 
-		var daysMap = [],
-			dateFormat = "YYYYMMDD",
-			dateTimeFormat = "YYYYMMDD[T]HHmmss[Z]";
+		const daysMap = []
+		const dateFormat = "YYYYMMDD"
+		const dateTimeFormat = "YYYYMMDD[T]HHmmss[Z]"
 
-		var DTSTAMP = moment.utc().format(dateTimeFormat);
+		const DTSTAMP = moment.utc().format(dateTimeFormat)
 
 		function skip(evt) {
-			var date  = evt.start.format('YYYY-MM-DD');
-			var _skip = _.contains(daysMap, date);
-			if (!_skip) daysMap.push(date);
-			return _skip;
+			const date  = evt.start.format('YYYY-MM-DD')
+			const _skip = _.contains(daysMap, date)
+			if (!_skip) daysMap.push(date)
+			return _skip
 		}
 
 		function startVEvent(evt) {
-			return ["BEGIN:VEVENT","UID:" + (evt.slug || Utils.slug(evt)), "DTSTAMP:" + DTSTAMP];
+			return ["BEGIN:VEVENT","UID:" + (evt.slug || Utils.slug(evt)), "DTSTAMP:" + DTSTAMP]
 		}
 
 		function addDates(evt, vevt) {
-			var date = evt.start.clone().startOf('day');
-			vevt.push("DTSTART;VALUE=DATE:" + date.format(dateFormat));
-			vevt.push("DTEND;VALUE=DATE:" + date.add(1,'d').format(dateFormat));
-			return vevt;
+			const date = evt.start.clone().startOf('day')
+			vevt.push("DTSTART;VALUE=DATE:" + date.format(dateFormat))
+			vevt.push("DTEND;VALUE=DATE:" + date.add(1,'d').format(dateFormat))
+			return vevt
 		}
 
 		function addDateTimes(evt, vevt) {
-			vevt.push("DTSTART;VALUE=DATE-TIME:" + evt.start.utc().format(dateTimeFormat));
-			vevt.push("DTEND;VALUE=DATE-TIME:" + evt.end.utc().format(dateTimeFormat));
-			evt.start.local();
-			evt.end.local();
-			return vevt;
+			vevt.push("DTSTART;VALUE=DATE-TIME:" + evt.start.utc().format(dateTimeFormat))
+			vevt.push("DTEND;VALUE=DATE-TIME:" + evt.end.utc().format(dateTimeFormat))
+			evt.start.local()
+			evt.end.local()
+			return vevt
 		}
 
 		function endVEvent(vevt) {
-			vevt.push("END:VEVENT");
-			calArray.push(vevt.join("\r\n"));
+			vevt.push("END:VEVENT")
+			calArray.push(vevt.join("\r\n"))
 		}
 
-		_.forEach(events, (event, index) => {
+    const tags = Config.get('iCalendarTags')
+    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
+    const filteredEvents = Export.filterEventsByTags(events, tags)
+
+		_.forEach(filteredEvents, (event, index) => {
 			switch (event.tag) {
-				case 'repos':
-					if (skip(event)) return;
-					var vevent = startVEvent(event);
-					addDates(event, vevent);
-					vevent.push("CATEGORIES:REPOS", "SUMMARY:"+this._titre(event), "DESCRIPTION:"+this._description(event));
-					endVEvent(vevent);
-					break;
-				case 'conges':
-					if (skip(event)) return;
-					var vevent = startVEvent(event);
-					addDates(event, vevent);
-					vevent.push("CATEGORIES:CONGES", "SUMMARY:"+this._titre(event), "DESCRIPTION:"+this._description(event));
-					endVEvent(vevent);
-					break;
-				case 'delegation':
-					if (skip(event)) return;
-					var vevent = startVEvent(event);
-					addDates(event, vevent);
-					vevent.push("CATEGORIES:SOL", "SUMMARY:"+this._titre(event), "DESCRIPTION:"+this._description(event));
-					endVEvent(vevent);
-					break;
-				case 'rotation':
-					var vevent = startVEvent(event);
-					addDateTimes(event, vevent);
+        case 'absence':
+    		case 'conges':
+    		case 'sanssolde':
+        case 'blanc':
+    		case 'repos':
+    		case 'maladie':
+    		case 'greve':
+					if (skip(event)) return
+					const vevent = startVEvent(event)
+					addDates(event, vevent)
 					vevent.push(
-						"CATEGORIES:ROTATION",
-						"SUMMARY:" + this._titre(event),
-						"DESCRIPTION:" + this._description(event).replace(/\n/g, "\\n")
-					);
-					endVEvent(vevent);
-					break;
+            "CATEGORIES:" + event.tag.toUpperCase(),
+            "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
+            "DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+          )
+					endVEvent(vevent)
+					break
+        case 'rotation':
+					const veventR = startVEvent(event)
+					veventR.push(
+            "DTSTART;VALUE=DATE:" + event.start.clone().startOf('day').format(dateFormat),
+            "DTEND;VALUE=DATE:" + event.end.clone().startOf('day').add(1,'d').format(dateFormat),
+            "CATEGORIES:" + event.tag.toUpperCase(),
+            "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
+            "DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+          )
+					endVEvent(veventR)
+          console.log(veventR)
+					break
 				case 'vol':
-					var vevent = startVEvent(event);
-					addDateTimes(event, vevent);
-					vevent.push(
-						"CATEGORIES:VOL",
-						"SUMMARY:" + this._titre(event),
-						"DESCRIPTION:" + this._description(event).replace(/\n/g, "\\n")
-					);
-					endVEvent(vevent);
-					break;
-				case 'mep':
-					var vevent = startVEvent(event);
-					addDateTimes(event, vevent);
-					vevent.push(
-						"CATEGORIES:VOL",
-						"SUMMARY:" + this._titre(event),
-						"DESCRIPTION:" + this._description(event).replace(/\n/g, "\\n")
-					);
-					endVEvent(vevent);
-					break;
+        case 'mep':
+					const _vevent = startVEvent(event)
+					addDateTimes(event, _vevent)
+					_vevent.push(
+						"CATEGORIES:" + event.tag.toUpperCase(),
+						"SUMMARY:" + Export.titre(_.defaults(event, {from: '', to: '', type: '', num: ''}), useCREWMobileFormat),
+						"DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+					)
+					endVEvent(_vevent)
+					break
 				default:
-					var vevent = startVEvent(event);
-					addDateTimes(event, vevent);
-					vevent.push(
+					const __vevent = startVEvent(event)
+					addDateTimes(event, __vevent)
+					__vevent.push(
 						"CATEGORIES:" + event.tag.toUpperCase(),
 						"SUMMARY:" + event.summary,
-						"DESCRIPTION:" + event.description
-					);
-					endVEvent(vevent);
-					break;
+						"DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+					)
+					endVEvent(__vevent)
+					break
 			}
-		});
+		})
 
-		calArray.push("END:VCALENDAR");
+		calArray.push("END:VCALENDAR")
 
-		if (App.support.isMobile && App.support.isSafari) {
-			var planning = 'data:text/calendar,' + encodeURIComponent(calArray.join("\r\n"));
-			window.open(planning, 'TOSync_planning.ics');
-		} else {
-			if (App.support.isSafari) {
-				alert("Si le fichier s'ouvre dans une fenêtre pressez les touches [CMD] + [S] pour l'enregistrer. Pour une meilleure compatibilité utilisez Firefox ou Chrome !");
-			}
-			var blob = new Blob([calArray.join("\r\n")], {type: "text/calendar"});
-			saveAs(blob, 'TOSync_plannning.ics');
-		}
-	},
+    let shared = false
+    try {
+      const filesArray = [ new File([calArray.join("\r\n")], 'TOSync_plannning.ics', { type: "text/calendar" }) ]
+      if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+        // const blob = new Blob(, { type: "text/calendar" })
+        navigator.share({
+          files: filesArray,
+          title: 'Planning',
+          text: 'Planning'
+        })
+        .then(() => console.log('[Share was successful.]'))
+        .catch((error) => console.log('[Sharing failed]', error))
+        shared = true
+      }
+    } catch (error) {
+      console.log(error)
+    }
 
-	_description(event) {
-		switch (event.tag) {
-			case 'conges':
-				return App.templates.events.conge ? Blaze.toHTMLWithData(Template[App.templates.events.conge], event) : event.description;
-			case 'repos':
-				return App.templates.events.repos ? Blaze.toHTMLWithData(Template[App.templates.events.repos], event) : event.description;
-			case 'rotation':
-				return App.templates.events.rotation ? Blaze.toHTMLWithData(Template[App.templates.events.rotation], event) : event.description;
-			case 'vol':
-			case 'mep':
-				return App.templates.events.vol ? Blaze.toHTMLWithData(Template[App.templates.events.vol], event) : event.description;
-			default:
-				return App.templates.events.sol ? Blaze.toHTMLWithData(Template[App.templates.events.sol], event) : event.description;
-		}
-	},
-
-	_titre(event) {
-		switch (event.tag) {
-			case 'rotation':
-				return App.templates.titre.rotation ?  App.templates.titre.rotation(event) : Utils.titre(event);
-			case 'vol':
-				return App.templates.titre.vol ?  App.templates.titre.vol(event) : event.summary;
-			case 'mep':
-				return App.templates.titre.mep ?  App.templates.titre.mep(event) : event.summary;
-			default:
-				return Utils.titre(event);
-		}
+    if (!shared) {
+      console.log(`[Your system doesn't support sharing files.]`)
+      const blob = new Blob([calArray.join("\r\n")], { type: "text/calendar" })
+      saveAs(blob, 'TOSync_plannning.ics')
+    }
 	}
-};
+}

@@ -1,0 +1,15 @@
+#changesModal {
+  table {
+    tr th:first-child, td:first-child {
+      display: none;
+    }
+
+    .before-head, .before {
+      color: $primary;
+    }
+
+    .after-head, .after {
+      color: $success;
+    }
+  }
+}

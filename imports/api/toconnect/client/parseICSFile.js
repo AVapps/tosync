@@ -1,5 +1,6 @@
 import moment from 'moment';
 import Utils from '../../client/lib/Utils.js';
+import _ from 'lodash'
 
 export default function (str) {
 	let start = str.indexOf('BEGIN:VEVENT');
@@ -30,6 +31,8 @@ export default function (str) {
 				raw[data.substring(0, j)] = data.substr(i+1).trim();
 			});
 
+    if (raw.STATUS == 'CANCELLED' || raw.SUMMARY.indexOf('UNKNOWN') !== -1) return
+
 		const evt = {
 			// category,
 			// tag,
@@ -41,22 +44,26 @@ export default function (str) {
 		}
 
 		if (raw.CATEGORIES) {
-			const category = raw.CATEGORIES.replace(/_/g,"").toUpperCase();
-			const tag = Utils.categories[category];
+			const category = raw.CATEGORIES.toUpperCase();
+			const tag = Utils.findTag(category);
 
 			_.extend(evt, { category, tag });
 
 			switch (tag) {
-				case 'repos':
-				case 'conges':
-				case 'instructionSol':
-				case 'simu':
-				case 'stage':
-				case 'delegation':
-				case 'sol':
-				case 'maladie':
-				case 'greve':
-				case 'sanssolde':
+        case 'absence':
+    		case 'conges':
+    		case 'sanssolde':
+        case 'blanc':
+    		case 'repos':
+    		case 'maladie':
+    		case 'greve':
+    		case 'stage':
+    		case 'sol':
+    		case 'instructionSol':
+    		case 'simu':
+    		case 'instructionSimu':
+    		case 'reserve':
+    		case 'delegation':
 					return evt;
 
 				case 'vol':
@@ -140,5 +147,5 @@ export default function (str) {
 			return evt;
 		}
 	});
-	return events;
+	return _.filter(events)
 };

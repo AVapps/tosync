@@ -1,0 +1,25 @@
+<template name="navbar">
+  <nav id="navbar" class="navbar navbar-expand-md navbar-light bg-light">
+		<div class="container-xl">
+		<!-- Brand and toggle get grouped for better mobile display -->
+  		<a class="navbar-brand" style="color:#00D66C">
+  			<i class="fas fa-retweet"></i>
+  			<strong>TO.<span class="text-primary">sync</span></strong>
+  		</a>
+      {{#if isLoggedIn }}
+        <button id="statusButton" class="btn status-button {{ classes }}" type="button" data-toggle="collapse" data-target="#navbar-collapse">
+          <i class="fas fa-user-times"></i>
+        </button>
+      {{/if}}
+		</div><!-- /.container-->
+	</nav>
+  {{#if isLoggedIn }}
+  <div id="navbar-collapse" class="collapse bg-dark text-white">
+    <div class="container-xl">
+        {{> loginStatusBar }}
+        <hr>
+        {{> toolbar }}
+    </div>
+  </div>
+  {{/if}}
+</template>

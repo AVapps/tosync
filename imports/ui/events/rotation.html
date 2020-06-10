@@ -2,23 +2,42 @@
 Départ  : {{ formatUTC start 'llll[Z]'}}
 Arrivée : {{ formatUTC end 'llll[Z]'}}
 
-Temps de vol total : {{ duree tvt }}
+Temps de vol total : {{ duree tvp }}
 Temps de MEP : {{ duree mep }}
-Nombre de jours : {{ nbjours }}
+Nombre de jours : {{ nbjoursTO }}
 
 {{> listeEquipageRotation this }}
 
-Rémunération
-HCa : {{ numFormat Hca }}
-ΣH1 : {{ numFormat H1 }}
-H2  : {{ numFormat H2 }}
+{{#if isPNT }}Rémunération A
+--------------
+HCa : {{ numFormat HcaTO }}
+ΣH1 : {{ numFormat H1TO }}
+H2  : {{ numFormat H2TO }}
 
-Heures de vol de nuit : {{ numFormat hdn }}
+HVnuit : {{ duree HVnuit }}
+
+Rémunération B et C
+----------------
+HCa : {{ numFormat HcaAF }}
+ΣH1 : {{ numFormat H1AF }}
+H2  : {{ numFormat H2AF }}
+ΣH1(r) : {{ numFormat H1rAF }}
+H2(r)  : {{ numFormat H2rAF }}
+
+TSV de nuit : {{ duree TSVnuit }}
+{{ else }}Rémunération
+------------
+HCa : {{ numFormat HcaTO }}
+ΣH1 : {{ numFormat H1TO }}
+H2  : {{ numFormat H2TO }}
+
+HVnuit : {{ duree HVnuit }}
+{{/if}}
 </template>
 
 <template name="listeEquipageRotation">
 Équipage{{#with equipage}}{{#each pnt }}
-| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}
+{{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}
 {{#each pnc }}
-| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}{{/with}}
+{{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}{{/with}}
 </template>

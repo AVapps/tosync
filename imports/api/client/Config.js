@@ -1,82 +1,109 @@
-import moment from 'moment';
+import moment from 'moment'
+import _ from 'lodash'
+import { Ground } from 'meteor/ground:db'
+import Utils from './lib/Utils.js'
+import Export from './lib/Export.js'
 
 Config = {
 	_collection: null,
 	_collectionReady: new ReactiveVar(false),
 	_ready: new ReactiveVar(false),
+  _onReadyListeners: [],
 
 	_defaults: {
 		calendarMode: 'table',
 		googleCalendarIds: {},
+    iCalendarTags: ['rotation', 'vol', 'sol', 'instruction', 'repos', 'conges'],
 		currentMonth: {
 			month: moment().month(),
 			year: moment().year()
 		},
-		Hcsr: 5.20
+		Hcsr: 5.20,
+    eHS: 'B',
+    useCREWMobileFormat: false,
+    profil: {
+      anciennete: 0,
+      echelon: 1,
+      fonction: 'OPL',
+      categorie: 'A',
+      grille: 'OPLA',
+      atpl: false,
+      classe: 5
+    },
+    firstUse: 0,
+    lastSessionCheck: 0
 	},
 
-	calendarTags: ['rotation', 'vol', 'sol', 'instruction', 'repos', 'conges', 'maladie', 'greve'],
+	init() {
+		this._collection = new Ground.Collection('config')
+		this._collection.once('loaded', () => {
+			this._collectionReady.set(true)
+		})
 
-	init: function () {
-		this._collection = new Ground.Collection('config', {
-			connection: null,
-			transform: (doc) => {
-				if (!_.has(doc, 'googleCalendarIds')) return doc;
-				let ids = {};
-				_.forEach(doc.googleCalendarIds, (list, calendarId) => {
-					ids[this._unescapeDots(calendarId)] = list;
-				});
-				doc.googleCalendarIds = ids;
-				return doc;
-			}
-		});
-		this._collection.on('loaded', () => {
-			this._collectionReady.set(true);
-		});
-
-		const self = this;
-		Tracker.autorun(function (c) {
-			self._ready.set(false);
-			if (self._collectionReady.get() && Meteor.userId()) {
-				const userId = Meteor.userId();
-				const config = self._collection.findOne({userId}, {reactive: false});
+		Tracker.autorun((c) => {
+			this._ready.set(false)
+			if (this._collectionReady.get() && Meteor.userId()) {
+				const userId = Meteor.userId()
+				const config = this._collection.findOne({ userId }, { reactive: false })
 
 				if (!config) {
-					self._collection.insert(_.defaults({userId}, self._defaults));
+					this._collection.insert(_.defaults({ userId }, this._defaults))
+				} else {
+          if (config.googleCalendarIds && _.some(config.googleCalendarIds, (list, key) => _.includes(Utils.tags, key))) {
+            this.resetCalendarIds()
+          }
+          if (!_.has(config, 'iCalendarTags')) {
+            this._collection.update(config._id, {
+              $set: {
+                iCalendarTags: _.get(this._defaults, 'iCalendarTags')
+              }
+            })
+          }
 				}
 
-				if (config && config.googleCalendarIds && _.some(config.googleCalendarIds, (list, key) => _.contains(self.calendarTags, key))) {
-					self._collection.update({userId}, {
-						$unset: {
-							'googleCalendarIds.rotations': "",
-							'googleCalendarIds.vols': "",
-							'googleCalendarIds.sol': "",
-							'googleCalendarIds.repos': "",
-							'googleCalendarIds.conges': "",
-						}
-					});
-				}
+				this._ready.set(true)
+        c.stop()
 
-				self._ready.set(true);
+        Meteor.defer(() => {
+          _.forEach(this._onReadyListeners, fn => {
+            Tracker.nonreactive(() => {
+              fn.call(this, this)
+            })
+          })
+        })
 			}
-		});
+		})
 	},
 
-	ready: function () {
-		return this._ready.get();
+  onReady(fn) {
+    if (_.isFunction(fn)) {
+      if (Tracker.nonreactive(() => this.ready())) {
+        fn.call(this, this)
+      } else {
+        this._onReadyListeners.push(fn)
+      }
+    }
+  },
+
+	ready() {
+		return this._ready.get()
 	},
 
-	get: function (field) {
+	get(field) {
 		if (field) {
-			this._checkField(field);
-			const config = this._collection.findOne(this._selector(), { fields: { [field]: 1 }});
-			return this.ready() ? config && config[field] : this._defaults[field];
+			this._checkField(field)
+			const config = this._collection.findOne(this._selector(), { fields: { [field]: 1 }})
+      if (this.ready() && _.has(config, field)) {
+        return _.get(config, field)
+      } else {
+        return _.get(this._defaults, field)
+      }
 		} else {
-			return this.ready() ? this._collection.findOne(this._selector()) : this._defaults;
+			return this.ready() ? this._collection.findOne(this._selector()) : this._defaults
 		}
 	},
 
-	set: function (field, value) {
+	set(field, value) {
 		this._checkField(field);
 		Tracker.autorun( c => {
 			if (this.ready()) {
@@ -91,9 +118,9 @@ Config = {
 		return this;
 	},
 
-	addTagToCalendarId: function (calendarId, tag) {
-		check(calendarId, String);
-		if (!_.contains(this.calendarTags, tag)) throw Meteor.Error("Invalid Tag");
+	addTagToCalendarId(calendarId, tag) {
+		check(calendarId, String)
+		if (!_.includes(Export.getSyncCategories(), tag)) throw Meteor.Error("Invalid Tag");
 		return this._collection.update(this._selector(), {
 			$addToSet: {
 				['googleCalendarIds.' + this._escapeDots(calendarId)]: tag
@@ -101,42 +128,66 @@ Config = {
 		});
 	},
 
-	removeTagFromCalendarId: function (calendarId, tag) {
-		check(calendarId, String);
-		if (!_.contains(this.calendarTags, tag)) throw Meteor.Error("Invalid Tag");
+	removeTagFromCalendarId(calendarId, tag) {
+		check(calendarId, String)
+		if (!_.includes(Export.getSyncCategories(), tag)) throw Meteor.Error("Invalid Tag");
 		return this._collection.update(this._selector(), {
 			$pull: {
 				['googleCalendarIds.' + this._escapeDots(calendarId)]: tag
 			}
+		})
+	},
+
+  addTagToICalendar(tag) {
+		check(tag, String)
+		if (!_.includes(Export.getSyncCategories(), tag)) throw Meteor.Error("Invalid Tag");
+		return this._collection.update(this._selector(), {
+			$addToSet: {
+				'iCalendarTags': tag
+			}
 		});
 	},
 
-	resetCalendarIds: function() {
+	removeTagFromICalendar(tag) {
+		check(tag, String)
+		if (!_.includes(Export.getSyncCategories(), tag)) throw Meteor.Error("Invalid Tag");
+		return this._collection.update(this._selector(), {
+			$pull: {
+				'iCalendarTags': tag
+			}
+		})
+	},
+
+  getCalendarTags() {
+    return _.mapKeys(this.get('googleCalendarIds'), (val, key) => {
+      return this._unescapeDots(key)
+    })
+  },
+
+	resetCalendarIds() {
 		return this._collection.update(this._selector(), {
 			'$set': _.pick(this._defaults, 'googleCalendarIds')
 		});
 	},
 
-	defaults: function () {
+	defaults() {
 		return this._defaults;
 	},
 
-	_checkField: function (field) {
+	_checkField(field) {
 		check(field, String);
 		if (!_.has(this._defaults, field)) throw new Meteor.Error('Unknown Config field', "Please provide à supported field !");
 	},
 
-	_selector: function () {
-		return {
-			userId: Meteor.userId()
-		};
+	_selector() {
+		return { userId: Meteor.userId() }
 	},
 
-	_escapeDots: function (str) {
-		return str.replace(/\./g, "\uff0E");
+	_escapeDots(str) {
+		return str.replace(/\./g, "\uff0E")
 	},
 
-	_unescapeDots: function (str) {
-		return str.replace(new RegExp("\uff0E", 'g'), '.');
+	_unescapeDots(str) {
+		return str.replace(/\uff0E/g, '.')
 	}
 }

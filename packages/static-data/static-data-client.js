@@ -3,14 +3,19 @@ Static = {};
 Static.Data = {
 	_versions: null,
 	_localVersions: null,
+  _localVersionsReady: new ReactiveVar(false),
 	_staticDataSub: null,
 
 	_staticCollections: new Map(),
 
 	init() {
 		this._versions = new Mongo.Collection('staticDataRevisions');
-		this._localVersions = new Ground.Collection('local_versions', { connection: null });
+		this._localVersions = new Ground.Collection('local_versions');
 		this._staticDataSub = Meteor.subscribe('staticDataRevisions');
+
+    this._localVersions.once('loaded', count => {
+      this._localVersionsReady.set(true)
+    })
 	},
 
 	register(name, collection) {
@@ -25,7 +30,7 @@ Static.Data = {
 	},
 
 	checkVersion(name, collection) {
-		if (this._staticDataSub.ready() && collection.ready()) {
+		if (this._staticDataSub.ready() && collection.ready() && this._localVersionsReady.get()) {
 			const newVersion = this._versions.findOne({collection: name}, {fields: {version: 1}});
 			const localVersion = this._localVersions.findOne({collection: name}, {reactive: false, fields: {version: 1}});
 			// console.log(name, newVersion, localVersion);
@@ -61,16 +66,16 @@ Static.Data = {
 	}
 };
 
-Static.Collection = class StaticCollection extends Mongo.Collection {
+Static.Collection = class StaticCollection extends Ground.Collection {
 	constructor(name, options) {
 		options = options || {};
-		options.connection = null;
+		// options.connection = null;
 		super(name, options);
-		Ground.Collection(this);
 
+    this._name = name
 		this._allowStaticImport = null;
 		this._localDataReady = new ReactiveVar(false);
-		this.on('loaded', () => {
+		this.once('loaded', () => {
 			// console.log(name, 'READY');
 			this._localDataReady.set(true);
 		});

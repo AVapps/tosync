@@ -1,6 +1,12 @@
 import { Template } from 'meteor/templating';
 import './rotation.html';
 
+Template.rotationDescriptionText.helpers({
+  isPNT() {
+    return Controller.isPNT()
+  }
+})
+
 Template.listeEquipageRotation.helpers({
 	equipage() {
 		function mapCrew(list) {
@@ -35,5 +41,5 @@ Template.listeEquipageRotation.helpers({
 		}
 
 		return { pnt: mapCrew(crew.pnt), pnc: mapCrew(crew.pnc) };
-	} 
+	}
 });

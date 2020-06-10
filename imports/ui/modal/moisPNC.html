@@ -1,0 +1,143 @@
+<template name="monthModalContentPNC">
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Activité vol</caption>
+    <tbody>
+      <tr>
+        <td>Heures de vol programmées</td>
+        <td>{{ numFormat stats.tvp }}</td>
+      </tr>
+      <tr>
+        <td>Heures de vol réalisées</td>
+        <td>{{ numFormat stats.tv }}</td>
+      </tr>
+      <tr>
+        <td>Heures de nuit (HVnuit)</td>
+        <td>{{ numFormat stats.TO.HVnuit }}</td>
+      </tr>
+      <tr>
+        <td>Temps de mise en place (MEP)</td>
+        <td>{{ numFormat stats.mep }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="stats table table-bordered table-sm table-striped">
+    <caption>Bilan activité</caption>
+    <tbody>
+      <tr>
+        <td>Jours d'activité (NJ)</td>
+        <td class="text-center">{{ stats.NJ }}</td>
+      </tr>
+      <tr>
+        <td>NJ Vol</td>
+        <td class="text-center">{{ stats.NJVol }}</td>
+      </tr>
+      <tr>
+        <td>Étapes vol</td>
+        <td class="text-center">{{ stats.countVol }}</td>
+      </tr>
+      <tr>
+        <td>NJ Sol</td>
+        <td class="text-center">{{ stats.NJSol }}</td>
+      </tr>
+      {{#if stats.count.stage }}
+      <tr>
+        <td>Jours de stage</td>
+        <td class="text-center">{{ stats.count.stage }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.delegation }}
+      <tr>
+        <td>Jours de délégation syndicale</td>
+        <td class="text-center">{{ stats.count.delegation }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td>Jours de repos</td>
+        <td class="text-center">{{ stats.count.repos }}</td>
+      </tr>
+      <tr>
+        <td>Jours de congés</td>
+        <td class="text-center">{{ stats.count.conges }}</td>
+      </tr>
+      {{#if stats.count.sanssolde }}
+      <tr>
+        <td>Jours sans solde</td>
+        <td class="text-center">{{ stats.count.sanssolde }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.maladie }}
+      <tr>
+        <td>Jours d'arrêt maladie</td>
+        <td class="text-center">{{ stats.count.maladie }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.absence }}
+      <tr>
+        <td>Jours d'absence</td>
+        <td class="text-center">{{ stats.count.absence }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.greve }}
+      <tr>
+        <td>Jours de grève</td>
+        <td class="text-center">{{ stats.count.greve }}</td>
+      </tr>
+      {{/if}}
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HC</caption>
+    <tbody>
+      <tr>
+        <td>Heures créditées vol (H2)</td>
+        <td>{{ numFormat stats.TO.H2 }}</td>
+      </tr>
+      <tr>
+        <td>Heures créditées nuit (Hcnuit)</td>
+        <td>{{ numFormat stats.TO.Hcnuit }}</td>
+      </tr>
+      {{#if stats.TO.Hcs }}
+      <tr>
+        <td>Heures créditées sol (Hcs)</td>
+        <td>{{ numFormat stats.TO.Hcs }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.Hcsi }}
+      <tr>
+        <td>Heures créditées instruction (Hcsi)</td>
+        <td>{{ numFormat stats.TO.Hcsi }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.TO.Hcsr }}
+      <tr>
+        <td>Heures créditées représ. pers. (Hcsr)</td>
+        <td>{{ numFormat stats.TO.Hcsr }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <th>Total HC</th>
+        <th>{{ numFormat stats.TO.HC }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HS</caption>
+    <tbody>
+      <tr>
+        <td>Trentièmes</td>
+        <td>{{ stats.TO.trentiemes }}</td>
+      </tr>
+      <tr>
+        <td>Seuil HS</td>
+        <td>{{ numFormat stats.TO.seuilHS }}</td>
+      </tr>
+      <tr>
+        <th>Total HS</th>
+        <th>{{ numFormat stats.TO.HS }}</th>
+      </tr>
+    </tbody>
+  </table>
+</template>

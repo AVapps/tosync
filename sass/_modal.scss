@@ -8,16 +8,19 @@
   }
 
   pre {
-    padding: 5px;
-
     @media all and (max-width: 480px) {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
     }
   }
 
   .table {
     font-family: "Source Code Pro", sans-serif;
     font-weight: 400;
+
+    caption {
+      caption-side: top;
+      text-align: center;
+    }
 
     tr, td, th {
       vertical-align: middle;
@@ -28,6 +31,19 @@
 
       &:empty {
         display: none;
+      }
+    }
+
+    &.stats, &.remu {
+      table-layout: fixed;
+      tr {
+        td, th {
+          text-align: center;
+        }
+
+        td:first-child, th:first-child {
+          text-align: left;
+        }
       }
     }
 
@@ -71,7 +87,7 @@
             margin-left: -5px;
           }
 
-          .event.label {
+          .event.badge {
               display: inline-block;
               /* height: 20px; */
               padding: .3em .6em;
@@ -136,7 +152,7 @@
       td.trigramme {
         text-align: center;
         width: 4rem;
-        color: $gray-light;
+        color: $gray-600;
       }
 
       td.fonction {
@@ -159,7 +175,7 @@
     }
 
     @media all and (max-width: 480px) {
-      font-size: 0.9rem;
+      font-size: .9rem;
 
       td.description {
         div {

@@ -1,26 +1,23 @@
 import { Meteor } from 'meteor/meteor';
-import { _ } from 'meteor/underscore';
+import _ from 'lodash';
 import moment from 'moment';
 import SyncTools from './lib/syncCalendarEvents.js';
+import Utils from './lib/Utils.js';
 
 Sync = {
 
 	process(data) {
-		console.log(data);
+		console.log('Sync.process', data)
 		if (_.has(data, 'import')) {
-			this.importPlanning(data['import']);
-		} else if (_.has(data, 'importError')) {
-			App.error(data.importError);
+			this.importPlanning(data['import'])
 		}
 
 		if (_.has(data, 'fill')) {
-			this.importPastEvents(data.fill);
+			this.importPastEvents(data.fill)
 		}
 
 		if (_.has(data, 'upsert')) {
-			this.importActivitePN(data.upsert);
-		} else if (_.has(data, 'activitePNError')) {
-			App.error(data.activitePNError);
+			this.importActivitePN(data.upsert)
 		}
 	},
 
@@ -61,6 +58,24 @@ Sync = {
 
 	reparseEvents(events) {
 		return SyncTools.reparseEvents(events);
-	}
+	},
 
+  updateTags(events) {
+    // Update tag of events
+    _.forEach(events, evt => {
+      if (evt.category) {
+        const tag = Utils.findTag(evt.category)
+        if (tag !== 'autre' && tag !== evt.tag) {
+          evt.tag = tag
+          console.log('NEW TAG', evt.summary, evt.category, evt.tag, tag)
+          Events.update(evt._id, {
+            $set: {
+              tag: tag,
+              slug: Utils.slug(evt)
+            }
+          })
+        }
+      }
+    })
+  }
 };

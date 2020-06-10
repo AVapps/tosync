@@ -1,0 +1,85 @@
+@import "sass/_variables";
+
+@import "node_modules/bootstrap/scss/bootstrap.scss";
+@import "node_modules/ladda/css/ladda.scss";
+
+@import "sass/_calendar";
+@import "sass/_changes";
+@import "sass/_colors";
+@import "sass/_home";
+@import "sass/_google";
+@import "sass/_layout";
+@import "sass/_modal";
+@import "sass/_navbar";
+@import "sass/_remu";
+@import "sass/_loading";
+@import "sass/_notifications";
+@import "sass/_toolbar";
+@import "sass/_print";
+
+html, body {
+  font-size: 14px;
+}
+
+.table-row {
+  display: table-row;
+}
+
+.table-cell {
+  display: table-cell;
+}
+
+.ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+button, a, button:focus, a:focus {
+  outline: none !important;
+  color: $gray-600;
+}
+
+.remove-button {
+    padding: 0px 2px;
+
+    &.btn-link {
+        color: $danger;
+
+        &:hover {
+            color: darken($danger, 30%);
+        }
+    }
+
+    &.active {
+        border-radius: 2px;
+    }
+}
+
+select {
+  -webkit-appearance: none;
+}
+
+#content {
+  background-color: #ffffff;
+  padding-bottom: 1rem;
+}
+
+footer {
+  display: block;
+
+  .navbar {
+    border-radius: 0;
+    border-right: none;
+    border-left: none;
+    margin-bottom: 0;
+  }
+}

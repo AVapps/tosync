@@ -1,0 +1,110 @@
+stages:
+  - meteor-build
+  - alpine-build
+  - docker
+  - deploy
+
+variables:
+  APPNAME: "tosync"
+  DOMAIN: "avapps.fr"
+  ROOT_URL: https://"${APPNAME}.${DOMAIN}"
+  IMAGE_TAG: "stable"
+  MONGO_URL: "mongodb://mongodb:27017/${APPNAME}"
+  INFO: "[minimeteor]"
+  USERNAME: "user"
+  USERHOME: "/home/user"
+
+before_script:
+  - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; IMAGE_TAG=${CI_BUILD_REF_NAME}; fi
+
+build-meteor:
+  stage: meteor-build
+  image: debian
+  script:
+    - echo ${INFO} Meteor container started
+    - echo ${INFO} Updating apt
+    - apt-get -qq update
+    - echo ${INFO} Installing tools
+    - apt-get -qq install curl procps python g++ make sudo >/dev/null
+    - echo ${INFO} Copying files
+    - useradd -m ${USERNAME}
+    - chown -R ${USERNAME} .
+    - sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
+    - echo ${INFO} Installing NPM build dependencies
+    - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor npm --loglevel=silent install
+    - echo ${INFO} Performing Meteor build
+    - mkdir meteor-build
+    - chown -R ${USERNAME} meteor-build
+    - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor build --directory ./meteor-build
+    - echo ${INFO} Meteor build container finished
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - meteor-build
+  only:
+    - master
+    - dev
+  tags:
+    - docker
+
+build-alpine:
+  stage: alpine-build
+  image: mhart/alpine-node:12.16.1
+  script:
+    - echo ${INFO} Alpine container started, installing tools
+    - apk add --no-cache make gcc g++ python sudo
+    - adduser -D -h ${USERHOME} ${USERNAME}
+    - mkdir alpine-build
+    - cp -r meteor-build/bundle alpine-build
+    - chown -R ${USERNAME} alpine-build
+    - echo ${INFO} Installing NPM build dependencies
+    - cd alpine-build/bundle/programs/server
+    - sudo -u ${USERNAME} npm install
+    - echo ${INFO} Alpine build container finished
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - alpine-build
+  only:
+    - master
+    - dev
+  tags:
+    - docker
+
+build-docker:
+  stage: docker
+  image: docker:18.06.3
+  script:
+    - echo ${INFO} Starting docker image build for ${CI_BUILD_REF_NAME}
+    - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t ${CI_REGISTRY}/jahdrien/tosync:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg METEOR_SETTINGS='${METEOR_SETTINGS}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' --build-arg PORT=${PORT} .
+    - docker push ${CI_REGISTRY}/jahdrien/tosync:${IMAGE_TAG}
+  only:
+    - master
+    - dev
+  tags:
+    - docker
+
+deploy-prod:
+  stage: deploy
+  image: cdrx/rancher-gitlab-deploy
+  script:
+    - upgrade --stack ${APPNAME} --service ${APPNAME}-server --finish-upgrade
+  environment:
+    name: production
+    url: https://tosync.avapps.fr
+  when: manual
+  only:
+    - master
+
+deploy-dev:
+  stage: deploy
+  image: cdrx/rancher-gitlab-deploy
+  script:
+    - upgrade --stack ${APPNAME} --service ${APPNAME}-server-dev --finish-upgrade
+  environment:
+    name: dev
+    url: https://tosync.dev.avapps.fr
+  only:
+    - dev

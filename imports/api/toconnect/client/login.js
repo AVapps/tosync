@@ -1,8 +1,8 @@
 Meteor.loginConnect = function(login, password, callback) {
-	var loginRequest = {'trigramme': login, 'password': password};
+	var loginRequest = { 'trigramme': login, 'password': password }
 	//send the login request
 	Accounts.callLoginMethod({
-		methodArguments: [loginRequest],
+		methodArguments: [ loginRequest ],
 		userCallback: callback
-	});
-};
+	})
+}

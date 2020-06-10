@@ -1,35 +1,39 @@
-import './helpers.js';
+import { Meteor } from 'meteor/meteor'
 
-import '../../api/client/lib/format.min.js';
-import '../../api/client/lib/moment.lang.fr';
+import './helpers.js'
 
-import '../../api/client/App.js';
-import '../../api/client/Notifications.js';
-import '../../api/client/Gapi.js';
-// import '../../api/client/Remu.js';
-import '../../api/client/Sync.js';
-import '../../api/client/Config.js';
-import '../../api/client/Log.js';
+import '/imports/api/client/lib/format.min.js'
+import '/imports/api/client/lib/moment.lang.fr'
 
-import '../../api/client/collections.js';
-import '../../api/toconnect/client/login.js';
+import '/imports/api/client/App.js'
+import '/imports/api/client/Notifications.js'
+import Gapi from '/imports/api/client/Gapi.js'
+// import '/imports/api/client/Remu.js';
+import '/imports/api/client/Sync.js'
+import '/imports/api/client/Config.js'
 
-import '../../api/client/Calendar.js';
-import '../../api/client/Connect.js';
-import '../../api/client/Controller.js';
-import '../../api/client/Modals.js';
+import '/imports/api/client/collections.js'
+import '/imports/api/toconnect/client/login.js'
 
-import '../../lib/moment-ejson.js';
+import '/imports/api/client/Calendar.js'
+import '/imports/api/client/Connect.js'
+import '/imports/api/client/Controller.js'
+import '/imports/api/client/Modals.js'
+
+import '/imports/lib/moment-ejson.js'
 
 // Session Init
-Session.set('calendarList', []);
-Session.set('calendarLoading', false);
-Session.setDefault('showLogin', false);
+Session.set('calendarList', [])
+Session.set('calendarLoading', false)
+Session.setDefault('showLogin', false)
 
-$(function() {
-	FastClick.attach(document.body);
-});
+Config.init()
+Connect.init()
+Controller.init()
 
-Config.init();
-Connect.init();
-Controller.init();
+window.handleGapiClientLoad = function () {
+  console.log('GAPI.handleGapiClientLoad')
+	Meteor.defer(() => {
+    Gapi.loadClient()
+  })
+}

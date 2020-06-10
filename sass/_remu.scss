@@ -1,4 +1,20 @@
 #remu {
+  select {
+    -webkit-appearance: none;
+    text-align-last: center;
+  }
+
+  caption {
+    caption-side: top;
+    text-align: center;
+  }
+
+  #profilAFForm {
+    .input-group-prepend .input-group-text {
+      min-width: 5rem;
+    }
+  }
+
   button.icsimport {
     margin-bottom: 1rem;
   }
@@ -6,23 +22,24 @@
   table.table {
     font-family: "Source Code Pro", $font-family-monospace;
     font-weight: 400;
-    font-size: 1.1rem;
 
-    @media all and (min-width: $screen-xs-min) {
-      font-size: 1.4rem;
+    @include media-breakpoint-up(xs) {
+      font-size: 1rem;
     }
 
     th, td {
       vertical-align: middle;
+      overflow-x: hidden;
     }
 
-    &.remu {
+    &.stats, &.remu {
+      table-layout: fixed;
       tr {
-        td {
-          text-align: right;
+        td, th {
+          text-align: center;
         }
 
-        td:first-child {
+        td:first-child, th:first-child {
           text-align: left;
         }
 
@@ -30,10 +47,6 @@
           font-weight: 600;
         }
       }
-    }
-
-    &.stats {
-      table-layout: fixed;
     }
   }
 }

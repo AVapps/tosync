@@ -1,0 +1,29 @@
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+#navbar {
+  border-top: 2px solid $success;
+
+  .status-button {
+    min-width: 38px;
+
+    &.btn-warning {
+      color: #fff;
+    }
+
+    & > .fa-sync {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+#navbar-collapse {
+  padding: 1.5rem 3rem;
+  margin: 0 -1.5rem;
+  box-shadow: inset 0 0 10px -1px black;
+
+  form#login {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

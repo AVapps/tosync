@@ -1,10 +1,12 @@
-export class PlanningParser {
+import { _ } from 'meteor/underscore';
+import moment from 'moment';
 
-	constructor(events, options) {
-		// this.events = _.sortBy(events, 'start');
-		this.events = events;
-		this.options = options || {};
-		
+export default class PlanningParser {
+
+	constructor(events = [], options = {}) {
+		this.events = _.sortBy(events, 'start');
+		this.options = options;
+
 		_.defaults(this.options, {
 			bases: ['ORY', 'CDG'],
 			rotationBreakTime: 10.0,
@@ -13,55 +15,65 @@ export class PlanningParser {
 
 		this._init();
 		this._groupEvents();
+		// this.eventsByTag = _.sortBy(this.parsedEvents, 'tag');
+		this.parsedEvents = _.sortBy(this.parsedEvents, 'start');
+	}
+
+	firstEvent() {
+		return _.first(this.parsedEvents);
+	}
+
+	lastEvent() {
+		return _.last(this.parsedEvents);
 	}
 
 	_init() {
 		this.rotations = [];
 		this.sols = [];
-		this.groupedEvents = [];
+		this.parsedEvents = [];
+		// this.eventsByTag = {};
 
 		this._resetRotation();
 		this._resetSV();
 	}
 
 	_groupEvents() {
-		var self = this;
-		_.forEach(this.events, function (evt) {
+		_.forEach(this.events, (evt, index) => {
 			switch (evt.tag) {
 				case 'vol':
 				case 'mep':
-					if (!self._rotation) {
-						self._beginRotation(evt);
-					} else if (self._prev
-						&& (self.options.bases.indexOf(self._prev.to) !== -1 || self.options.bases.indexOf(evt.from) !== -1)
-						&& evt.start.diff(self._prev.end, 'hours', true) >= self.options.rotationBreakTime) {
-						self._completeRotation()
+					if (!this._rotation) {
+						this._beginRotation(evt);
+					} else if (this._prev
+						&& (this.options.bases.indexOf(this._prev.to) !== -1 || this.options.bases.indexOf(evt.from) !== -1)
+						&& evt.start.diff(this._prev.end, 'hours', true) >= this.options.rotationBreakTime) {
+						this._completeRotation()
 							._beginRotation(evt);
 					}
-					self._addVolToRotation(evt);
-					self._prev = evt;
+					this._addVolToRotation(evt);
+					this._prev = evt;
 					break;
 				case 'conges':
 				case 'repos':
-					self._completeRotation();
-					self._addAllDayEvent(evt);
+				case 'maladie':
+				case 'greve':
+				case 'sanssolde':
+				case 'absence':
+				case 'blanc':
+					this._completeRotation();
+					this._addAllDayEvent(evt);
 					break;
-				case 'simu':
-				case 'instruction':
-				case 'stage':
-				case 'sol':
-				case 'delegation':
-				case 'autre':
-					self._completeRotation();
-					self.sols.push(evt);
-					break; 
+				default:
+					this._completeRotation();
+					this.sols.push(evt);
+					break;
 			}
 		});
 
 		this._completeRotation();
 
-		_.forEach(this.rotations, function (rotation) {
-			self.parseSV(rotation);
+		_.forEach(this.rotations, rotation => {
+			this.parseSV(rotation);
 		});
 
 		return this;
@@ -69,8 +81,10 @@ export class PlanningParser {
 
 	_addAllDayEvent(evt) {
 		if (!(this.sols.length && _.last(this.sols).start.isSame(evt.start, 'day'))) {
+			evt.start.startOf('day');
+			evt.end.endOf('day');
 			this.sols.push(evt);
-			this.groupedEvents.push(evt);
+			this.parsedEvents.push(evt);
 		};
 		return this;
 	}
@@ -88,6 +102,7 @@ export class PlanningParser {
 
 	_addVolToRotation(vol) {
 		this._rotation.vols.push(vol);
+		this.parsedEvents.push(vol);
 		return this;
 	}
 
@@ -95,7 +110,7 @@ export class PlanningParser {
 		if (!this._prev || !this._rotation) return;
 		this._rotation.end = this._prev.end.clone();
 		this.rotations.push(this._rotation);
-		this.groupedEvents.push(this._rotation);
+		this.parsedEvents.push(this._rotation);
 		this._resetRotation();
 		return this;
 	}
@@ -107,17 +122,16 @@ export class PlanningParser {
 	}
 
 	parseSV(rotation) {
-		var self = this;
 		this._resetSV();
-		_.forEach(rotation.vols, function (evt) {
-			if (!self._sv) {
-				self._beginSV(evt);
-			} else if (self._prev && evt.start.diff(self._prev.end, 'hours', true) >= self.options.stopoverBreakTime) {
-				self._completeSV(rotation)
+		_.forEach(rotation.vols, evt => {
+			if (!this._sv) {
+				this._beginSV(evt);
+			} else if (this._prev && evt.start.diff(this._prev.end, 'hours', true) >= this.options.stopoverBreakTime) {
+				this._completeSV(rotation)
 					._beginSV(evt);
 			}
-			self._addVolToSV(evt);
-			self._prev = evt;
+			this._addVolToSV(evt);
+			this._prev = evt;
 		});
 		return this._completeSV(rotation);
 	}
@@ -136,7 +150,7 @@ export class PlanningParser {
 	}
 
 	_completeSV(rotation) {
-		var index = rotation.services.length;
+		const index = rotation.services.length;
 		_.forEach(this._sv.vols, function (vol) {
 			vol.svIndex = index;
 		});

@@ -1,7 +1,8 @@
-import { Meteor } from 'meteor/meteor';
-import { Template } from 'meteor/templating';
-import './modal.html';
-import _ from 'lodash';
+import { Meteor } from 'meteor/meteor'
+import { Template } from 'meteor/templating'
+import './modal.html'
+import _ from 'lodash'
+import TemplatesIndex from '/imports/api/client/lib/TemplatesIndex.js'
 
 Template.modal.onCreated(function() {
 	this.state = new ReactiveDict();
@@ -71,7 +72,7 @@ Template.modal.events({
 
 Template.modal.helpers({
 	selectedDay() {
-		return Controller.selectedDay.get();
+    return Controller.selectedDay.get();
 	},
 
 	template() {
@@ -80,11 +81,11 @@ Template.modal.helpers({
 			switch (_.first(selectedDay.events).tag) {
 				case 'rotation':
 				case 'vol':
-					return App.templates.modal.rotation;
+					return TemplatesIndex.modal.rotation;
 				// case 'sol':
-					// return App.templates.modal.sol;
+					// return TemplatesIndex.modal.sol;
 				default:
-					return App.templates.modal.default;
+					return TemplatesIndex.modal.default;
 			}
 		} else {
 			return null;
@@ -92,7 +93,10 @@ Template.modal.helpers({
 	},
 
 	templateData() {
-		return _.extend({ editing: Template.instance().state.get('editing') }, Controller.selectedDay.get());
+		return {
+      state: { editing: Template.instance().state.get('editing') },
+      day: Controller.selectedDay.get()
+    }
 	},
 
 	editing() {

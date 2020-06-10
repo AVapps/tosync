@@ -1,0 +1,252 @@
+<template name="monthModalContentRemuAFTab">
+  <h6 class="mt-3">Rému B - Nouveau système de rémunération</h6>
+  <hr>
+  {{> profilAFForm profil=profil }}
+  <hr>
+  {{#with s=salaire.AF stats=stats }}
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Salaire</caption>
+    <thead>
+      <tr>
+        <th>Libellé</th>
+        <th>Base</th>
+        <th>Taux</th>
+        <th>Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fixe</td>
+        <td></td>
+        <td></td>
+        <td>{{ numFormat s.fixe }}</td>
+      </tr>
+      <tr>
+        <td>PV MGA</td>
+        <td>{{ numFormat 80 }}</td>
+        <td>{{ numFormat s.PVEI }}</td>
+        <td>{{ numFormat s.PVMGA100 }}</td>
+      </tr>
+      {{#if s.nbPVcomp }}
+      <tr>
+        <td>PV complémentaires</td>
+        <td>{{ numFormat s.nbPVcomp }}</td>
+        <td>{{ numFormat s.PVEI }}</td>
+        <td>{{ numFormat s.montantPVcomp }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.AF.HS }}
+      <tr>
+        <td>Majo HS - TF</td>
+        <td>{{ numFormat stats.AF.HS }}</td>
+        <td>{{ numFormat s.tauxHSTF }}</td>
+        <td>{{ numFormat s.montantHSTF }}</td>
+      </tr>
+      <tr>
+        <td>Majo HS - PV</td>
+        <td>{{ numFormat stats.AF.HS }}</td>
+        <td>{{ numFormat s.tauxHSPV }}</td>
+        <td>{{ numFormat s.tauxHSPV }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.AF.NJabs }}
+      <tr>
+        <td>Absences</td>
+        <td>{{ numFormat stats.AF.NJabs }}</td>
+        <td>{{ numFormat s.tauxMGA }}</td>
+        <td>{{ numFormat s.deductionAbsence }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.maladie }}
+      <tr>
+        <td>Maladie</td>
+        <td>{{ numFormat stats.count.maladie }}</td>
+        <td>{{ numFormat s.tauxMGA }}</td>
+        <td>{{ numFormat s.maladie }}</td>
+      </tr>
+      {{/if}}
+      {{#if stats.count.conges }}
+      <tr>
+        <td>Congés (estimation)</td>
+        <td>{{ numFormat stats.count.conges }}</td>
+        <td>~{{ numFormat s.tauxConges }}</td>
+        <td>{{ numFormat s.montantConges }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <th>Total brut hors indemnités</th>
+        <th></th>
+        <th></th>
+        <th>{{ numFormat s.totalBrut }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HC</caption>
+    <tbody>
+      <tr>
+        <td>Heures créditées vol (H2)</td>
+        <td>{{ numFormat stats.AF.H2 }}</td>
+      </tr>
+      {{#if stats.AF.Hcs }}
+      <tr>
+        <td>Heures créditées sol (Hcs)</td>
+        <td>{{ numFormat stats.AF.Hcs }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td>HC décomptées (HCd)</td>
+        <td>{{ numFormat stats.AF.HCd }}</td>
+      </tr>
+      <tr>
+        <td>HC garanties (HCgm)</td>
+        <td>{{ numFormat stats.AF.HCgm }}</td>
+      </tr>
+      {{#if stats.AF.HcsStage }}
+      <tr>
+        <td>HCs stage (HC_qual)</td>
+        <td>{{ numFormat stats.AF.HcsStage }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <th>Total HC</th>
+        <th>{{ numFormat stats.AF.HC }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan HS</caption>
+    <tbody>
+      <tr>
+        <td>Trentièmes</td>
+        <td>{{ stats.AF.trentiemes }}</td>
+      </tr>
+      <tr>
+        <td>Seuil HS</td>
+        <td>{{ numFormat stats.AF.seuilHS }}</td>
+      </tr>
+      <tr>
+        <th>Total HS</th>
+        <th>{{ numFormat stats.AF.HS }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>Bilan PV</caption>
+    <tbody>
+      <tr>
+        <td>PVrm</td>
+        <td>{{ numFormat stats.AF.PVrm }}</td>
+      </tr>
+      <tr>
+        <td>PV garanties</td>
+        <td>{{ numFormat stats.AF.PVgm }}</td>
+      </tr>
+      {{#if stats.AF.PVstage }}
+      <tr>
+        <td>PV stage (PV_qual)</td>
+        <td>{{ numFormat stats.AF.PVstage }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td>PV activité</td>
+        <td>{{ numFormat stats.AF.PV }}</td>
+      </tr>
+      <tr>
+        <td>Majoration nuit (PV nuit)</td>
+        <td>{{ numFormat stats.AF.PVNuit }}</td>
+      </tr>
+      {{#if isCDB }}
+      <tr>
+        <td>Prime de commandement (PV CDB)</td>
+        <td>{{ numFormat stats.AF.PVCDB }}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <th>Total PV</th>
+        <th>{{ numFormat s.totalPV }}</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="remu table table-bordered table-sm table-striped">
+    <caption>MGA</caption>
+    <tbody>
+      <tr>
+        <td>Trentièmes</td>
+        <td>{{ stats.AF.trentiemes }}</td>
+      </tr>
+      <tr>
+        <td>PV MGA</td>
+        <td>{{ numFormat s.PVMGA }}</td>
+      </tr>
+      <tr>
+        <th>PV > MGA</th>
+        <th>{{ numFormat s.nbPVcomp }}</th>
+      </tr>
+    </tbody>
+  </table>
+  {{/with}}
+  <hr>
+  <div class="custom-control custom-switch mt-3">
+    <input type="checkbox" class="custom-control-input" id="eHSconfigB" checked={{ eHSchecked }}>
+    <label class="custom-control-label" for="eHSconfigB">Afficher l'écart aux heures supplémentaires du calendrier (eHS) selon les règles de rémunération « B »</label>
+  </div>
+</template>
+
+<template name="profilAFForm">
+  <div id="profilAFForm">
+    <div class="row">
+      <div class="col-6 col-lg-3 mt-2 mt-lg-0">
+        <div class="input-group input-group-sm">
+          <div class="input-group-prepend">
+            <label class="input-group-text" for="fonction">Fonction</label>
+          </div>
+          <select id="fonction" class="custom-select custom-select-sm">
+            <option value="OPL" {{ selectedFonction 'OPL' }}>OPL</option>
+            <option value="CDB" {{ selectedFonction 'CDB' }}>CDB</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 mt-2 mt-lg-0">
+        <div class="input-group input-group-sm">
+          <div class="input-group-prepend">
+            <label for="categorie" class="input-group-text">Catégorie</label>
+          </div>
+          <select id="categorie" class="custom-select custom-select-sm" {{ categoriesDisabled }}>
+            {{#each option in categories }}
+              <option value="{{ option }}" {{ selectedCategory option }}>{{ option }}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 mt-2 mt-lg-0">
+        <div class="input-group input-group-sm">
+          <div class="input-group-prepend">
+            <label for="echelon" class="input-group-text">Echelon</label>
+          </div>
+          <input type="number" id="echelon" class="form-control form-control-sm text-center" min="1" max="10" value="{{ profil.echelon }}">
+        </div>
+      </div>
+      <div class="col-6 col-lg-3 mt-2 mt-lg-0">
+        <div class="input-group input-group-sm">
+          <div class="input-group-prepend">
+            <label class="input-group-text" for="classe">Classe</label>
+          </div>
+          <input type="number" id="classe" class="form-control form-control-sm text-center" min="1" max="5" value="{{ profil.classe }}">
+        </div>
+      </div>
+    </div>
+    <div class="row mt-2 justify-content-center">
+      <div class="col-6">
+        <div class="custom-control custom-switch text-center">
+          <input type="checkbox" class="custom-control-input" id="atpl" {{ atplChecked }} {{ atplDisabled }}>
+          <label class="custom-control-label" for="atpl">Bonification ATPL</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

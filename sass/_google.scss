@@ -5,37 +5,23 @@
   }
 
   .modal-body {
-    font-size: 1.1rem;
-
     h4 {
-      font-size: 1.4rem;
-    }
-
-    @media all and (min-width: $screen-xs-min) {
-      font-size: 1.4rem;
-
-      h4 {
-        font-size: 18px;
-      }
+      font-size: 1rem;
     }
 
     table {
       width: 100%;
       table-layout: fixed;
 
+      th.label, td.label {
+        width: 40%;
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+      }
+
       .chosen-drop {
         z-index: 5000;
       }
-    }
-
-    th, td {
-      text-overflow: ellipsis;
-      word-wrap: nowrap;
-      -webkit-hyphens: auto;
-      -moz-hyphens: auto;
-      -ms-hyphens: auto;
-      -o-hyphens: auto;
-      hyphens: auto;
     }
 
     th {
@@ -43,12 +29,16 @@
 
       h3, h4 {
         margin: 0;
+        text-overflow: ellipsis;
+        overflow-x: hidden;
       }
 
-      span.label {
+      span.badge {
         display: block;
-        width: 100%;
         text-align: center;
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+        hyphens: auto;
       }
     }
 

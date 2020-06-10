@@ -1,28 +1,67 @@
 <template name="toolbar">
 	<div id="toolbar">
-		<div class="container">
-			<div class="row">
-				<div class="col-sm-4">
-					<button type="button" class="icsimport btn btn-success btn-block">
-						<span class="glyphicon glyphicon-upload"></span>
-						Importer un fichier ics
-					</button>
-					<input id="filereader" type="file" class="hidden" accept="text/calendar" />
-				</div>
-				<div class="col-sm-4">
-					<button type="button" class="export btn btn-primary btn-block ladda-button ellipsis" data-style="zoom-out">
-						<span class="glyphicon glyphicon-calendar"></span>
-						Exportation iCalendar
-					</button>
-				</div>
-				<div class="col-sm-4">
-					<button type="button" class="google btn btn-danger btn-block ladda-button ellipsis" data-style="zoom-out">
-						<span class="glyphicon glyphicon-cloud-upload"></span>
-						Synchronisation Google
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<hr>
+    <div class="row justify-content-center">
+      <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+        <button type="button" class="js-icalendar-import btn btn-outline-success btn-block">
+  				<i class="fas fa-file-import"></i>
+  				Importer un fichier ics
+  			</button>
+			  <input id="filereader" type="file" class="d-none" accept="text/calendar" />
+      </div>
+      <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+        <div class="btn-group btn-block" role="group">
+    	    <button type="button" class="js-icalendar-export btn btn-outline-light ladda-button ellipsis flex-grow-1" data-style="zoom-out" {{ disabledIfNoEvents }}>
+    				<i class="fas fa-file-export"></i>
+    				Exportation iCalendar
+    			</button>
+          <button type="button" class="js-icalendar-settings btn btn-outline-light flex-grow-0">
+            <i class="fas fa-filter"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6 mt-2 mt-lg-0">
+  			<button type="button" class="js-gapi-sync btn btn-outline-danger btn-block ladda-button ellipsis" data-style="zoom-out" {{ disabledIfNoEvents }}>
+  				<i class="fas fa-cloud-upload-alt"></i>
+  				Synchronisation Google
+  			</button>
+      </div>
+    </div>
+    <div class="custom-control custom-switch mt-3 text-md-center">
+      <input type="checkbox" class="custom-control-input" id="exportFormat" checked={{ crewMobileFormatChecked }}>
+      <label class="custom-control-label" for="exportFormat">Utiliser le format CREW Mobile pour les rotations et les vols exportés (ex: TO3434 (ORY-LIS) 73H).</label>
+    </div>
+    <div class="modal fade" id="iCalendarModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content text-body">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Sélectionnez les évènements à exporter</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form class="row">
+              {{#with tags=iCalendarTags categories=categories }}
+                {{#each tag in categories }}
+                  <div class="col-sm-6 text-left">
+                    {{> iCalendarCategoryTagSwitch tag=tag checked=(checked tags tag) }}
+                  </div>
+                {{/each}}
+              {{/with}}
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="iCalendarCategoryTagSwitch">
+  <label class="custom-control custom-switch custom-control-inline">
+    <input type="checkbox" class="custom-control-input" name="{{ name }}" checked={{ checked }}>
+    <span class="custom-control-label" for="{{ name }}">{{ categoryLabel }}</span>
+  </label>
 </template>

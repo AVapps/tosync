@@ -10,22 +10,47 @@ const TOConnect = {
 		return true;
 	},
 
-	fetchSyncData(cb) {
-		return Meteor.call('getSyncData', function (error, data) {
-			if (error) {
-				cb(error);
-			} else {
-				if (_.has(data, 'import')) {
-					data['import'] = parseICSFile(data['import']);
-				}
+  async validateChanges() {
+    return new Promise((resolve, reject) => {
+      Meteor.call('validateChanges', (error, data) => {
+        if (!error && data) {
+          resolve(data)
+        } else {
+          reject(error)
+        }
+      })
+    })
+  },
 
-				if (_.has(data, 'upsert')) {
-					data['upsert'] = parseActivitePN(data['upsert']);
-				}
+  async signPlanning() {
+    return new Promise((resolve, reject) => {
+      Meteor.call('signPlanning', (error, data) => {
+        if (!error && data) {
+          resolve(data)
+        } else {
+          reject(error)
+        }
+      })
+    })
+  },
 
-				cb(null, data);
-			}
-		});
+	async fetchSyncData() {
+		return new Promise((resolve, reject) => {
+      Meteor.call('getSyncData', function (error, data) {
+  			if (error) {
+  				reject(error)
+  			} else {
+  				if (_.has(data, 'import')) {
+  					data['import'] = parseICSFile(data['import']);
+  				}
+
+  				if (_.has(data, 'upsert')) {
+  					data['upsert'] = parseActivitePN(data['upsert']);
+  				}
+          resolve(data)
+  			}
+  		})
+    })
 	}
 };
 

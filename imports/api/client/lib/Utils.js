@@ -1,9 +1,115 @@
+import _ from 'lodash'
 /**
 * Helper functions
 **/
 export default {
+  tags: [
+		'rotation',
+		'vol',
+		'mep',
+    'absence',
+		'conges',
+		'sanssolde',
+    'blanc',
+    'jisap',
+		'repos',
+		'maladie',
+		'greve',
+		'stage',
+		'sol',
+		'instructionSol',
+		'simu',
+		'instructionSimu',
+		'reserve',
+		'delegation',
+		'autre'
+	],
+
+  alldayTags: [
+    'absence',
+		'conges',
+		'sanssolde',
+    'blanc',
+    'jisap',
+		'repos',
+		'maladie',
+		'greve'
+  ],
+
+  categories: {
+    'ABSJ': 'blanc', // Absence excusée payée
+    'ABSNJ': 'absence', // Absence PN non excusée non payée
+    'BLANC': 'blanc',
+    'BLANCVOL': 'blanc', // Blanc suite à un swap vol contre blanc
+		'OFF': 'repos',
+    'OFFC': 'repos', // Jour OFF couple
+  	'OFFD': 'repos', // JOUR OFF DESIDERATA
+		'OFFE': 'repos',
+		'OFFR': 'repos',
+    'RPC': 'repos',
+    'JISAP': 'jisap',
+		'CP': 'conges',
+		'CA': 'conges',
+		'CAHC': 'conges',
+		'CPI': 'conges',
+		'CPD': 'conges',
+    'CPBLANC': 'conges', // CP sur jour blanc
+    'CPBL': 'conges', // CP sur jour blanc
+		'CAPA': 'sanssolde',
+		'INST': 'instructionSol',
+		'CSM': 'instructionSol', // 'CS_M'
+		'SIMU': 'simu',
+		'SIM': 'simu',
+		'ENT': 'simu',
+		'E1': 'simu',
+		'E2': 'simu',
+		'C1': 'simu',
+		'C2': 'simu',
+		'LOE': 'simu',
+    'UPRT': 'simu', // Simu UPRT
+		'STAG': 'stage',
+		'JDD': 'delegation',
+		'JDDC': 'delegation',
+		'JDDO': 'delegation',
+		'JDCC': 'delegation',
+		'JDDA': 'delegation', // Jour de délégation AF
+		'JDDAF': 'delegation', // Jour de délégation AF
+		'RSYC': 'delegation',
+		'NEGO': 'delegation',
+		'RCSE': 'delegation',
+		'FLT': 'vol',
+		'DHD': 'mep',
+		'ENGS': 'mep',
+    'ENGST': 'mep',
+    'BURT': 'sol', // Bureau  PNT
+    'BURC': 'sol', // Bureau  PNC
+		'MTE': 'sol',
+    'CS': 'sol', // Ajout pour détection CS (cours au sol)
+    'CSATPL': 'sol', // Cours au sol pour formation ATPL
+		'CSS': 'sol', // Cours sol SADE
+    'QT': 'stage',
+    'SIMU_QT': 'stage', // Simu de QT
+		'VMT': 'sol',
+		'VM': 'sol',
+		'MDC': 'sol',
+		'SUR': 'sol',
+		'CRMT': 'sol',
+		'SS1': 'sol',
+		'MDT': 'sol',
+    'MDE': 'sol',
+		'MEET': 'sol', // Réunion compagnie
+		'EFB': 'sol',
+		'ENTP': 'sol',
+		'E_LE': 'sol',  // 'E_LE'
+		'HS': 'maladie',
+    'OFFHS': 'maladie', // Arrêt maladie sur OFF
+    'FATIG': 'maladie', // Clause fatigue PN
+		'GREV': 'greve',
+		'NPL': 'blanc' // Non planifiable
+	},
+
 	titre(evt) {
-		return this.tagLabel(evt.tag);
+		return this.tagLabel(evt.tag)
 	},
 
 	tagLabel(tag) {
@@ -17,9 +123,11 @@ export default {
 			case 'conges':
 				return 'Congés';
 			case 'sanssolde':
-				return 'Congés sans solde';
+				return 'Sans solde';
 			case 'repos':
 				return 'Repos';
+			case 'jisap':
+				return 'JISAP';
 			case 'maladie':
 				return 'Maladie';
 			case 'greve':
@@ -54,51 +162,36 @@ export default {
 	tagLabelClass(tag) {
 		switch (tag) {
 			case 'conges':
-				return 'label-success';
+				return 'badge-conges';
 			case 'repos':
-				return 'label-repos';
+				return 'badge-success';
 			case 'rotation':
 			case 'vol':
 			case 'mep':
-				return 'label-info';
+				return 'badge-primary';
 			case 'stage':
-				return 'label-primary';
+				return 'badge-info';
 			case 'greve':
 			case 'maladie':
-				return 'label-warning';
+			case 'absence':
+			case 'sanssolde':
+				return 'badge-warning';
 			case 'reserve':
 			case 'sol':
 			case 'instructionSimu':
 			case 'instructionSol':
 			case 'simu':
 			case 'delegation':
-				return 'label-danger';
+				return 'badge-danger';
 			case 'autre':
-			case 'sanssolde':
-				return 'label-default';
+				return 'badge-secondary';
+			case 'blanc':
+			case 'jisap':
+				return 'badge-light';
 			default:
-				return 'label-default';
+				return 'badge-dark';
 		}
 	},
-
-	tags: [
-		'rotation',
-		'vol',
-		'mep',
-		'conges',
-		'sanssolde',
-		'repos',
-		'maladie',
-		'greve',
-		'stage',
-		'sol',
-		'instructionSol',
-		'simu',
-		'instructionSimu',
-		'reserve',
-		'delegation',
-		'autre'
-	],
 
 	slug(event, username, index) {
 		var prefix = (username || Meteor.user().username) + event.start.format('YYYYMMDD'),
@@ -110,6 +203,9 @@ export default {
 			case 'maladie':
 			case 'greve':
 			case 'sanssolde':
+			case 'blanc':
+			case 'jisap':
+      case 'absence':
 				return [prefix, suffix].join('-');
 			case 'vol':
 				return [prefix, event.num, event.from, event.to, suffix].join('-');
@@ -129,57 +225,40 @@ export default {
 		return ucfirst(str);
 	},
 
-	categories: {
-		'OFF': 'repos',
-		'OFFD': 'repos',
-		'OFFE': 'repos',
-		'OFFR': 'repos',
-		'CP': 'conges',
-		'CA': 'conges',
-		'CAHC': 'conges',
-		'CPI': 'conges',
-		'CPD': 'conges',
-		'CAPA': 'sanssolde',
-		'INST': 'instructionSol',
-		'CSM': 'instructionSol', // 'CS_M'
-		'SIMU': 'simu',
-		'SIM': 'simu',
-		'ENT': 'simu',
-		'E1': 'simu',
-		'E2': 'simu',
-		'C1': 'simu',
-		'C2': 'simu',
-		'LOE': 'simu',
-		'STAG': 'stage',
-		'JDD': 'delegation',
-		'JDDC': 'delegation',
-		'JDDO': 'delegation',
-		'JDCC': 'delegation',
-		'RSYC': 'delegation',
-		'NEGO': 'delegation',
-		'RCSE': 'delegation',
-		'FLT': 'vol',
-		'DHD': 'mep',
-		'ENGS': 'mep',
-		'MTE': 'sol',
-		'CSST': 'sol',
-		'VMT': 'sol',
-		'VM': 'sol',
-		'MDC': 'sol',
-		'SUR': 'sol',
-		'CRMT': 'sol',
-		'SS1': 'sol',
-		'MDT': 'sol',
-		'MEET': 'sol',
-		'EFB': 'sol',
-		'ENTP': 'sol',
-		'ELE': 'sol',  // 'E_LE'
-		'HS': 'maladie',
-		'GREV': 'greve',
-		'NPL': 'autre'
-	}
-};
+  findTag(code) {
+    if (_.has(this.categories, code)) {
+      return _.get(this.categories, code)
+    }
+
+    if (code.includes('_')) {
+      const shortCode = code.replace(/_/g,"")
+      if (_.has(this.categories, shortCode)) {
+        return _.get(this.categories, shortCode)
+      }
+
+      const subCode = code.split('_')[0]
+      if (_.has(this.categories, subCode)) {
+        const tag =_ .get(this.categories, subCode)
+        console.log(`---  Tag attribué (méthode sub) : ${tag} ---`)
+        return tag
+      }
+    }
+
+    const found = _.find(this.categories, (tag, _code) => {
+      return _code.includes(code) || code.includes(_code)
+    })
+
+    if (found) {
+      console.log(`---  Tag attribué (méthode recherche) : ${found} ---`)
+      return found
+    }
+
+    console.log('!!! IMPOSSIBLE DE DETERMINER TAG !!!', code)
+    return 'autre'
+  }
+}
+
 
 function ucfirst(str) {
-	return str.charAt(0).toUpperCase() + str.slice(1);
-};
+	return str.charAt(0).toUpperCase() + str.slice(1)
+}

@@ -1,161 +1,88 @@
-import { Meteor } from 'meteor/meteor';
-import { Excel } from './Exporter/Excel.js';
-import { IcsFile } from './Exporter/IcsFile.js';
-import parseIcsFile from '../toconnect/client/parseICSFile.js';
-import swal from 'sweetalert2';
+import { Meteor } from 'meteor/meteor'
+import { Excel } from './Exporter/Excel.js'
+import { IcsFile } from './Exporter/IcsFile.js'
+import parseIcsFile from '/imports/api/toconnect/client/parseICSFile.js'
+import Modals from '/imports/api/client/Modals.js'
+import Swal from 'sweetalert2'
 
 App = {
-	templates: {
-		events: {
-			conge: 'congeDescriptionText',
-			repos: 'reposDescriptionText',
-			rotation: 'rotationDescriptionText',
-			sol: 'solDescriptionText',
-			vol: 'volDescriptionText'
-		},
-
-		modal: {
-			rotation: 'rotationModalContent',
-			// sv: 'svModalContent',
-			sol: 'solModalContent',
-			conge: 'defaultModalContent',
-			repos: 'defaultModalContent',
-			default: 'defaultModalContent',
-			mois: 'monthModalContent'
-		},
-
-		titre: {
-			rotation: _.template("Rotation <%= nbjours %>J du <%= tsStart.format('D MMMM') %>"),
-			vol: _.template("<%= num %> | <%= from %> - <%= to %> | <%= type %>"),
-			mep: _.template("<%= title %> | <%= from %> - <%= to %> | MEP")
-		}
+	async sync() {
+		const data = await Connect.getSyncData()
+    Sync.process(data)
+    return data
 	},
 
-	sync() {
-		return Connect.getSyncData(function (data) {
-			Sync.process(data);
-		});
-	},
+  async requestChangesValidation() {
+    return Swal.fire({
+      title: 'Modifications de planning',
+      html: `<p>Des modifications de planning sont en attente de validation. Voulez-vous que TO.sync les valide pour vous ?</p>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#00D66C',
+      cancelButtonColor: '#ff3268',
+      confirmButtonText: '<i class="fa fa-check"></i> Ouvrir la page de validation',
+      cancelButtonText: '<i class="fa fa-times"></i> Annuler'
+    }).then((result) => {
+      if (result.value) {
+        Modals.Changes.open()
+      }
+    })
+  },
+
+  async requestPlanningSign() {
+    return Swal.fire({
+      title: 'Planning non signé',
+      html: `<p><strong>TO.sync peut signer votre planning pour vous, mais seul le planning publié sur TO.connect fait foi !</strong></p><p>L'importation et la synchronisation de votre planning par TO.sync ne peuvent être garanties à 100%, <strong>il est nécessaire de consulter votre planning sur TO.connect.</strong></p>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#00D66C',
+      cancelButtonColor: '#ff3268',
+      confirmButtonText: '<i class="fa fa-signature"></i> Signer mon planning',
+      cancelButtonText: '<i class="fa fa-times"></i> Annuler'
+    }).then((result) => {
+      if (result.value) {
+        return Connect.signPlanning()
+      }
+    })
+  },
 
 	exportExcel() {
-		Excel.generate(Controller.Planning);
+		Excel.generate(Controller.Planning)
 	},
 
 	exportIcs() {
-		IcsFile.generate(this.eventsToSync());
+		IcsFile.generate(this.eventsToSync())
 	},
 
 	importIcs(data) {
-		const events = parseIcsFile(data);
+		const events = parseIcsFile(data)
 		if (events.length) {
-			Sync.importPastEvents(events);
-			// App.success(added.length + " nouveaux évènements ont été importés !");
+			Sync.importPastEvents(events)
+			// App.success(added.length + " nouveaux évènements ont été importés !")
 		} else {
-			App.warn('Aucun évènement trouvé !');
+			App.warn('Aucun évènement trouvé !')
 		}
 	},
 
-	askForPlanningReparsing(message, cb) {
-		swal({
-		  title: 'Erreur de planning',
-		  text: message,
-		  type: 'warning',
-		  showCancelButton: true,
-			// buttonsStyling: false,
-			// confirmButtonClass: 'btn btn-primary',
-			// cancelButtonClass: 'btn btn-danger',
-		  confirmButtonColor: '#2800a0',
-		  cancelButtonColor: '#ff3268',
-		  confirmButtonText: 'Ok',
-			cancelButtonText: 'Annuler'
-		}).then(() => {
-			this.reparseEventsOfCurrentMonth(cb);
-		  swal(
-		    'Terminé !',
-		    'Votre planning a été recalculé.',
-		    'success'
-		  )
-		}, (dismiss) => {
-			if (_.isFunction(cb)) cb(dismiss);
-		});
-	},
-
-	reparseEventsOfCurrentMonth: _.throttle(_reparseEventsOfCurrentMonth, 5000, { 'trailing': false }),
+	updateTags(cb) {
+    Meteor.call('getAllEventsOfMonth', Controller.currentMonth.get(), (error, eventsOfMonth) => {
+  		if (eventsOfMonth) {
+  			Sync.updateTags(eventsOfMonth)
+  			if (_.isFunction(cb)) cb(undefined, true)
+  		} else if (error) {
+  			console.log(error)
+  			if (_.isFunction(cb)) cb(error)
+  		}
+  	})
+  },
 
 	eventsToSync() {
-		return Controller.Planning.eventsToSync();
+		return Controller.Planning.eventsToSync()
 	},
 
 	support: {
 		filereader : window.File && window.FileList && window.FileReader,
 		isMobile: /iPhone|iPod|iPad|Android|BlackBerry/i.test(navigator.userAgent),
 		isSafari: navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1
-	},
-
-	gares: [
-		{
-			"code":"GLE",
-			"nom":"Gare Lille Europe"
-		},
-		{
-			"code":"GLF",
-			"nom":"Gare Lille Flandres"
-		},
-		{
-			"code":"GNT",
-			"nom":"Gare de Nantes"
-		},
-		{
-			"code":"LPD",
-			"nom":"Gare par dieu"
-		},
-		{
-			"code":"LSE",
-			"nom":"Gare St-Exupery"
-		},
-		{
-			"code":"GPM",
-			"nom":"Gare Montparnasse"
-		},
-		{
-			"code":"GPN",
-			"nom":"Gare du nord"
-		},
-		{
-			"code":"GPE",
-			"nom":"Gare de l'est"
-		},
-		{
-			"code":"GPZ",
-			"nom":"Gare St-Lazare"
-		},
-		{
-			"code":"GPL",
-			"nom":"Gare de Lyon"
-		},
-		{
-			"code":"GPY",
-			"nom":"Gare de Massy"
-		},
-		{
-			"code":"GST",
-			"nom":"Gare Strasbourg"
-		},
-		{
-			"code":"GTZ",
-			"nom":"Gare de Metz"
-		}
-	]
-};
-
-function _reparseEventsOfCurrentMonth(cb) {
-	Meteor.call('getAllEventsOfMonth', Controller.currentMonth.get(), (error, eventsOfMonth) => {
-		if (eventsOfMonth) {
-			Sync.reparseEvents(eventsOfMonth);
-			if (_.isFunction(cb)) cb(undefined, true);
-		} else if (error) {
-			console.log(error);
-			if (_.isFunction(cb)) cb(error);
-		}
-	});
+	}
 }

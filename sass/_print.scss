@@ -1,0 +1,136 @@
+@media print {
+
+  body {
+    background-color: #ffffff !important;
+  }
+
+  .badge {
+    border: none !important;
+  }
+
+  #navbar, #navbar-collapse, #HC, .affix, footer, .modal {
+    display: none !important;
+  }
+
+  #calendar {
+    break-inside: avoid;
+
+    .fc-calendar {
+      .fc-body {
+        .fc-cell {
+          &:hover {
+            background-color: #ffffff !important;
+          }
+
+          &.today {
+            border-top: 1px solid #ecf0f1 !important;
+
+            > span.fc-date, > span.fc-weekday {
+              color: inherit !important;
+              font-weight: inherit !important;
+            }
+          }
+        }
+      }
+
+      &.fc-table {
+        font-size: 10px;
+        @page { size: A4 landscape }
+
+        > .fc-head, > .fc-body {
+          .fc-small {
+            display: none;
+          }
+
+          .fc-large {
+            display: block;
+
+            > .fc-cell {
+              padding: 5px !important;
+            }
+          }
+        }
+
+        > .fc-body {
+          > .fc-cell {
+            height: 28mm !important;
+            padding: 5px !important;
+
+            > .fc-date {
+              top: 0px !important;
+            }
+
+            &.blanc, &.dispersion {
+              div.fc-title {
+                display: none;
+              }
+            }
+
+            &.calendar-dow-5, &.calendar-dow-6 {
+              background-color: #ffffff;
+            }
+
+            .fc-content {
+
+              > .fc-event {
+                display: table-row !important;
+
+                > span {
+                  display: table-cell !important
+                }
+
+                .fc-summary {
+                  text-align: center !important;
+                  border: none !important;
+                  width: 100%;
+
+                  > .table-row {
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                  }
+                }
+
+                .fc-start, .fc-summary, .fc-end {
+                  display: table-cell !important;
+                }
+
+                &:last-child {
+                  .fc-start, .fc-end {
+                    display: table-cell !important;
+                  }
+
+                  .fc-end {
+                    text-align: right !important;
+                  }
+                }
+              }
+
+              &.fc-length-5 {
+                > .fc-event {
+                  &:nth-child(4) {
+                    display: table-row;
+
+                    & + .fc-event:before {
+                      display: none;
+                    }
+                  }
+
+                  &:last-child {
+                    .fc-summary {
+                      display: table-cell !important;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      &.fc-list {
+        font-size: 10px;
+        @page { size: A4 portrait }
+      }
+    }
+  }
+}

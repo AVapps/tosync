@@ -4,50 +4,37 @@ Arrivée : {{ formatUTC end 'llll[Z]'}} {{ to }} ({{ tz }})
 {{#each airports }}
 {{#if iata }}{{ iata }} : {{ city }} {{ name }} ({{ country }}) - {{ oaci }} ({{ altitude }}ft){{/if}}{{#if code }}{{ code }} : {{ nom }}{{/if}}{{/each}}
 
-{{#if isMEP}}Temps de MEP : {{ duree mep }}{{else}}Temps de vol : {{ duree tv }}{{/if}}
+{{#if isMEP}}Temps de MEP : {{ duree mep }}{{else}}Temps de vol : {{ duree tvp }}{{/if}}
 
-Type avion      : {{ type }}
+Type avion : {{ type }}
 Fonction à bord : {{ fonction }}
-
-{{> listeEquipageVol this }}
+{{#if hasPEQ this }}
+{{> listeEquipageVol this }}{{/if}}
 {{#if remark }}
 Remarque : {{ remark }}
+{{/if}}{{#if isPNT }}
+Rémunération A
+--------------
+HV100%(r) : {{ duree hv100TO }}
+HVnuit : {{ duree HVnuit }}
+
+Rémunération B et C
+----------------
+Temps de vol de référence : {{ duree tvrefAF }}
+HV100% : {{ duree hv100AF }}
+HV100%(r) : {{ duree hv100rAF }}
+{{ else }}
+Rémunération
+------------
+HV100%(r) : {{ duree hv100TO }}
+HVnuit : {{ duree HVnuit }}
 {{/if}}
-Rémunération
-HV100% : {{ numFormat tvref }}
-HCv    : {{ numFormat Hcv }}
-Heures de vol de nuit : {{ numFormat hdn }}
-{{#if sv }}{{#with sv }}
-[ Service de vol ]
-Début TS  : {{ format tsStart 'llll[Z]' }}
-Fin TS    : {{ format tsEnd 'llll[Z]' }}
-TS        : {{ diffH tsStart tsEnd }}
-
-Début TSV : {{ format tsvStart 'llll[Z]' }}
-Fin TSV   : {{ format tsvEnd 'llll[Z]' }}
-TSV       : {{ diffH tsvStart tsvEnd }}
-
-Temps de vol total : {{ duree tvt }}
-Temps de MEP       : {{ duree mep }}
-Nbre d'étapes      : {{ countVol }}
-
-Rémunération
-TME : {{ duree tme }}
-CMT : {{ numFormat cmt }}
-HCv : {{ numFormat Hcv }}
-
-Temps rémunéré : {{ duree TR }}
-HCt : {{ numFormat Hct }}
-
-H1  : {{ numFormat H1 }}
-
-Heures de vol de nuit : {{ numFormat hdn }}
-{{/with}}{{/if}}
 </template>
 
 <template name="listeEquipageVol">
-Équipage{{#with equipage}}{{#each pnt }}
-| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}
+Équipage
+--------{{#with equipage}}{{#each pnt }}
+{{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}
 {{#each pnc }}
-| {{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}{{/with}}
+{{ trigramme }} |{{#if nom }} {{ fonction }} | {{ nom }} {{ prenom }}{{/if}}{{/each}}{{/with}}
 </template>

@@ -1,9 +1,10 @@
-$border-radius-base: 2px;
-$border-radius-large: 2px;
-$border-radius-small: 1px;
+$border-radius:               2px;
+$border-radius-lg:            2px;
+$border-radius-sm:            1px;
 
-$brand-success: #00D66C;
-$brand-primary: #2800a0;
-$brand-danger: #ff3268;
+$success: #00D66C;
+$primary: #2800a0;
+$danger: #ff3268;
+$info: darken(#ff3286, 30%);;
 
 $text-color: #202020;

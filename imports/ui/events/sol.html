@@ -1,3 +1,23 @@
 <template name="solDescriptionText">
-	{{ description }}
+{{ content }}
+
+{{#with jourSol start }}{{#if isPNT }}Rémunération A
+--------------{{# if HcsTO }}
+Hcs : {{ numFormat HcsTO }}{{/if}}{{# if HcsiTO }}
+Hcsi : {{ numFormat HcsiTO }}{{/if}}{{# if HcSimuInstTO }}
+HcSimuInst : {{ numFormat HcSimuInstTO }}{{/if}}{{# if HcsrTO }}
+Hcsr : {{ numFormat HcsrTO }}{{/if}}
+
+Rémunération B et C
+------------------{{# if HcsAF }}
+Hcs : {{ numFormat HcsAF }}{{/if}}{{# if PVAF }}
+PV : {{ numFormat PVAF }}{{/if}}{{# if majoNuitPVAF }}
+PVnuit : {{ numFormat majoNuitPVAF }}{{/if}}
+{{ else }}Rémunération
+------------{{# if HcsTO }}
+Hcs : {{ numFormat HcsTO }}{{/if}}{{# if HcsiTO }}
+Hcsi : {{ numFormat HcsiTO }}{{/if}}{{# if HcSimuInstTO }}
+HcSimuInst : {{ numFormat HcSimuInstTO }}{{/if}}{{# if HcsrTO }}
+Hcsr : {{ numFormat HcsrTO }}{{/if}}
+{{/if}}{{/with}}
 </template>

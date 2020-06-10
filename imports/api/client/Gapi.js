@@ -1,300 +1,345 @@
-import { Meteor } from 'meteor/meteor';
-import { queue } from 'd3-queue';
-import Utils from './lib/Utils.js';
+import { Meteor } from 'meteor/meteor'
+import { ReactiveVar } from 'meteor/reactive-var'
+import _ from 'lodash'
 
-if (!console ) console = {log: function () {}};
+import Export from './lib/Export.js'
+import GapiBatch from './lib/GapiBatch.js'
 
-window.handleGapiClientLoad = function () {
-	Gapi.init();
-};
+const CLIENT_ID = Meteor.settings.public.gapi.clientId
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/calendar.events'
+]
+const DISCOVERY_DOCS = [ 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest' ]
 
-window.Gapi = {
-	clientId: Meteor.settings.public.gapi.clientId,
-	scope: Meteor.settings.public.gapi.scope,
+class Gapi {
+  constructor() {
+    if (!Gapi.instance) {
+      console.log('GAPI.init')
+    	this._ready = new ReactiveVar(false)
+      this._isSignedIn = new ReactiveVar(false)
+    	this._calendarList = new ReactiveVar([])
+      Gapi.instance = this
+    }
+   return Gapi.instance
+  }
 
-	_loaded: false,
-	_ready: new ReactiveVar(false),
-	_calendarList: new ReactiveVar([]),
+  loadClient() {
+    return gapi.load('client:auth2', async () => {
+      try {
+        await this.initClient()
 
-	init: function () {
-		this._loaded = true;
-		this.immediateAuthorize();
-	},
+        // Listen for sign-in state changes.
+        gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn) => {
+          this.handleSignInStatus(isSignedIn)
+        })
 
-	ready: function () {
-		return this._ready.get();
-	},
+        // Handle the initial sign-in state.
+        this.handleSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get())
 
-	_setReady: function (ready) {
-		return this._ready.set(ready);
-	},
+        this._ready.set(true)
+      } catch (error) {
+        console.log(error)
+      }
+    })
+  }
 
-	error: function (msg) {
-		this._setReady(false);
-		Session.set('gapiError', msg);
-	},
+  async initClient() {
+    console.log('GAPI.initClient')
+    return gapi.client.init({
+      client_id: CLIENT_ID,
+      scope: SCOPES.join(' '),
+      discoveryDocs: DISCOVERY_DOCS
+    })
+  }
 
-	immediateAuthorize: function (success, error) {
-		gapi.auth.authorize({client_id: Gapi.clientId, scope: Gapi.scope, immediate: true}, function (authResult) {
-			// console.log('gapiClient : handleImmediateAuthResult', authResult);
-			if (Gapi.handleResponse(authResult)) {
-				Gapi._getCalendarList((list) => {
-						Gapi._calendarList.set(list);
-						Gapi._setReady(true);
-					}, error);
-				if (_.isFunction(success)) success(authResult);
-			} else {
-				Gapi._setReady(false);
-				if (_.isFunction(error)) error(authResult.error || authResult);
-			}
-		});
-	},
+  handleSignInStatus(isSignedIn){
+    this._isSignedIn.set(isSignedIn)
+    if (isSignedIn) {
+      this.loadCalendarList()
+    }
+  }
 
-	authorize: function (success, error) {
-		gapi.auth.authorize({client_id: Gapi.clientId, scope: Gapi.scope, immediate: false, authuser: -1}, function (authResult) {
-			// console.log('gapiClient : handleAuthResult', authResult);
-			if (Gapi.handleResponse(authResult)) {
-				Gapi._getCalendarList((list) => {
-						Gapi._calendarList.set(list);
-						Gapi._setReady(true);
-					}, error);
-				if (_.isFunction(success)) success(authResult);
-			} else {
-				Gapi._setReady(false);
-				if (_.isFunction(error)) error(authResult.error || authResult);
-			}
-		});
-	},
+  async signIn(options) {
+    return gapi.auth2.getAuthInstance().signIn(options)
+  }
 
-	handleResponse: function (resp) {
-		if (resp && !resp.error) {
-			return true;
-		} else {
-			return false;
-		}
-	},
+  async signOut() {
+    return gapi.auth2.getAuthInstance().signOut()
+  }
 
-	checkAuth: function (success, error) {
-		if (!this._loaded) error("Gapi Javascript client not yet loaded ! Try again later.");
+  isSignedIn() {
+    return this._isSignedIn.get()
+  }
 
-		if (this.ready()) {
-			Gapi.immediateAuthorize(success, function (err) {
-				Gapi.authorize(success, error);
-			});
-		} else {
-			Gapi.authorize(success, error);
-		}
-	},
+	ready() {
+		return this._ready.get()
+	}
 
-	_getCalendarList: function (success, error) {
+	async _getCalendarList() {
 		// Charge la liste des agendas
+    try {
+      const resp = await gapi.client.request({
+  			'path': '/calendar/v3/users/me/calendarList',
+  			'params': {
+  				minAccessRole: 'owner',
+  				fields: 'items(accessRole,backgroundColor,foregroundColor,id,primary,summary,timeZone)'
+  			}
+  		})
+      if (_.has(resp, 'result.items') && resp.result.items.length) {
+        return _.sortBy(resp.result.items, item => {
+          if (item.primary) return '0'
+          return item.summaryOverride || item.summary
+        })
+      } else {
+        Notify.error('Aucun calendrier trouvé !')
+      }
+    } catch (error) {
+      console.log(error)
+    }
+	}
 
-		gapi.client.request({
-			'path': '/calendar/v3/users/me/calendarList',
-			'params': {
-				minAccessRole: 'owner',
-				fields: 'items(accessRole,backgroundColor,foregroundColor,id,primary,summary,timeZone)'
-			}
-		}).execute(function(resp) {
-			if (Gapi.handleResponse(resp)) {
-				if (resp.items && resp.items.length) {
+	getCalendarList() {
+		return this._calendarList.get()
+	}
 
-					var _calendarList = _.sortBy(resp.items, function (item) {
-						if (item.primary) return '0';
-						return item.summaryOverride || item.summary;
-					});
+	async loadCalendarList() {
+    const calendarList = await this._getCalendarList()
+    if (_.isArray(calendarList)) {
+      this._calendarList.set(calendarList)
+    }
+    return calendarList
+	}
 
-					if (_.isFunction(success)) success(_calendarList);
+  addTagToCalendarId(calendarId, tag) {
+    return Config.addTagToCalendarId(calendarId, tag)
+  }
 
-				} else {
-					if (_.isFunction(error)) error('Aucun calendrier trouvé !');
-				}
-			} else {
-				if (_.isFunction(error)) error('Impossible de charger la liste des calendriers !');
-			}
-		});
-	},
+  removeTagFromCalendarId(calendarId, tag) {
+    return Config.removeTagFromCalendarId(calendarId, tag)
+  }
 
-	getCalendarList: function () {
-		return this._calendarList.get();
-	},
+	async syncEvents(events, progress = _.noop) {
+		progress(0)
+		const startOfMonth = moment().startOf('month')
 
-	loadCalendarList: function () {
-		Gapi._getCalendarList((list) => this._calendarList.set(list));
-	},
+		if (!events.length) return error("Rien à synchroniser !")
 
-	syncEvents: function (events, progress = _.noop, cb = _.noop) {
-		progress(0);
-		const startOfMonth = moment().startOf('month');
+		const config = Config.getCalendarTags()
+		const authorizedCalendars = _.map(this.getCalendarList(), 'id')
 
-		if (!events.length) return error("Rien à synchroniser !");
+		if (!_.some(authorizedCalendars, calId => {
+      return !_.isEmpty(config[calId])
+    })) return App.error("Sélectionnez au moins un calendrier !")
 
-		const config = Config.get('googleCalendarIds');
-		const authorizedCalendars = _.pluck(Gapi.getCalendarList(), 'id');
+		const syncList = _.chain(authorizedCalendars)
+      .map(calId => {
+        if (_.has(config, calId)) {
+          const tags = _.get(config, calId)
+          return {
+    				calendarId: calId,
+    				events: Export.filterEventsByTags(events, tags)
+    			}
+        } else {
+          return undefined
+        }
+  		})
+      .filter(doc => doc && doc.events && !_.isEmpty(doc.events))
+      .value()
 
-		if (!_.some(authorizedCalendars, function (calId) { return !_.isEmpty(config[calId]) })) return error("Sélectionnez au moins un calendrier !");
+		const suffix = ('-' + Meteor.user().username) || 'METEORCREW'
 
-		const syncList = _.map(authorizedCalendars, (calId) => {
-			const tags = config[calId];
-			return {
-				calendarId: calId,
-				events: _.isEmpty(tags) ? [] : _.filter(events, (evt) => {
-					switch (evt.tag) {
-						case 'sol':
-						case 'delegation':
-						case 'autre':
-						case 'stage':
-						case 'simu':
-							return _.contains(tags, 'sol');
-						case 'instruction':
-						case 'instructionSol':
-						case 'instructionSimu':
-							return _.contains(tags, 'instruction');
-						case 'vol':
-						case 'mep':
-							return _.contains(tags, 'vol');
-						default:
-							return _.contains(tags, evt.tag);
-					}
-				})
-			}
-		});
+		if (suffix.length < 4) return App.error("Chaîne d'identification des évènements introuvable !")
 
-		const suffix = ('-' + Meteor.user().username) || 'METEORCREW';
+		const total = 2 * _.reduce(syncList, (count, sync) => {
+      return count + sync.events.length
+    }, 0)
 
-		if (suffix.length < 4) return error("Chaîne d'identification des évènements introuvable !");
+		const start = _.first(events).start
+		const end = _.last(events).end
+		let count = 0
 
-		console.log(syncList, suffix);
-
-		const total = syncList.length * 2,
-			start = _.first(events).start,
-			end = _.last(events).end;
-		let count = 0;
-
-		function incrProgress() {
-			count++;
-			progress(Math.round(count*100/total));
+		function incrProgress(incr=1) {
+			count += incr
+			progress(Math.round(count*100/total))
 		}
 
-		const q = queue();
+    // console.log(events, syncList, suffix)
 
-		const task = (sync, callback) => {
-			return this._processSyncTask(sync, start, end, suffix, incrProgress, callback);
-		};
+    const results = []
+    for (const sync of syncList) {
+      results.push(await this._processSyncTask(sync, start, end, suffix, incrProgress))
+    }
+    return Promise.all(results)
+	}
 
-		_.forEach(syncList, (sync) => {
-			q.defer(task, sync);
-		});
+	async _processSyncTask(sync, start, end, suffix, incrProgress) {
+    const respClear = await this._clearEvents(sync.calendarId, start, end, suffix)
+    console.log(respClear)
+    if (respClear) {
+      incrProgress(sync.events.length)
 
-		q.awaitAll((error, results) => {
-			if (error) {
-				cb(error);
-			} else {
-				cb(null, results);
+      const respInsert = await this._insertEvents(sync.calendarId, sync.events)
+
+      incrProgress(sync.events.length)
+
+      console.log('gapiClient : batchInsert on : ' + sync.calendarId, respInsert)
+
+      if (_.has(respInsert, 'result') && _.isObject(respInsert.result)) {
+        const success = _.every(respInsert.result, (result, id) => result && _.has(result, 'result.id'))
+        if (success) {
+          return respInsert
+        } else {
+          throw new Meteor.Error("Erreur d'insertion", "Des évènements n'ont pu être ajoutés à l'agenda: synchronisation incomplète !")
+        }
+      } else {
+        throw new Meteor.Error("Erreur d'insertion", "Erreur lors de la synchronisation des nouveaux évènements !")
+      }
+    }
+	}
+
+  async _clearEvents(calendarId, start, end, suffix) {
+    let count = 0
+
+		const respFind = await gapi.client.request({
+			'path': '/calendar/v3/calendars/'+calendarId+'/events',
+			'params': {
+				timeMin: start.format(),
+				timeMax: end.format(),
+				maxResults: 999,
+        singleEvents: true,
+				fields: 'items(iCalUID,id)'
 			}
-		});
+		})
 
-		return this;
-	},
+    const deleteRequests = []
+    if (_.has(respFind, 'result.items') && respFind.result.items.length) {
+      _.forEach(respFind.result.items, function (item, index) {
+        if (item.iCalUID.substr(-7) === 'CHOPETO' || item.iCalUID.substr(-10) === 'METEORCREW' || item.iCalUID.substr(-4) === suffix || item.id.substr(-4) === suffix) {
+          deleteRequests.push({
+            'method': 'DELETE',
+            'path': '/calendar/v3/calendars/'+calendarId+'/events/'+item.id,
+            'params': { sendUpdates: 'none' },
+            'id': item.id
+          })
+        }
+      })
+    }
 
-	_processSyncTask(sync, start, end, suffix, incrProgress, cb) {
-		this._clearEvents(sync.calendarId, start, end, suffix, (error, result) => {
-			if (error) {
-				cb(error);
-			} else if (!_.isEmpty(sync.events)) {
-				this._batchInsert(sync.calendarId, sync.events, (e,r) => {
-					incrProgress();
-					cb(e,r);
-				});
-			} else {
-				incrProgress();
-				cb(null, []);
+    if (deleteRequests.length) {
+      console.log('gapiClient : ' + deleteRequests.length + ' events to delete found in "' + calendarId + '"')
+      const auth = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
+      const respDelete = await GapiBatch.batchRequest(deleteRequests, '/batch/calendar/v3', auth)
+
+      if (_.has(respDelete, 'result') && _.isObject(respDelete.result)) {
+        const clearCount = _.reduce(respDelete.result, (count, result, id) => {
+          return result && _.isEmpty(result.result) && result.status === 204 ? count+1 : count
+        }, 0)
+
+        const diff = count - clearCount
+
+        if (diff === 0) {
+          return respDelete
+        } else if (diff < 5) {
+          App.error(`${diff} évènements n'ont pas été supprimés de l'agenda !`)
+          return respDelete
+        } else {
+          throw new Meteor.Error("Echec", "Trop d'évènements n'ont pu être supprimés de l'agenda : " + calendarId + ": Synchronisation annulée !")
+        }
+      } else {
+        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n!!! Synchronisation annulée !!!")
+      }
+    } else {
+      return true
+    }
+  }
+
+  async _insertEvents(calendarId, events) {
+		const baseId = '' + Date.now() + ''
+    const auth = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
+    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
+    return GapiBatch.batchRequest(_.map(events, (evt, index) => {
+      const data = this._transform(evt, baseId, index, useCREWMobileFormat)
+			return {
+        'method': 'POST',
+				'path': '/calendar/v3/calendars/' + calendarId + '/events',
+				'data': data,
+        'id': data.iCalUID
+      }
+    }), '/batch/calendar/v3', auth)
+	}
+
+	async __clearEventsBatch(calendarId, start, end, suffix) {
+		const deleteBatch = gapi.client.newBatch()
+		let count = 0
+
+		const resp = await gapi.client.request({
+			'path': '/calendar/v3/calendars/'+calendarId+'/events',
+			'params': {
+				timeMin: start.format(),
+				timeMax: end.format(),
+				maxResults: 999,
+				fields: 'items(iCalUID,id)'
 			}
-		});
-	},
+		})
 
-	_clearEvents(calendarId, start, end, suffix, cb) {
-		const deleteBatch = gapi.client.newBatch();
-		let count = 0;
-		gapi.client
-			.request({
-				'path': '/calendar/v3/calendars/'+calendarId+'/events',
-				'params': {
-					timeMin: start.format(),
-					timeMax: end.format(),
-					maxResults: 999,
-					fields: 'items(iCalUID,id)'
-				}
-			})
-			.execute(resp => {
-				if (resp && !resp.error && _.isArray(resp.items)) {
-					_.forEach(resp.items, function (item, index) {
-						if (item.iCalUID.substr(-7) === 'CHOPETO' || item.iCalUID.substr(-10) === 'METEORCREW' || item.iCalUID.substr(-4) === suffix || item.id.substr(-4) === suffix) {
-							deleteBatch.add(
-								gapi.client.request({
-									'method': 'DELETE',
-									'path': '/calendar/v3/calendars/'+calendarId+'/events/'+item.id
-								})
-							);
-							count++;
-						}
-					});
+    if (_.has(resp, 'result.items') && resp.result.items.length) {
+      _.forEach(resp.result.items, function (item, index) {
+        if (item.iCalUID.substr(-7) === 'CHOPETO' || item.iCalUID.substr(-10) === 'METEORCREW' || item.iCalUID.substr(-4) === suffix || item.id.substr(-4) === suffix) {
+          deleteBatch.add(
+            gapi.client.request({
+              'method': 'DELETE',
+              'path': '/calendar/v3/calendars/'+calendarId+'/events/'+item.id,
+              'params': { sendUpdates: 'none' }
+            })
+          )
+          count++
+        }
+      })
+    }
 
-					if (count) {
-						console.log('gapiClient : ' + count + ' events to delete found in "' + calendarId + '"');
+    if (count) {
+      console.log('gapiClient : ' + count + ' events to delete found in "' + calendarId + '"')
+      const resp = await deleteBatch
 
-						deleteBatch.execute((result, rawResponse) => {
-							console.log('gapiClient : batchDelete on ' + calendarId, result);
+      if (_.has(resp, 'result') && _.isObject(resp.result)) {
+        const clearCount = _.reduce(resp.result, (count, result, id) => {
+          return result && _.isEmpty(result.result) && result.status === 204 ? count+1 : count
+        }, 0)
 
-							if (!result || result.error) {
-								return cb(new Meteor.Error("Echec", "Erreur lors de la suppression des évènements dans " + calendarId + " !\n\n!!! Synchronisation annulée !!!"));
-							}
+        const diff = count - clearCount
 
-							const every = _.every(resp, function (result, id) {
-								return result && _.isEmpty(result.result);
-							});
+        if (diff === 0) {
+          return resp
+        } else if (diff < 5) {
+          App.error(`${diff} évènements n'ont pas été supprimés de l'agenda !`)
+          return resp
+        } else {
+          throw new Meteor.Error("Echec", "Trop d'évènements n'ont pu être supprimés de l'agenda : " + calendarId + ": Synchronisation annulée !")
+        }
+      } else {
+        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n!!! Synchronisation annulée !!!")
+      }
+    } else {
+      return true
+    }
+	}
 
-							if (!every) return cb(new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n!!! Synchronisation annulée !!!"));
-
-							cb(null, result);
-						});
-					} else {
-						cb(null, []);
-					}
-				} else if (_.isFunction(cb)) {
-					cb(new Meteor.Error('Introuvable', "Impossible de charger la liste des évènements du calendrier Google !"));
-				}
-			});
-	},
-
-	_batchInsert(calendarId, events, cb) {
-		const baseId = '' + Date.now() + '';
-		const batch = gapi.client.newBatch();
+	__insertEventsBatch(calendarId, events) {
+		const baseId = '' + Date.now() + ''
+		const batch = gapi.client.newBatch()
+    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
 		_.forEach(events, (evt, index) => {
 			batch.add(gapi.client.request({
 				'path': '/calendar/v3/calendars/'+calendarId+'/events',
 				'method': 'POST',
-				'body': JSON.stringify(this._transform(evt, baseId, index))
-			}));
-		});
+				'body': JSON.stringify(this._transform(evt, baseId, index, useCREWMobileFormat))
+			}))
+		})
+    return batch
+	}
 
-		batch.execute(function (resp, rawResponse) {
-			console.log('gapiClient : batchInsert on : ' + calendarId);
-
-			if (!resp || resp.error) return cb(new Meteor.Error("Erreur d'insertion", "Erreur lors de la synchronisation des nouveaux évènements !"));
-
-			var every = _.every(resp, function (result, id) {
-				return result && result.result && !result.result.error;
-			});
-
-			if (!every) return cb(new Meteor.Error("Erreur d'insertion", "Des évènements n'ont pu être ajoutés à l'agenda !\n\n !!! ATTENTION : Synchronisation incomplète !!!"));
-
-			cb(null, resp);
-		});
-
-	},
-
-	_transform(event, baseId, index) {
+	_transform(event, baseId, index, useCREWMobileFormat) {
 		let body = {
 			iCalUID: baseId + index + '-METEORCREW',
 			start: {
@@ -306,11 +351,16 @@ window.Gapi = {
 			reminders: {
 				useDefault: false
 			}
-		};
+		}
+
 		switch (event.tag) {
-			case 'repos':
-			case 'conges':
-			case 'delegation':
+			case 'absence':
+  		case 'conges':
+  		case 'sanssolde':
+      case 'blanc':
+  		case 'repos':
+  		case 'maladie':
+  		case 'greve':
 				return _.extend(body, {
 					start: {
 						date: event.start.format('YYYY-MM-DD')
@@ -318,61 +368,40 @@ window.Gapi = {
 					end: {
 						date: event.start.clone().add(1, 'd').format('YYYY-MM-DD')
 					},
-					summary: this._titre(event),
-					description: this._description(event)
-				});
-			case 'rotation':
+					summary: Export.titre(event, useCREWMobileFormat),
+					description: Export.description(event)
+				})
+      case 'rotation':
 				return _.extend(body, {
 					start: {
-						date: event.tsStart.format('YYYY-MM-DD')
+						date: event.start.format('YYYY-MM-DD')
 					},
 					end: {
-						date: event.tsEnd.clone().add(1, 'd').format('YYYY-MM-DD')
+						date: event.end.clone().add(1, 'd').format('YYYY-MM-DD')
 					},
-					summary: this._titre(event),
-					description: this._description(event)
-				});
+					summary: Export.titre(event, useCREWMobileFormat),
+					description: Export.description(event)
+				})
 			case 'vol':
 				return _.extend(body, {
-					summary: this._titre(_.defaults(event, {from: '', to: '', type: '', num: ''})),
-					description: this._description(event),
-				});
+					summary: Export.titre(_.defaults(event, {from: '', to: '', type: '', num: ''}), useCREWMobileFormat),
+					description: Export.description(event),
+				})
 			case 'mep':
 				return _.extend(body, {
-					summary: this._titre(event),
-					description: this._description(event),
-				});
+					summary: Export.titre(event, useCREWMobileFormat),
+					description: Export.description(event),
+				})
 			default:
-				return _.extend(body, _.pick(event, 'summary', 'description'));
-		}
-	},
-
-	_description(event) {
-		switch (event.tag) {
-			case 'conges':
-				return App.templates.events.conge ? Blaze.toHTMLWithData(Template[App.templates.events.conge], event) : event.description;
-			case 'repos':
-				return App.templates.events.repos ? Blaze.toHTMLWithData(Template[App.templates.events.repos], event) : event.description;
-			case 'rotation':
-				return App.templates.events.rotation ? Blaze.toHTMLWithData(Template[App.templates.events.rotation], event) : event.description;
-			case 'vol':
-			case 'mep':
-				return App.templates.events.vol ? Blaze.toHTMLWithData(Template[App.templates.events.vol], event) : event.description;
-			default:
-				return App.templates.events.sol ? Blaze.toHTMLWithData(Template[App.templates.events.sol], event) : event.description;
-		}
-	},
-
-	_titre(event) {
-		switch (event.tag) {
-			case 'rotation':
-				return App.templates.titre.rotation ?  App.templates.titre.rotation(event) : Utils.titre(event);
-			case 'vol':
-				return App.templates.titre.vol ?  App.templates.titre.vol(event) : event.summary;
-			case 'mep':
-				return App.templates.titre.mep ?  App.templates.titre.mep(event) : event.summary;
-			default:
-				return Utils.titre(event);
+				return _.extend(body, {
+          summary: event.summary,
+          description: Export.description(event)
+        })
 		}
 	}
-};
+}
+
+const instance = new Gapi()
+Object.freeze(instance)
+
+export default instance

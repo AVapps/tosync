@@ -1,51 +1,52 @@
 <template name="calendar">
-	<div data-spy="affix" data-offset-top="139">
-		<div class="container">
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="fc-controls clndr-controls">
-						<div class="fc-controls-row">
-							<div class="fc-control fc-control-left">
-								<button class="btn btn-link fc-style">
-									<span class="glyphicon {{ displayStyleIcon }}"></span>
-								</button>
-							</div>
-							<div class="fc-control">
-								<div class="fc-header">
-									<div class="btn-group">
-										<button class="clndr-previous-button btn btn-link">
-											<span class="glyphicon glyphicon-chevron-left"></span>
-										</button>
-										<button class="btn btn-link fc-month" disabled>{{ format month 'MMMM YYYY' }}</button>
-										<button class="clndr-next-button btn btn-link">
-											<span class="glyphicon glyphicon-chevron-right"></span>
-										</button>
-									</div>
-								</div>
-							</div>
-							<div class="fc-control fc-control-right">
-								<button type="button" class="btn btn-link remu">
-									<span class="glyphicon glyphicon-stats"></span>
-								</button>
-							</div>
-						</div>
+	<div class="affix sticky-top">
+		<div class="container-xl">
+      <div class="row justify-content-between align-items-center">
+				<div class="col-2 px-0">
+          {{#if isTableStyle }}
+					<button class="btn btn-link fc-style">
+            <i class="fas fa-list"></i>
+          </button>
+          {{else}}
+          <button class="btn btn-link fc-style">
+            <i class="fas fa-calendar"></i>
+          </button>
+          {{/if}}
+        </div>
+        <div class="col-auto flex-grow-1 px-0">
+					<div class="fc-controls d-flex justify-content-center align-items-center">
+						<button class="clndr-previous-button btn btn-link">
+							<i class="fas fa-chevron-left"></i>
+						</button>
+						<button class="btn btn-link fc-month" disabled>{{ format month 'MMMM YYYY' }}</button>
+						<button class="clndr-next-button btn btn-link">
+							<i class="fas fa-chevron-right"></i>
+						</button>
 					</div>
+        </div>
+	      <div class="col-2 text-right px-0">
+					<button type="button" class="btn btn-link remu">
+						<i class="fas fa-chart-bar"></i>
+					</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	{{#if hasEvents }}
 	<div id="HC">
-		{{#with remu}}
-		<div class="container text-muted text-center">
-			<span class="label label-default">{{ numFormat real.HC }} HC</span>
-			<span class="label label-success">{{ numFormat real.HS }} HS</span>
+		{{#with stats=remu }}
+		<div class="container-xl text-muted text-center">
+      <button id="statsButton" type="button" class="btn btn-light remu">
+        <i class="fas fa-file-invoice"></i>
+        <span class="badge {{ eHSclass stats.eHS }} remu">eHS {{ numFormat stats.eHS }}</span>
+  			<span class="badge badge-default remu">HDV {{ duree stats.tv }}</span>
+      </button>
 		</div>
 		{{/with}}
 	</div>
 	<div id="planningContent">
-		<div class="container">
+		<div class="container-xl">
 			<div id="calendar" class="fc-calendar-container">
+        <h4 class="d-none d-print-block text-capitalize">{{ format month 'MMMM YYYY' }}</h4>
 				<div class="fc-calendar {{ displayStyle }}">
 					<div class="fc-head text-muted">
 						<div class="fc-row fc-small">
@@ -68,34 +69,31 @@
 						</div>
 					</div>
 					<div class="fc-body">
-						{{#each days}}
-							{{> planningCalendarDay }}
+						{{#each day in days}}
+							{{> planningCalendarDay day=day }}
 						{{/each}}
 					</div>
 				</div>
 			</div>
 		</div>
 	</div><!-- /content -->
-	{{ else }}
-		{{> home }}
-	{{/if}}
 </template>
 
 <template name="planningCalendarDay">
-	<div class="fc-cell {{ classes }}" data-date="{{ format this.date 'YYYY-MM-DD' }}">
-		<span class="fc-weekday text-muted">{{ weekday }}</span>
-		<span class="fc-date text-muted">{{ day }}</span>
+	<div class="fc-cell {{ dayClasses }}" data-date="{{ day.slug }}">
+		<span class="fc-weekday text-muted">{{ day.weekday }}</span>
+		<span class="fc-date text-muted">{{ day.day }}</span>
 		<div>
-			{{> planningCalendarDayLabel }}
-			{{#with eventsList }}
-			{{#if showEvents }}
-			<ul class="fc-content fc-length-{{ this.length }}">
-				{{#each evt in this }}
-					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
-				{{/each}}
-			</ul>
-			{{/if}}
-			{{/with}}
+			{{> planningCalendarDayLabel day }}
+      {{#unless day.allday }}
+  			{{#with eventsList }}
+  			<ul class="fc-content fc-length-{{ this.length }}">
+  				{{#each evt in this }}
+  					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
+  				{{/each}}
+  			</ul>
+  			{{/with}}
+			{{/unless}}
 		</div>
 	</div>
 </template>
@@ -105,9 +103,7 @@
 </template>
 
 <template name="planningCalendarDayLabel">
-	{{#let dayTag=getDayTag }}
-		<div class="fc-title label {{ dayLabelClass dayTag }} {{ spanClass }}"><span>{{ dayLabelText dayTag }}</span></div>
-	{{/let}}
+	<div class="fc-title badge {{ dayLabelClass tag }} {{ spanClass }}"><span>{{ dayLabelText tag }}</span></div>
 </template>
 
 <template name="planningCalendarVol">

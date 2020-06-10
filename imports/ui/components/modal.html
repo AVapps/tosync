@@ -1,28 +1,22 @@
 <template name="modal">
-    <div id="modal" class="modal fade" style="overflow-x:hidden">
-		<div class="modal-dialog modal-lg">
-            <div class="modal-content">
-        		<div class="modal-header">
-        			<button type="button" class="btn btn-default close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Fermer</span></button>
-        			<h4 class="modal-title">{{format selectedDay.date 'dddd Do MMMM YYYY'}}</h4>
-        		</div>
-        		<div class="modal-body">
-                    {{#if selectedDay }}
-                        <div class="modal-tootlbar">
-                			{{#if editing }}
-                				<button type="button" class="btn btn-sm btn-link cancel pull-left">Annuler</button>
-                				<button type="button" class="btn btn-sm btn-link save pull-right">Ok</button>
-                			{{ else }}
-                				<button type="button" class="btn btn-sm btn-link editing pull-right">Modifier</button>
-                			{{/if}}
-                        </div>
-        				{{> Template.dynamic template=template data=templateData }}
-        			{{/if}}
-        		</div>
-        		<div class="modal-footer">
-        			<button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
-        		</div>
-        	</div><!-- /.modal-content -->
+  <div id="modal" class="modal fade" style="overflow-x:hidden" role="dialog">
+		<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content">
+    		<div class="modal-header">
+    			<h5 class="modal-title">{{format selectedDay.date 'dddd Do MMMM YYYY'}}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+    		</div>
+    		<div class="modal-body">
+          {{#if selectedDay }}
+    				{{> Template.dynamic template=template data=templateData }}
+    			{{/if}}
+    		</div>
+    		<div class="modal-footer">
+    			<button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+    		</div>
+    	</div><!-- /.modal-content -->
 		</div><!-- /.modal-dialog -->
 	</div><!-- /.modal -->
 </template>

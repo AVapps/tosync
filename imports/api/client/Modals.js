@@ -1,28 +1,46 @@
-Modals = {
+export default {
 	Day: {
-		open: function () {
-			$('#modal').modal('show');
+		open() {
+			$('#modal').modal('show')
 		},
-		close: function () {
-			$('#modal').modal('hide');
+		close() {
+			$('#modal').modal('hide')
 		}
 	},
 
 	Google: {
-		open: function () {
-			$('#google').modal('show');
+		open() {
+      $('#google').modal('show')
 		},
-		close: function () {
-			$('#google').modal('hide');
+		close() {
+			$('#google').modal('hide')
 		}
 	},
 
 	Remu: {
-		open: function () {
-			$('#remu').modal('show');
+		open() {
+			$('#remu').modal('show')
 		},
-		close: function () {
-			$('#remu').modal('hide');
+		close() {
+			$('#remu').modal('hide')
+		}
+	},
+
+  Changelog: {
+		open() {
+			$('#changelog').modal('show')
+		},
+		close() {
+			$('#changelog').modal('hide')
+		}
+	},
+
+  Changes: {
+		open() {
+			return $('#changesModal').modal('show')
+		},
+		close() {
+			return $('#changesModal').modal('hide')
 		}
 	}
-};
+}

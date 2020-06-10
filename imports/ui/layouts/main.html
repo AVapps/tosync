@@ -1,65 +1,42 @@
 <template name="main">
+  <div id="mainView">
+  	{{> navbar isLoggedIn=isLoggedIn connectAuthentificated=connectAuthentificated }}
+    <div id="content">
+      {{#if isLoggedIn }}
+      	<div id="calendar-container">
+          {{> calendar }}
+        </div>
+      {{ else }}
+        {{> home }}
+      {{/if}}
+    </div>
+    <footer>
+  		<nav class="navbar navbar-dark bg-success" role="navigation">
+  			<div class="container-xl">
+  				<p class="navbar-text">
+  					<a href="#" data-toggle="modal" data-target="#changelog">TO.sync 2.1.1</a>
+  				</p>
+          <p class="navbar-text">
+  					<a id="cguLink" href="https://cgu.tosync.avapps.fr">Conditions d'utilisation</a>
+  				</p>
+  				<p class="navbar-text navbar-right">AdrienV &copy; 2020</p>
+  			</div>
+  		</nav>
+  	</footer>
+  </div>
 
-	<nav class="navbar navbar-default navbar-static-top" role="navigation">
-		<div class="container">
-		<!-- Brand and toggle get grouped for better mobile display -->
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
-					<span class="sr-only">Navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
-				<a class="navbar-brand" style="color:#00D66C">
-					<span class="glyphicon glyphicon-retweet" aria-hidden="true"></span>
-					<strong>TO.<span class="text-primary">sync</span></strong>
-				</a>
-			</div>
-
-			<!-- Collect the nav links, forms, and other content for toggling -->
-			<div class="collapse navbar-collapse" id="navbar-collapse">
-				{{> login }}
-			</div><!-- /.navbar-collapse -->
-		</div><!-- /.container-->
-	</nav>
-
-	{{> notifications}}
-
-
-	{{#if hasEvents }}
-		{{> toolbar }}
-	{{/if}}
-
-	<div id="calendar-container">{{> calendar days=days }}</div>
-
-	{{> modal }}
-
-	<div id="google" class="modal fade">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				{{> google }}
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
-
-	{{> remu }}
+  <div id="modals">
+    {{#if isLoggedIn }}
+      {{> modal }}
+    	{{> google }}
+      {{> remu }}
+      {{> changes }}
+    {{/if}}
+    {{> changelog }}
+    {{> notifications }}
+  </div>
 
 
-	<div id="changelog" class="modal fade">
-		<div class="modal-dialog modal-lg">
-			{{> changelog }}
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
 
 
-	<footer>
-		<nav class="navbar navbar-default" role="navigation">
-			<div class="container">
-				<p class="navbar-text">
-					<a href="#" data-toggle="modal" data-target="#changelog">TO.sync 1.9.6</a>
-				</p>
-				<p class="navbar-text navbar-right">AdrienV &copy; 2017</p>
-			</div>
-		</nav>
-	</footer>
 </template>

@@ -1,0 +1,66 @@
+<template name="loginStatusBar">
+  {{#if isLoggedIn }}
+    <div class="row">
+      <div class="col-md mb-4 mb-md-0">
+        <p class="text-center">
+          <i class="fas fa-user"></i>&nbsp;
+          {{#with userProfile }}
+          <span class="text-capitalize">{{ prenom }}</span>
+          <span class="text-uppercase">{{ nom }}</span>
+          {{/with}}
+        </p>
+        <button type="button" class="logout btn btn-sm btn-danger mx-auto d-block" {{ disabledOnConnectRunning }}>
+      		<i class="fas fa-times"></i>&nbsp;Déconnexion
+      	</button>
+      </div>
+      <div class="col-md">
+        {{#if connectAuthentificated }}
+          <p class="text-success text-center">
+            <i class="fas fa-check-circle"></i>&nbsp;Connecté à TO.connect
+          </p>
+          {{#if syncAvailable }}
+            {{> connectButton }}
+          {{/if}}
+          {{#if changesPending }}
+            <button class="btn btn-warning btn-sm d-block mx-auto js-validateChanges">
+              <i class="fas fa-check"></i>&nbsp;Valider les modifications
+            </button>
+          {{/if}}
+          {{#if signNeeded }}
+            {{#LaddaButton class="btn-warning btn-sm d-block mx-auto" onClick=onSignClick }}
+              <i class="fas fa-signature"></i>&nbsp;Signer mon planning
+            {{/LaddaButton}}
+          {{/if}}
+
+        {{ else }}
+          <p class="text-warning text-center">
+            <i class="fas fa-exclamation-circle"></i>&nbsp;Déconnecté de TO.connect
+          </p>
+          <form id="login">
+            <div class="form-row">
+              <div class="col">
+        		    <input name="login" type="text" value="" placeholder="Trigramme" class="form-control form-control-sm" maxlength="3" pattern="[A-Z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
+              </div>
+              <div class="col">
+          		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control form-control-sm" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
+              </div>
+              <div class="col">
+          		  <button type="submit" class="btn btn-sm btn-warning btn-block login ladda-button" data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
+                  <span class="ladda-label">Connexion</span>
+                </button>
+              </div>
+            </div>
+        	</form>
+        {{/if}}
+      </div>
+    </div>
+  {{/if}}
+</template>
+
+<template name="connectButton">
+	<button type="button" class="connect-sync btn btn-sm btn-success ladda-button d-block mx-auto" data-style="zoom-out" title="Synchroniser avec TO.Connect" data-toggle="tooltip" data-placement="bottom" {{ disabledOnConnectRunning }}>
+		<span class="ladda-label">
+			<i class="fas fa-sync-alt"></i>&nbsp;Synchroniser
+		</span>
+	</button>
+</template>

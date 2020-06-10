@@ -1,0 +1,193 @@
+<template name="rotationModalMainTab">
+  {{> volsTable etapes=this.day.etapes editing=this.state.editing }}
+	{{> listeEquipageRotationModal equipage }}
+
+  <div class="row">
+  {{#each sv in this.day.svs }}
+    {{> serviceVolTable sv=sv day=this.day }}
+  {{/each}}
+  </div>
+
+	{{> rotationTable rotation=this.day.rotation }}
+</template>
+
+<template name="volsTable">
+	{{#if showTable }}
+  <div class="modal-tootlbar">
+    {{#if this.editing }}
+      <button type="button" class="btn btn-sm btn-link cancel pull-left">Annuler</button>
+      <button type="button" class="btn btn-sm btn-link save pull-right">Ok</button>
+    {{ else }}
+      <button type="button" class="btn btn-sm btn-link editing pull-right">Modifier</button>
+    {{/if}}
+  </div>
+	<table class="table events table-bordered table-sm table-striped">
+		<thead>
+			<tr>
+				<th class="summary">Vol / MEP</th>
+				<th>Dép.</th>
+				<th>Arr.</th>
+				<th>Blk</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each vol in etapes }}
+				{{> volsTableRow vol=vol editing=editing }}
+			{{/each}}
+		</tbody>
+	</table>
+	{{#each remarks }}<pre>{{ this }}</pre>{{/each}}
+	<table class="table airports table-bordered table-sm table-striped">
+		<tbody>
+		{{#each airports }}
+			{{#if iata }}
+				<tr>
+					<td>{{ iata }}</td>
+					<td>{{ city }} {{ name }} ({{ country }}) - {{ oaci }} ({{ altitude }}ft)</td>
+				</tr>
+			{{/if}}
+			{{#if code }}
+				<tr>
+					<td>{{ code }}</td>
+					<td>{{ nom }}</td>
+				</tr>
+			{{/if}}
+		{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+</template>
+
+<template name="volsTableRow">
+	<tr>
+		<td class="summary">
+			{{#if this.editing }}
+				<button type="button" class="btn btn-sm btn-link remove-button">
+					<i class="fas fa-minus-square"></i>
+				</button>
+			{{/if}}
+			{{#if is 'vol'}}
+				<span class="num">{{ vol.num }}</span>
+				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+				<span class="tz">{{ vol.tz }}</span>
+			{{else}}
+				{{> eventLabel vol }}
+				<span class="title">{{ vol.title }}</span>
+				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+			{{/if}}
+		</td>
+		<td class="start">{{> volTimeField vol=vol field='start' editing=editing }}</td>
+		<td class="end">{{> volTimeField vol=vol field='end' editing=editing }}</td>
+		<td class="block">{{#if is 'vol'}}{{ duree vol.tvp }}{{ else }}{{ duree vol.mep }}{{/if}}</td>
+	</tr>
+	{{#if showReal }}
+		<tr>
+			<td class="realise text-muted text-right">
+				réalisé
+			</td>
+			<td class="start">{{> volTimeField vol=vol field='real.start' editing=editing }}</td>
+			<td class="end">{{> volTimeField vol=vol field='real.end' editing=editing }}</td>
+			<td class="block">{{ duree vol.tv }}</td>
+		</tr>
+	{{/if}}
+</template>
+
+<template name="volTimeField">
+	{{#if this.editing }}
+		<input type="time" name="{{ field }}" class="vol-time form-control" value="{{ fieldValue }}"/>
+	{{ else }}
+		{{ fieldValue }}
+	{{/if}}
+</template>
+
+<template name="listeEquipageRotationModal">
+	{{#if showList }}
+	<table class="table crew table-bordered table-sm table-striped">
+    <caption>Equipage</caption>
+		<tbody>
+			{{#each pnt}}
+				<tr>
+					<td class="trigramme">{{ trigramme }}</td>
+					<td class="fonction">{{ fonction }}</td>
+					<td>{{ nom }} {{ prenom }}</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	<table class="table crew table-bordered table-sm table-striped">
+		<tbody>
+			{{#each pnc}}
+				<tr>
+					<td class="trigramme">{{ trigramme }}</td>
+					<td class="fonction">{{ fonction }}</td>
+					<td><span class="text-uppercase">{{ nom }}</span> <span class="text-capitalize">{{ prenom }}</span></td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+</template>
+
+<template name="serviceVolTable">
+  {{#if showSv }}
+  <div class="col-md">
+		<table class="table table-bordered table-sm table-striped svdata stats">
+      <caption>Service de vol</caption>
+			<thead>
+				<tr>
+					<th></th>
+					<th>Début</th>
+					<th>Fin</th>
+					<th>Durée</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<th>TS</th>
+					<td>{{ format sv.tsStart 'HH:mm' }}</td>
+					<td>{{ format sv.tsEnd 'HH:mm' }}</td>
+					<td>{{ diffH sv.tsStart sv.tsEnd }}</td>
+				</tr>
+				<tr>
+					<th>TSV</th>
+					<td>{{ format sv.tsvStart 'HH:mm' }}</td>
+					<td>{{ format sv.tsvEnd 'HH:mm' }}</td>
+					<td>{{ diffH sv.tsvStart sv.tsvEnd }}</td>
+				</tr>
+			</tbody>
+		</table>
+    <table class="table table-bordered table-sm table-striped svdata stats">
+			<tbody>
+				<tr>
+					<th>HDV réalisées</th>
+					<td>{{ numFormat sv.tv }}</td>
+				</tr>
+				<tr>
+					<th>MEP</th>
+					<td>{{ numFormat sv.mep }}</td>
+				</tr>
+			</tbody>
+		</table>
+  </div>
+  {{/if}}
+</template>
+
+<template name="rotationTable">
+	<table class="table table-bordered table-sm table-striped svdata stats">
+    <caption>Rotation</caption>
+		<tbody>
+			<tr>
+				<th>HDV programmées</th>
+				<td>{{ numFormat rotation.tvp }}</td>
+			</tr>
+      <tr>
+				<th>HDV réalisées</th>
+				<td>{{ numFormat rotation.tv }}</td>
+			</tr>
+			<tr>
+				<th>MEP</th>
+				<td>{{ numFormat rotation.mep }}</td>
+			</tr>
+		</tbody>
+	</table>
+</template>

@@ -1,2 +1,2 @@
-import { TOConnect } from '../../api/toconnect/server/TOConnect';
-Accounts.registerLoginHandler(TOConnect.loginHandler);
+import TOConnectLoginHandler from '../../api/toconnect/server/TOConnectLoginHandler.js'
+Accounts.registerLoginHandler('TOConnect', TOConnectLoginHandler)

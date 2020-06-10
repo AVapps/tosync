@@ -1,18 +1,22 @@
 <template name="home">
-	<br>
-	<div id="firstUse">
+	<div id="home">
 		<div class="container">
-			<div class="panel panel-info">
-				<div class="panel-heading"><h4>Bienvenue sur <strong><span style="color:#00D66C">TO.</span><span class="text-primary">sync</span></strong></h4></div>
-				<div class="panel-body">
-					<p class="lead">Commencez par importer votre planning en entrant votre trigramme et votre mot de passe ci-dessus.</p>
-					<blockquote>Une fois votre planning importé vous pourrez le synchroniser avec votre agenda Google et accéder au décompte d'heures créditées.</blockquote>
+			<div class="card text-white bg-primary mb-4">
+				<div class="card-body">
+          <div class="card-title"><h4>Bienvenue</h4></div>
+					<p class="card-text">Commencez par importer votre planning en entrant votre trigramme et votre mot de passe ci-dessous.</p>
+          {{> loginForm }}
+					<p class="card-text mt-3">Une fois votre planning importé vous pourrez le synchroniser avec votre agenda Google et accéder au décompte d'heures créditées.</p>
 				</div>
 			</div>
-			<div class="panel panel-danger">
-				<div class="panel-heading"><h4><span class="glyphicon glyphicon-info-sign"></span> Attention</h4></div>
-				<div class="panel-body">
-					<p class="lead"> Vous devez valider votre planning sur <a class="btn btn-default btn-xs" href="https://connect.fr.transavia.com/TOConnect" target="blank">TO.Connect</a> avant de pourvoir l'importer.</p>
+
+			<div class="card text-white bg-danger mb-4">
+				<div class="card-body">
+          <div class="card-title">
+            <h4><i class="fas fa-user-shield"></i>&nbsp;Données personnelles</h4>
+          </div>
+          <p class="lead">TO.sync télécharge votre planning afin de pouvoir le synchroniser et pour calculer votre rémunération. Certaines de ces données sont stockées sur nos serveurs afin de vous identifier ou pour synchroniser vos données entre les différents périphériques que vous utilisez. <strong>Néanmoins aucun traitement de données n'est effectué ou conservé sur nos serveurs</strong>. Tous les traitements de données sont effectués dans le navigateur de l'utilisateur et les données collectées ne sont transmises à aucune tierce partie.</p>
+          <p>Pour en savoir plus, consultez les <a class="font-weight-bold" href="https://cgu.tosync.avapps.fr">Conditions d'utilisation</a>.</p>
 				</div>
 			</div>
 		</div>

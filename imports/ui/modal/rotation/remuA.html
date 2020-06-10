@@ -1,0 +1,94 @@
+<template name="rotationModalRemuATab">
+  {{#if isPNT }}
+  <h6 class="mt-3">Rému A - Ancien système de rémunération</h6>
+  <hr>
+  {{/if}}
+  {{#if this.day.etapes.length }}
+	<table class="table events table-bordered table-sm table-striped">
+		<thead>
+			<tr>
+				<th class="summary">Vol / MEP</th>
+				<th>HV100%(r) / MEP</th>
+        <th>HVnuit</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each vol in this.day.etapes }}
+				<tr>
+          {{#if is vol 'vol'}}
+          <td class="summary">
+      			<span class="num">{{ vol.num }}</span>
+      			<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+      		</td>
+          <td>{{ duree vol.hv100TO }}</td>
+      		<td>{{ duree vol.HVnuit }}</td>
+          {{else}}
+          <td class="summary">
+      			{{> eventLabel vol }}
+    				<span class="title">{{ vol.title }}</span>
+    				<span class="from">{{ vol.from }}</span>&nbsp;<span class="to">{{ vol.to }}</span>
+      		</td>
+          <td>{{ duree vol.mep }}</td>
+      		<td></td>
+          {{/if}}
+        </tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{/if}}
+
+  <div class="row">
+    {{#each sv in this.day.svs }}
+    <div class="col-md">
+      <table class="table table-bordered table-sm table-striped svdata stats">
+        <caption>Service de vol {{ num @index }}</caption>
+        <tbody>
+          <tr>
+            <th>Hcv</th>
+            <td>{{ numFormat sv.HcvTO }}</td>
+          </tr>
+          <tr>
+            <th>Hct</th>
+            <td>{{ numFormat sv.HctTO }}</td>
+          </tr>
+          <tr>
+            <th>H1</th>
+            <td>{{ numFormat sv.H1TO }}</td>
+          </tr>
+          <tr>
+  					<th>TME</th>
+  					<td>{{ numFormat sv.tme }}</td>
+  				</tr>
+  				<tr>
+  					<th>CMT</th>
+  					<td>{{ numFormat sv.cmt }}</td>
+  				</tr>
+        </tbody>
+      </table>
+    </div>
+    {{/each}}
+    <div class="col-md">
+      <table class="table table-bordered table-sm table-striped svdata stats">
+        <caption>Rotation</caption>
+    		<tbody>
+    			<tr>
+    				<th>&sum;H1</th>
+    				<td>{{ numFormat this.day.rotation.H1TO }}</td>
+    			</tr>
+          <tr>
+    				<th>Hca</th>
+    				<td>{{ numFormat this.day.rotation.HcaTO }}</td>
+    			</tr>
+    			<tr>
+    				<th>H2</th>
+    				<td>{{ numFormat this.day.rotation.H2TO }}</td>
+    			</tr>
+          <tr>
+            <th>HVnuit</th>
+            <td>{{ duree this.day.rotation.HVnuit }}</td>
+          </tr>
+    		</tbody>
+    	</table>
+    </div>
+  </div>
+</template>

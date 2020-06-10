@@ -1,0 +1,38 @@
+<template name="changes">
+  <div id="changesModal" class="modal fade">
+		<div class="modal-dialog modal-xl">
+      <div class="modal-content">
+    		<div class="modal-header">
+    			<h5 class="modal-title">Modifications de planning</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+    		</div>
+    		<div class="modal-body">
+          <div class="card text-white bg-danger mb-4">
+    				<div class="card-body">
+              <div class="card-title">
+                <h4><i class="fas fa-exclamation-circle"></i>&nbsp;Seule la première page des modifciations de planning sont affichées ci-dessous !</h4>
+              </div>
+              <p class="lead">
+                TO.sync peut valider les modifications pour vous, mais seul le planning publié sur TO.connect fait foi !
+              </p>
+              <p>L'importation et la synchronisation de votre planning par TO.sync ne peuvent être garanties à 100%, <strong>il est nécessaire de consulter votre planning sur TO.connect.</strong></p>
+    				</div>
+    			</div>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              {{{ tableContent }}}
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+          {{#LaddaButton class="btn-primary" onClick=onConfirmClick }}
+            <i class="fas fa-check"></i>&nbsp;Valider les modifications
+          {{/LaddaButton}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

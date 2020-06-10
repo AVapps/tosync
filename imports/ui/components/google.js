@@ -1,94 +1,109 @@
-import { Template } from 'meteor/templating';
-import './google.html';
+import { Template } from 'meteor/templating'
+import './google.html'
 
-Template.google.onRendered(function() {
-	this.$syncButton = this.$('button.sync').ladda();
-	this.$progressBar = this.$('.progress-bar');
-});
+import _ from 'lodash'
+import * as Ladda from 'ladda'
+
+import Utils from '/imports/api/client/lib/Utils'
+import Modals from '/imports/api/client/Modals.js'
+import Gapi from '/imports/api/client/Gapi.js'
+import Export from '/imports/api/client/lib/Export.js'
+
+window.Gapi = Gapi
 
 Template.google.helpers({
-	calendarList: function () {
-		var list = Gapi.getCalendarList();
-		if (_.isArray(list)) return list;
-		return [];
-	}
-});
+	calendarList() {
+    const list = Gapi.getCalendarList()
+  	if (_.isArray(list)) return list
+    return []
+	},
+
+  calendarTags(calendar) {
+    return _.get(Config.getCalendarTags(), calendar.id) || []
+  },
+
+  isSignedIn() {
+    return Gapi.isSignedIn()
+  }
+})
 
 Template.google.events({
-	'change select': function (e,t) {
-		var obj = {};
-		if (e.added) {
-			// console.log('added', e.added.id, e.currentTarget.name);
-			Config.addTagToCalendarId(e.currentTarget.name, e.added.id);
-		}
-		if (e.removed) {
-			// console.log('removed', e.removed.id, e.currentTarget.name);
-			Config.removeTagFromCalendarId(e.currentTarget.name, e.removed.id);
-		}
-	},
+	'click button.js-sync': function (e,t) {
+    if (!t.ladda) {
+      t.ladda = Ladda.create(e.currentTarget)
+    }
 
-	'click button.sync': function (e,t) {
-		t.$syncButton.ladda( 'start' );
+		t.ladda.start()
 
+    const progressBar = t.$('.progress-bar')
 		const progress = (value) => {
-			t.$progressBar.css('width', value + '%');
-			t.$progressBar.attr('aria-valuenow', value);
-		};
+			progressBar.css('width', value + '%')
+			progressBar.attr('aria-valuenow', value)
+      t.ladda.setProgress(value/100)
+		}
 
-		progress(0);
-
-		Gapi.syncEvents(App.eventsToSync(), progress, (error, results) => {
-			if (error) {
-				App.error(error);
-			} else {
-				Modals.Google.close();
-			}
-			t.$syncButton.ladda( 'stop' );
-			progress(0);
-		});
+		Gapi.syncEvents(App.eventsToSync(), progress).then(
+      results => {
+        Modals.Google.close()
+        progress(0)
+        t.ladda.stop()
+  		},
+      error => {
+        App.error(error)
+        t.ladda.stop()
+      }
+    )
 	},
 
-	'click button.authorize': function (e,t) {
-		Gapi.authorize(_.noop, (err) => App.error(err));
-	}
-});
+  'click button.js-sign-in': function(e,t) {
+    Gapi.signIn({
+      prompt: 'select_account'
+    })
+  },
 
-const tagLabel = {
-	rotation: 'Rotations',
-	sol: 'Activités sol',
-	instruction: 'Instruction',
-	vol: 'Vols',
-	repos: 'Repos',
-	conges: 'Congés',
-	maladie: 'Maladie',
-	greve: 'Grève'
-}
+	'click button.js-change-user': async function(e,t) {
+    await Gapi.signOut()
+    Gapi.signIn({
+      prompt: 'select_account'
+    })
+	}
+})
 
 Template.googleCalendarLine.helpers({
-	bgColor: function () {
-		return this && {
-			style: ['background-color:' + this.backgroundColor, 'color:' + this.foregroundColor].join(';')
-		};
+	bgColor() {
+		return this.calendar && {
+			style: ['background-color:' + this.calendar.backgroundColor, 'color:' + this.calendar.foregroundColor].join(';')
+		}
 	},
 
-	selected: function (id, tag) {
-		return _.contains(Config.get('googleCalendarIds')[id], tag) ? 'selected' : '';
+	categories() {
+		return Export.getSyncCategories()
 	},
 
-	categories: function () {
-		return Config.calendarTags;
-	},
-
-	categoryLabel: function (category) {
-		return tagLabel[category];
+  checked(tag) {
+		return _.includes(this.tags, tag)
 	}
-});
+})
 
-Template.googleCalendarLine.onRendered(function () {
-	this.$('select').select2({width: "100%"});
+Template.googleCalendarLineTagSwitch.helpers({
+  name() {
+    return this.calendarId + '[' + this.tag + ']'
+  },
 
-	this.autorun(() => {
-		Template.currentData();
-		this.$('select').select2('destroy').select2({width: "100%"});
-	});
-});
+	categoryLabel() {
+		return Export.getSyncCategoryLabel(this.tag)
+	}
+})
+
+
+Template.googleCalendarLineTagSwitch.events({
+  'change input': function (e,t) {
+    if (e.currentTarget.checked) {
+      // console.log('added', t.data.calendarId, t.data.tag)
+      Gapi.addTagToCalendarId(t.data.calendarId, t.data.tag)
+    } else {
+      // console.log('removed', t.data.calendarId, t.data.tag)
+      Gapi.removeTagFromCalendarId(t.data.calendarId, t.data.tag)
+    }
+  }
+})

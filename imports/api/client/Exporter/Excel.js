@@ -1,6 +1,6 @@
-import JSZip from 'jszip';
-import './Blob.js';
-import saveAs from './FileSaver.js';
+import JSZip from 'jszip'
+import './Blob.js'
+import { saveAs } from 'file-saver'
 
 export const Excel = {
 	generate: function (Planning) {
@@ -9,7 +9,7 @@ export const Excel = {
 			.every(function (evt) {return _.contains(['opl', 'cdb', 'officier pilote de ligne', 'commandant de bord'], evt.fonction.toLowerCase()) || !_.has(evt, 'fonction')})
 			.value();
 		Meteor.call('xlsx', check, function (error, data) {
-			const zip = new JSZip(data, { base64: false });			
+			const zip = new JSZip(data, { base64: false });
 
 			function xmlToString(xmlData) {
 				//IE
@@ -23,7 +23,7 @@ export const Excel = {
 			}
 
 			const epoch = moment('1904-01-01');
-			
+
 			function datenum(m) {
 				return m.diff(epoch, 'days');
 			}
@@ -48,7 +48,7 @@ export const Excel = {
 
 			var sstxml = $.parseXML(zip.file('xl/sharedStrings.xml').asText());
 			var $sst = $(sstxml).find('sst');
-			
+
 			var SharedStrings = {
 				data: [],
 				lookup: function (str) {
@@ -107,7 +107,7 @@ export const Excel = {
 
 					_.forEach(sv.events, function (evt, i) {
 						if (i) $row = $ws.find('row[r='+(row+i)+']');
-						
+
 						// Code IATA origine
 						$row.find('c[r=C'+(row+i)+']')
 							.attr('t', 's')
@@ -183,9 +183,9 @@ export const Excel = {
 									.text(evt.tv);
 								break;
 						}
-						
+
 					});
-					
+
 					row += 4;
 					$row = $ws.find('row[r='+row+']');
 
@@ -206,7 +206,7 @@ export const Excel = {
 						.removeAttr('t')
 						.find('v')
 						.text(hnum(Math.min(real(_.first(sv.events), 'start'), _.first(sv.events).start)));
-					
+
 					// Dernier block
 					$row.find('c[r=W'+row+']')
 						.removeAttr('t')
@@ -252,7 +252,7 @@ export const Excel = {
 					row++;
 					$row = $ws.find('row[r='+row+']');
 				});
-				
+
 				var sumRow = row - 1;
 				var $sumRow = $ws.find('row[r='+sumRow+']');
 				var startRow = sumRow - (rot.nbjours - 1) * 5

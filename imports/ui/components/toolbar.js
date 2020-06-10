@@ -1,68 +1,134 @@
-import { Template } from 'meteor/templating';
-import './toolbar.html';
+import { Template } from 'meteor/templating'
+import './toolbar.html'
+
+import _ from 'lodash'
+import * as Ladda from 'ladda'
+
+import Modals from '/imports/api/client/Modals.js'
+import Gapi from '/imports/api/client/Gapi.js'
+import Export from '/imports/api/client/lib/Export.js'
 
 Template.toolbar.onRendered(function() {
-	this.$googleButton = this.$('button.google').ladda();
-});
+	this.ladda = Ladda.create(this.find('button.js-gapi-sync'))
+})
+
+Template.toolbar.helpers({
+  disabledIfNoEvents() {
+    return Controller.currentEvents.get().length ? '' : 'disabled'
+  },
+
+  categories() {
+		return Export.getSyncCategories()
+	},
+
+  iCalendarTags() {
+    return Config.get('iCalendarTags')
+  },
+
+  checked(tags, tag) {
+    return _.includes(tags, tag)
+  },
+
+  crewMobileFormatChecked() {
+    return Config.get('useCREWMobileFormat')
+  }
+})
 
 Template.toolbar.events({
-	'click button.google': function (e, t) {
-		var inputs = t.$('input, button.import').prop('disabled', true);
-		t.$googleButton.ladda('start');
-
-		var success = function () {
-			Modals.Google.open();
-			t.$googleButton.ladda('stop');
-			inputs.prop('disabled', false);
-		};
-
-		var error = function (msg) {
-			App.error(msg);
-			t.$googleButton.ladda('stop');
-			inputs.prop('disabled', false);
-		};
-
-		Gapi.checkAuth(function () {
-			Gapi.loadCalendarList();
-			success();
-		}, error);
+	'click button.js-gapi-sync': function (e,t) {
+		if (Gapi.isSignedIn()) {
+      Modals.Google.open()
+    } else {
+      const inputs = t.$('input, button.js-icalendar-import').prop('disabled', true);
+  		t.ladda.start()
+      Gapi.signIn().then(
+        value => {
+          // Load Calendars
+          Modals.Google.open()
+    			t.ladda.stop()
+    			inputs.prop('disabled', false)
+        },
+        reason => {
+          console.log(reason)
+          // App.error(msg)
+    			t.ladda.stop()
+    			inputs.prop('disabled', false)
+        }
+      )
+    }
 	},
 
-	'click button.export': function (e, t) {
-		e.preventDefault();
-		App.exportIcs();
+  'click button.js-icalendar-settings': function (e,t) {
+    t.$('#iCalendarModal').modal('show')
+  },
+
+	'click button.js-icalendar-export': function (e, t) {
+		e.preventDefault()
+		App.exportIcs()
 	},
 
-	'click button.icsimport': function (e, t) {
-		e.preventDefault();
+	'click button.js-icalendar-import': function (e, t) {
+		e.preventDefault()
 
-		if (App.support.isMobile) return App.warn("Cette fonctionnalité n'est pas disponible sur les terminaux mobiles !");
+		if (App.support.isMobile) return App.warn("Cette fonctionnalité n'est pas disponible sur les terminaux mobiles !")
 
-		if (!App.support.filereader) return App.warn("Votre navigateur ne prend pas en charge la lecture de fichiers !", "Utilisez la dernière version de Firefox, Safari ou Chrome.");
+		if (!App.support.filereader) return App.warn("Votre navigateur ne prend pas en charge la lecture de fichiers !", "Utilisez la dernière version de Firefox, Safari ou Chrome.")
 
-		if (!Meteor.userId()) return App.warn("Non connecté !", "Vous devez vous connecter pour pouvoir importer un fichier ics.");
+		if (!Meteor.userId()) return App.warn("Non connecté !", "Vous devez vous connecter pour pouvoir importer un fichier ics.")
 
-		t.$('#filereader').trigger('click');
+		t.$('#filereader').trigger('click')
 	},
 
 	'change #filereader': function (e, t) {
 		if (e.target.files && e.target.files.length) {
 			if (e.target.files[0].type === 'text/calendar') {
-				const fr = new FileReader();
+				const fr = new FileReader()
 
 				fr.onload = function () {
-					App.importIcs(fr.result);
-				};
+					App.importIcs(fr.result)
+          e.target.value = ""
+				}
 
 				fr.onerror = function () {
-					App.error("Une erreur s'est produite durant la lecture du fichier !");
-				};
+					App.error("Une erreur s'est produite durant la lecture du fichier !")
+          e.target.value = ""
+				}
 
-				fr.readAsText(e.target.files[0]);
+				fr.readAsText(e.target.files[0])
 
 			} else {
-				App.error('Format de fichier incorrect. Vous devez séléctionner un fichier .ics encodé utf-8.');
+				App.error('Format de fichier incorrect. Vous devez séléctionner un fichier .ics encodé utf-8.')
 			}
 		}
+	},
+
+  'change #exportFormat': function (e,t) {
+    if (e.currentTarget.checked) {
+      Config.set('useCREWMobileFormat', true)
+    } else {
+      Config.set('useCREWMobileFormat', false)
+    }
+  }
+})
+
+Template.iCalendarCategoryTagSwitch.helpers({
+  name() {
+    return 'iCalendar[' + this.tag + ']'
+  },
+
+	categoryLabel() {
+		return Export.getSyncCategoryLabel(this.tag)
 	}
-});
+})
+
+Template.iCalendarCategoryTagSwitch.events({
+  'change input': (e,t) => {
+    if (e.currentTarget.checked) {
+      // console.log('added', t.data.tag)
+      Config.addTagToICalendar(t.data.tag)
+    } else {
+      // console.log('removed', t.data.tag)
+      Config.removeTagFromICalendar(t.data.tag)
+    }
+  }
+})
