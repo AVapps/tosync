@@ -2,18 +2,5 @@ FROM mhart/alpine-node:12.16.1
 RUN adduser -D -h /home/user user
 ADD alpine-build/bundle /home/user
 WORKDIR /home/user
-ARG ADMIN_EMAIL
-ARG METEOR_SETTINGS
-ARG MONGO_URL
-ARG ROOT_URL
-ARG PORT
-LABEL auto-config-lb.email=$ADMIN_EMAIL
-LABEL auto-config-lb.domains=$ROOT_URL
-ENV ADMIN_EMAIL	$ADMIN_EMAIL
-ENV METEOR_SETTINGS	$METEOR_SETTINGS
-ENV MONGO_URL $MONGO_URL
-ENV ROOT_URL $ROOT_URL
-ENV PORT ${PORT:-3000}
-ENV HTTP_FORWARDED_COUNT 1
 USER user
 CMD node main.js

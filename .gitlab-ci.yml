@@ -78,7 +78,7 @@ build-docker:
     - echo ${INFO} Starting docker image build for ${CI_BUILD_REF_NAME}
     - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg METEOR_SETTINGS='${METEOR_SETTINGS}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' --build-arg PORT=${PORT} .
+    - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' .
     - docker push ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG}
   only:
     - master
