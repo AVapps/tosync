@@ -209,9 +209,10 @@ Calendar = {
     const slug = date.format('YYYY-MM-DD')
     const day = this.days.findOne({ slug })
     if (!day) return
-    // console.log(day, doc, date)
-    const updatedEvents = _.reject(day.events, { _id: doc._id }).push(doc)
+    const updatedEvents = _.reject(day.events, { _id: doc._id })
+    updatedEvents.push(doc)
     const params = this.getDayParams(updatedEvents)
+    // console.log('Calendar.updateEventFromDate', slug, date, doc, day, updatedEvents, params)
     this.days.update({ slug, 'events._id': doc._id }, {
       $set: _.extend(params, {
         'events.$': doc
@@ -284,6 +285,7 @@ Calendar = {
         allday: false
       }
     } else {
+      if (!events.length || !_.has(_.first(events), 'tag')) debugger
       const specialCategoryEvent = _.find(events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
       const tag = specialCategoryEvent ? specialCategoryEvent.tag : _.first(events).tag
       return { tag, allday: _.includes(Utils.alldayTags, tag) }

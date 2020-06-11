@@ -42,7 +42,7 @@ export default function firstUseDrive() {
         stageBackground: '#00D66C',
         popover: {
           title: `Conditions d'utilisation`,
-          description: `N'oubliez de consulter les conditions d'utilisation et de gestion des données personnelles !`,
+          description: `N'oubliez pas de consulter les conditions d'utilisation et de gestion des données personnelles !`,
           position: 'top-right'
         }
       }
