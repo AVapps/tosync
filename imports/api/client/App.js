@@ -41,9 +41,10 @@ App = {
       cancelButtonColor: '#ff3268',
       confirmButtonText: '<i class="fa fa-signature"></i> Signer mon planning',
       cancelButtonText: '<i class="fa fa-times"></i> Annuler'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.value) {
-        return Connect.signPlanning()
+        await Connect.signPlanning()
+        return App.sync()
       }
     })
   },

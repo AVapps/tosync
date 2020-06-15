@@ -10,13 +10,10 @@ Template.changes.helpers({
 
   onConfirmClick() {
     return async (doneCb) => {
-      try {
-        await Connect.validateChanges()
-      } catch (e) {
-        console.log('validateChanges', e)
-      }
-      doneCb()
+      await Connect.validateChanges()
       Modals.Changes.close()
+      doneCb()
+      App.sync()
     }
   }
 })

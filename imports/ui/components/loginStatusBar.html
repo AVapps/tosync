@@ -39,7 +39,7 @@
           <form id="login">
             <div class="form-row">
               <div class="col">
-        		    <input name="login" type="text" value="" placeholder="Trigramme" class="form-control form-control-sm" maxlength="3" pattern="[A-Z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
+        		    <input name="login" type="text" value="" placeholder="Trigramme" class="form-control form-control-sm text-uppercase" maxlength="3" pattern="[A-z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
               </div>
               <div class="col">
           		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control form-control-sm" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>

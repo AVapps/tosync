@@ -49,6 +49,7 @@ export default {
     'RPC': 'repos',
     'JISAP': 'jisap',
 		'CP': 'conges',
+		'CPE': 'sanssolde', // Congé parental d'éducation
 		'CA': 'conges',
 		'CAHC': 'conges',
 		'CPI': 'conges',
