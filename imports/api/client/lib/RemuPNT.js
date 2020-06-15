@@ -639,7 +639,7 @@ export default class RemuPNT {
       sv.finTR = sv.debutTR
       sv.finTSVrAF = last.end.toDateTime().plus({ hours: CONFIG_AF.postTSVr })
       sv.HctTO = 0
-      sv.HctAF = finTSVrAF.diff(sv.debutTR).as('hours') * CONFIG_AF.coefTSV
+      sv.HctAF = sv.finTSVrAF.diff(sv.debutTR).as('hours') * CONFIG_AF.coefTSV
     }
 
     sv.HcvTO = (sumBy(groups.vol, 'hv100TO') * sv.cmt) + (sumBy(groups.mep, 'mep') / 2)
