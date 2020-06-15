@@ -7,8 +7,8 @@ stages:
 variables:
   APPNAME: "tosync"
   DOMAIN: "avapps.fr"
-  ROOT_URL: https://"${APPNAME}.${DOMAIN}"
-  IMAGE_TAG: "stable"
+  ROOT_URL: "https://${APPNAME}.${DOMAIN}"
+  IMAGE_TAG: $CI_COMMIT_TAG
   MONGO_URL: "mongodb://mongodb:27017/${APPNAME}"
   INFO: "[minimeteor]"
   USERNAME: "user"
@@ -78,8 +78,8 @@ build-docker:
     - echo ${INFO} Starting docker image build for ${CI_BUILD_REF_NAME}
     - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${CI_COMMIT_SHORT_SHA} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' .
-    - docker push ${CI_REGISTRY}/tosync/to.sync-meteor:${CI_COMMIT_SHORT_SHA}
+    - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' .
+    - docker push ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG}
   only:
     - master
     - dev
@@ -90,7 +90,7 @@ deploy-prod:
   stage: deploy
   image: cdrx/rancher-gitlab-deploy
   script:
-    - upgrade --stack ${APPNAME} --service ${APPNAME}-server --finish-upgrade
+    - upgrade --stack ${APPNAME} --service ${APPNAME}-server --new-image ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --finish-upgrade
   environment:
     name: production
     url: https://tosync.avapps.fr
@@ -102,7 +102,7 @@ deploy-dev:
   stage: deploy
   image: cdrx/rancher-gitlab-deploy
   script:
-    - upgrade --stack ${APPNAME} --service ${APPNAME}-server-dev --finish-upgrade
+    - upgrade --stack ${APPNAME} --service ${APPNAME}-server-dev --new-image ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --finish-upgrade
   environment:
     name: dev
     url: https://tosync.dev.avapps.fr
