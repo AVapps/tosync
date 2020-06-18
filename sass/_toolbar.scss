@@ -10,14 +10,17 @@
     align-items: center;
 
     > i, svg {
+      display: inline-block;
       height: 16px;
       width: 16px;
+      margin-right: 24px;
       flex-grow: 0;
       flex-shrink: 0;
     }
 
     > span.label {
-      text-align: center;
+      display: inline-block;
+      text-align: left;
       flex-grow: 1;
       flex-shrink: 1;
     }

@@ -26,10 +26,20 @@ Template.GoogleButton.onRendered(function () {
       }
     })
   }
+
+  Tracker.autorun(comp => {
+    if (!this.faComp) this.faComp = comp
+    if (Gapi.isSignedIn()) {
+      this.$('.js-google-button [data-fa-i2svg]').show()
+    } else {
+      this.$('.js-google-button [data-fa-i2svg]').hide()
+    }
+  })
 })
 
 Template.GoogleButton.onDestroyed(function () {
   if (this.laddaComp) this.laddaComp.stop()
+  if (this.faComp) this.faComp.stop()
 })
 
 Template.GoogleButton.helpers({
@@ -42,7 +52,6 @@ Template.GoogleButton.events({
   'click button.js-google-button': function (e,t) {
     t.state.set('loading', true)
 		if (Gapi.isSignedIn()) {
-      console.log(t.ladda)
   		Gapi.syncEvents(App.eventsToSync(), t.setProgress).then(
         results => {
           Modals.Google.close()

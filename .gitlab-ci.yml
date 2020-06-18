@@ -15,7 +15,7 @@ variables:
   USERHOME: "/home/user"
 
 before_script:
-  - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; IMAGE_TAG=${CI_BUILD_REF_NAME}; fi
+  - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; IMAGE_TAG="${CI_BUILD_REF_NAME}-${CI_COMMIT_SHORT_SHA}"; fi
 
 build-meteor:
   stage: meteor-build
