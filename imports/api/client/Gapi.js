@@ -15,10 +15,13 @@ const DISCOVERY_DOCS = [ 'https://www.googleapis.com/discovery/v1/apis/calendar/
 class Gapi {
   constructor() {
     if (!Gapi.instance) {
-      console.log('GAPI.init')
+      // console.log('GAPI.init')
     	this._ready = new ReactiveVar(false)
       this._isSignedIn = new ReactiveVar(false)
     	this._calendarList = new ReactiveVar([])
+      this._backoffDelay = 1000
+      this.auth = false
+      this.currentUser = false
       Gapi.instance = this
     }
    return Gapi.instance
@@ -29,13 +32,20 @@ class Gapi {
       try {
         await this.initClient()
 
+        this.auth = gapi.auth2.getAuthInstance()
+        this.currentUser = this.auth.currentUser.get()
+
+        this.auth.currentUser.listen((currentUser) => {
+          this.currentUser = currentUser
+        })
+
         // Listen for sign-in state changes.
-        gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn) => {
+        this.auth.isSignedIn.listen((isSignedIn) => {
           this.handleSignInStatus(isSignedIn)
         })
 
         // Handle the initial sign-in state.
-        this.handleSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get())
+        this.handleSignInStatus(this.auth.isSignedIn.get())
 
         this._ready.set(true)
       } catch (error) {
@@ -54,6 +64,7 @@ class Gapi {
   }
 
   handleSignInStatus(isSignedIn){
+    // console.log('Gapi.handleSignInStatus(isSignedIn)', isSignedIn)
     this._isSignedIn.set(isSignedIn)
     if (isSignedIn) {
       this.loadCalendarList()
@@ -61,11 +72,15 @@ class Gapi {
   }
 
   async signIn(options) {
-    return gapi.auth2.getAuthInstance().signIn(options)
+    return this.auth ? this.auth.signIn(options) : undefined
   }
 
   async signOut() {
-    return gapi.auth2.getAuthInstance().signOut()
+    return this.auth ? this.auth.signOut() : undefined
+  }
+
+  async revoke() {
+    return this.auth ? this.auth.disconnect() : undefined
   }
 
   isSignedIn() {
@@ -120,6 +135,7 @@ class Gapi {
   }
 
 	async syncEvents(events, progress = _.noop) {
+    this._backoffDelay = 1000
 		progress(0)
 		const startOfMonth = moment().startOf('month')
 
@@ -199,9 +215,7 @@ class Gapi {
 	}
 
   async _clearEvents(calendarId, start, end, suffix) {
-    let count = 0
-
-		const respFind = await gapi.client.request({
+    const respFind = await gapi.client.request({
 			'path': '/calendar/v3/calendars/'+calendarId+'/events',
 			'params': {
 				timeMin: start.format(),
@@ -214,13 +228,13 @@ class Gapi {
 
     const deleteRequests = []
     if (_.has(respFind, 'result.items') && respFind.result.items.length) {
-      _.forEach(respFind.result.items, function (item, index) {
+      _.forEach(respFind.result.items, (item, index) => {
         if (item.iCalUID.substr(-7) === 'CHOPETO' || item.iCalUID.substr(-10) === 'METEORCREW' || item.iCalUID.substr(-4) === suffix || item.id.substr(-4) === suffix) {
           deleteRequests.push({
             'method': 'DELETE',
             'path': '/calendar/v3/calendars/'+calendarId+'/events/'+item.id,
             'params': { sendUpdates: 'none' },
-            'id': item.id
+            'id': item.iCalUID
           })
         }
       })
@@ -228,15 +242,19 @@ class Gapi {
 
     if (deleteRequests.length) {
       console.log('gapiClient : ' + deleteRequests.length + ' events to delete found in "' + calendarId + '"')
-      const auth = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
-      const respDelete = await GapiBatch.batchRequest(deleteRequests, '/batch/calendar/v3', auth)
+      const auth = this.currentUser.getAuthResponse()
+      const respDelete = await GapiBatch.batchRequestWithBackoffRetry(deleteRequests, '/batch/calendar/v3', auth, this._backoffDelay)
+
+      if (_.has(respDelete, 'delay')) {
+        this._backoffDelay = respDelete.delay
+      }
 
       if (_.has(respDelete, 'result') && _.isObject(respDelete.result)) {
-        const clearCount = _.reduce(respDelete.result, (count, result, id) => {
-          return result && _.isEmpty(result.result) && result.status === 204 ? count+1 : count
+        let clearCount = _.reduce(respDelete.result, (t, result, id) => {
+          return result && _.isEmpty(result.result) && result.status == 204 ? t+1 : t
         }, 0)
 
-        const diff = count - clearCount
+        const diff = deleteRequests.length - clearCount
 
         if (diff === 0) {
           return respDelete
@@ -247,7 +265,7 @@ class Gapi {
           throw new Meteor.Error("Echec", "Trop d'évènements n'ont pu être supprimés de l'agenda : " + calendarId + ": Synchronisation annulée !")
         }
       } else {
-        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n!!! Synchronisation annulée !!!")
+        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n Synchronisation annulée !")
       }
     } else {
       return true
@@ -256,9 +274,9 @@ class Gapi {
 
   async _insertEvents(calendarId, events) {
 		const baseId = '' + Date.now() + ''
-    const auth = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
+    const auth = this.currentUser.getAuthResponse()
     const useCREWMobileFormat = Config.get('useCREWMobileFormat')
-    return GapiBatch.batchRequest(_.map(events, (evt, index) => {
+    const requests = _.map(events, (evt, index) => {
       const data = this._transform(evt, baseId, index, useCREWMobileFormat)
 			return {
         'method': 'POST',
@@ -266,7 +284,12 @@ class Gapi {
 				'data': data,
         'id': data.iCalUID
       }
-    }), '/batch/calendar/v3', auth)
+    })
+    const resp = GapiBatch.batchRequestWithBackoffRetry(requests, '/batch/calendar/v3', auth, this._backoffDelay)
+    if (_.has(resp, 'delay')) {
+      this._backoffDelay = resp.delay
+    }
+    return resp
 	}
 
 	async __clearEventsBatch(calendarId, start, end, suffix) {
@@ -304,7 +327,7 @@ class Gapi {
 
       if (_.has(resp, 'result') && _.isObject(resp.result)) {
         const clearCount = _.reduce(resp.result, (count, result, id) => {
-          return result && _.isEmpty(result.result) && result.status === 204 ? count+1 : count
+          return result && _.isEmpty(result.result) && result.status == 204 ? count+1 : count
         }, 0)
 
         const diff = count - clearCount
@@ -402,6 +425,5 @@ class Gapi {
 }
 
 const instance = new Gapi()
-Object.freeze(instance)
 
 export default instance

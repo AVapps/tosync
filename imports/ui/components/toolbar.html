@@ -2,28 +2,25 @@
 	<div id="toolbar">
     <div class="row justify-content-center">
       <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
-        <button type="button" class="js-icalendar-import btn btn-outline-success btn-block">
+        <button type="button" class="js-icalendar-import btn btn-success btn-block">
   				<i class="fas fa-file-import"></i>
-  				Importer un fichier ics
+  				<span class="label">Importer un fichier ics</span>
   			</button>
 			  <input id="filereader" type="file" class="d-none" accept="text/calendar" />
       </div>
       <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
         <div class="btn-group btn-block" role="group">
-    	    <button type="button" class="js-icalendar-export btn btn-outline-light ladda-button ellipsis flex-grow-1" data-style="zoom-out" {{ disabledIfNoEvents }}>
+    	    <button type="button" class="js-icalendar-export btn btn-primary ladda-button ellipsis flex-grow-1" data-style="zoom-out" {{ disabledIfNoEvents }}>
     				<i class="fas fa-file-export"></i>
-    				Exportation iCalendar
+    				<span class="label">Exportation iCalendar</span>
     			</button>
-          <button type="button" class="js-icalendar-settings btn btn-outline-light flex-grow-0">
+          <button type="button" class="js-icalendar-settings btn btn-primary flex-grow-0">
             <i class="fas fa-filter"></i>
           </button>
         </div>
       </div>
       <div class="col-lg-4 col-md-6 mt-2 mt-lg-0">
-  			<button type="button" class="js-gapi-sync btn btn-outline-danger btn-block ladda-button ellipsis" data-style="zoom-out" {{ disabledIfNoEvents }}>
-  				<i class="fas fa-cloud-upload-alt"></i>
-  				Synchronisation Google
-  			</button>
+  			{{> GoogleButton disabled=disabledIfNoEvents }}
       </div>
     </div>
     <div class="custom-control custom-switch mt-3 text-md-center">

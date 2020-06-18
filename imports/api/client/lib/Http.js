@@ -14,9 +14,9 @@ class HTTP {
         const payload = mainParts[1];
 
         const headerLines = headersPart.split('\r\n');
-        const firsLine = headerLines.shift();
+        const firstLine = headerLines.shift();
 
-        const firstLineParts = firsLine.match(/(HTTP\/[\d.]+)\s+(\d{3})\s(.*)$/)
+        const firstLineParts = firstLine.match(/(HTTP\/[\d.]+)\s+(\d{3})\s(.*)$/)
         const headers = HTTP.parseHeaders(headerLines);
 
         return {

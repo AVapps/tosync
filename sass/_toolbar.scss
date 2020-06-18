@@ -1,3 +1,25 @@
 #toolbar {
-  
+  button, .btn {
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .btn.btn-block, .btn-group > .btn:first-child {
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    > i, svg {
+      height: 16px;
+      width: 16px;
+      flex-grow: 0;
+      flex-shrink: 0;
+    }
+
+    > span.label {
+      text-align: center;
+      flex-grow: 1;
+      flex-shrink: 1;
+    }
+  }
 }

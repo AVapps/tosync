@@ -1,3 +1,40 @@
+.btn-google {
+  background-color: #FFFFFF;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 6px 8px;
+
+  &:hover {
+    background-color: #e2e6ea;
+    border-color: none;
+  }
+
+  .ladda-label {
+    width: 100%;
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  img {
+    display: inline-block;
+    height: 18px;
+    width: 18px;
+    margin-right: 24px;
+    flex-grow: 0;
+    flex-shrink: 0;
+  }
+
+  span.label {
+    display: inline-block;
+    text-align: center;
+    flex-grow: 1;
+    flex-shrink: 1;
+  }
+}
+
 #google {
   .progress {
     height: 4px;

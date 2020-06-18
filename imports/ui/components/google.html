@@ -35,12 +35,33 @@
         			</tbody>
         		</table>
       		</form>
+
+          <hr>
+
+          <div class="row justify-content-center">
+            <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+              <button type="button" class="js-change-user btn btn-primary btn-block">Changer de compte Google</button>
+            </div>
+            <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+              <button type="button" class="js-revoke btn btn-warning btn-block">Révoquer les autorisations</button>
+            </div>
+            <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+              <button type="button" class="js-sign-out btn btn-danger btn-block">Déconnexion de Google</button>
+            </div>
+          </div>
+
           {{ else }}
-            <button type="button" class="btn btn-danger btn-block js-sign-in">Connexion</button>
+            <div class="row justify-content-center">
+              <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+                <button type="button" class="js-sign-in btn btn-light btn-google btn-block ellipsis">
+                    <img src="./google_logo.svg" alt="G"/>
+                    <span class="label">{{#if isSignedIn }}Synchroniser Google Agenda{{ else }}Connexion avec Google{{/if}}</span>
+                </button>
+              </div>
+            </div>
           {{/if}}
       	</div>
       	<div class="modal-footer">
-      		<button type="button" class="js-change-user btn btn-primary pull-left">Changer de compte</button>
       		<button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
       	</div>
       </div><!-- /.modal-content -->

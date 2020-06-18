@@ -2,15 +2,10 @@ import { Template } from 'meteor/templating'
 import './toolbar.html'
 
 import _ from 'lodash'
-import * as Ladda from 'ladda'
 
 import Modals from '/imports/api/client/Modals.js'
-import Gapi from '/imports/api/client/Gapi.js'
 import Export from '/imports/api/client/lib/Export.js'
 
-Template.toolbar.onRendered(function() {
-	this.ladda = Ladda.create(this.find('button.js-gapi-sync'))
-})
 
 Template.toolbar.helpers({
   disabledIfNoEvents() {
@@ -35,29 +30,6 @@ Template.toolbar.helpers({
 })
 
 Template.toolbar.events({
-	'click button.js-gapi-sync': function (e,t) {
-		if (Gapi.isSignedIn()) {
-      Modals.Google.open()
-    } else {
-      const inputs = t.$('input, button.js-icalendar-import').prop('disabled', true);
-  		t.ladda.start()
-      Gapi.signIn().then(
-        value => {
-          // Load Calendars
-          Modals.Google.open()
-    			t.ladda.stop()
-    			inputs.prop('disabled', false)
-        },
-        reason => {
-          console.log(reason)
-          // App.error(msg)
-    			t.ladda.stop()
-    			inputs.prop('disabled', false)
-        }
-      )
-    }
-	},
-
   'click button.js-icalendar-settings': function (e,t) {
     t.$('#iCalendarModal').modal('show')
   },

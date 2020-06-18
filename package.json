@@ -1,6 +1,6 @@
 {
   "name": "TO.sync",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Synchronisattion des plannings TO.",
   "main": "index.js",
   "scripts": {

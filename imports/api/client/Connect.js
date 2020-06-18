@@ -162,7 +162,7 @@ Connect = {
     try {
       state = await pify(Meteor.call)('checkSession')
     } catch (error) {
-      this._handleError(error)
+      this._handleError(error, true)
     }
     console.log('Connect.checkSession', state)
     if (_.isObject(state) && _.has(state, 'connected')) {
@@ -211,7 +211,7 @@ Connect = {
     }
   },
 
-	_handleError(error) {
+	_handleError(error, silent) {
     console.log('Connect._handleError', error)
 		if (error && _.has(error, 'error')) {
       switch (error.error) {
@@ -220,13 +220,13 @@ Connect = {
           // Notify.error(error)
           break;
         case 503:
-          Notify.error("TO.connect est (encore) injoignable !")
+          if (!silent) Notify.error("TO.connect est (encore) injoignable !")
           break;
         default:
-          Notify.error(error)
+          if (!silent) Notify.error(error)
       }
 		} else {
-      Notify.error(error)
+      if (!silent) Notify.error(error)
     }
 		return this
 	}

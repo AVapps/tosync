@@ -1,0 +1,15 @@
+<template name="GoogleButton">
+  <div id="GoogleButton" class="btn-group btn-block" role="group">
+    <button type="button" class="js-google-button btn btn-light btn-google btn-block ladda-button ellipsis" data-style="zoom-out" {{ disabled }}>
+      <span class="ladda-label">
+        <img src="./google_logo.svg" alt="G"/>
+        <span class="label">{{#if isSignedIn }}Synchroniser Google Agenda{{ else }}Connexion avec Google{{/if}}</span>
+      </span>
+    </button>
+    {{#if isSignedIn }}
+    <button type="button" class="js-google-settings btn btn-light flex-grow-0" {{ disabled }} disabled={{ loading }}>
+      <i class="fas fa-cog"></i>
+    </button>
+    {{/if}}
+  </div>
+</template>

@@ -1,9 +1,16 @@
 import axios from 'axios'
 import _ from 'lodash'
-import { HTTPResponse } from './Http.js'
+import { Meteor } from 'meteor/meteor'
+import { HTTP, HTTPResponse } from './Http.js'
 
 const BASE_URL = 'https://content.googleapis.com/'
 const BOUNDARY = 'tosync-avapps-googleAPI-BaTcH'
+
+function wait(ms) {
+  return new Promise((resolve, reject) => {
+    Meteor.setTimeout(resolve, ms)
+  })
+}
 
 export default {
   async request(req, auth) {
@@ -33,6 +40,35 @@ export default {
 
     const resp = await axios(options)
     return this.parseBatchResponse(resp)
+  },
+
+  async batchRequestWithBackoffRetry(reqs, batchPath, auth, delay = 1000) {
+    let resp
+    let retry = []
+    let results = {}
+
+    do {
+      if (retry.length) {
+        console.log('batchRequestWithBackoffRetry : backoffWait', delay)
+        await wait(delay)
+        delay *= 2
+      }
+
+      resp = await this.batchRequest(retry.length ? retry : reqs, batchPath, auth)
+      retry = []
+
+      if (_.has(resp, 'result') && _.isObject(resp.result)) {
+        _.extend(results, resp.result)
+
+        _.forEach(resp.result, (result, id) => {
+          if (_.has(result, 'result.error.message') && result.result.error.message == "Rate Limit Exceeded") {
+            const req = _.find(reqs, { id })
+            if (req) retry.push(req)
+          }
+        })
+      }
+    } while (retry.length > 0)
+    return _.extend(resp, { result: results, delay })
   },
 
   /**
@@ -92,32 +128,41 @@ export default {
         const subResps = response.data.split('--' + boundary)
         subResps.pop() // Last element is always "--\r\n"
 
-        return {
-          result: _.chain(subResps)
-            .map(resp => {
-              resp = resp.trim()
-              if (resp.length && resp !== "--") {
-                const splitIndex = resp.indexOf('HTTP')
-                const subResp = HTTPResponse.parseResponse(resp.substring(splitIndex))
+        const result = {}
+        let key = 0
 
-                const result = _.pick(subResp, 'headers', 'status', 'statusText')
+        _.forEach(subResps, resp => {
+          resp = resp.trim()
+          if (resp.length && resp !== "--") {
+            const splitIndex = resp.indexOf('HTTP')
+            const partHeaders = HTTP.parseHeaders(resp.substring(0, splitIndex).trim().split('\r\n'))
+            const subResp = HTTPResponse.parseResponse(resp.substring(splitIndex))
 
-                if (_.has(subResp, 'payload') && _.isString(subResp.payload) && !_.isEmpty(subResp.payload.trim())) {
-                  try {
-                    _.extend(result, {
-                      body: subResp.payload.trim(),
-                      result: JSON.parse(subResp.payload)
-                    })
-                  } catch (error) {
-                    console.log("Can't parse response payload : ", subResp)
-                  }
-                }
-                return result
+            const innerResult = _.pick(subResp, 'headers', 'status', 'statusText')
+
+            if (_.has(subResp, 'payload') && _.isString(subResp.payload) && !_.isEmpty(subResp.payload.trim())) {
+              try {
+                _.extend(innerResult, {
+                  body: subResp.payload.trim(),
+                  result: JSON.parse(subResp.payload)
+                })
+              } catch (error) {
+                console.log("Can't parse response payload : ", subResp)
               }
-              return false
-            })
-            .filter(r => r)
-            .value(),
+            }
+
+            if (_.has(partHeaders, 'Content-ID')) {
+              innerResult.id = _.get(partHeaders, 'Content-ID').replace('response-', '')
+            } else {
+              innerResult.id = ['UNKNOWN', key].join('-')
+              key++
+            }
+            result[innerResult.id] = innerResult
+          }
+        })
+
+        return {
+          result,
           body: response.data,
           headers: response.headers,
           status: response.status,

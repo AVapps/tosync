@@ -66,7 +66,17 @@ Template.google.events({
     Gapi.signIn({
       prompt: 'select_account'
     })
-	}
+	},
+
+  'click button.js-revoke': function(e,t) {
+    Gapi.revoke()
+    Modals.Google.close()
+  },
+
+  'click button.js-sign-out': function(e,t) {
+    Gapi.signOut()
+    Modals.Google.close()
+  },
 })
 
 Template.googleCalendarLine.helpers({

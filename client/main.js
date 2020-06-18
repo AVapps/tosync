@@ -25,6 +25,7 @@ import '/imports/ui/components/toolbar.js'
 import '/imports/ui/components/eventLabel.js'
 import '/imports/ui/components/removeButton.js'
 import '/imports/ui/components/LaddaButton.js'
+import '/imports/ui/components/GoogleButton.js'
 import '/imports/ui/components/adminPNImport.js'
 
 
