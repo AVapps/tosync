@@ -24,9 +24,15 @@ Template.loginForm.events({
 
 		const success = await Connect.login(username, pw)
     console.log('Connect.login', success)
-    t.$('input[type=password]').val('')
+    // t.$('input[type=password]').val('')
     l.stop()
     if (success) App.sync()
 		return false
 	}
+})
+
+Template.loginForm.helpers({
+  message() {
+    return Connect.state.get('message')
+  }
 })

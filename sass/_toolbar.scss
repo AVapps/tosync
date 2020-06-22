@@ -9,7 +9,7 @@
     flex-direction: row;
     align-items: center;
 
-    > i, svg {
+    i, svg, span.icon {
       display: inline-block;
       height: 16px;
       width: 16px;
@@ -18,7 +18,7 @@
       flex-shrink: 0;
     }
 
-    > span.label {
+    span.label {
       display: inline-block;
       text-align: left;
       flex-grow: 1;

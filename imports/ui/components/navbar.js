@@ -36,5 +36,9 @@ Template.navbar.onRendered(function () {
 Template.navbar.helpers({
   classes() {
     return Template.instance().classes.get()
+  },
+
+  message() {
+    return Connect.state.get('message')
   }
 })

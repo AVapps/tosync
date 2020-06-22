@@ -8,14 +8,15 @@ variables:
   APPNAME: "tosync"
   DOMAIN: "avapps.fr"
   ROOT_URL: "https://${APPNAME}.${DOMAIN}"
-  IMAGE_TAG: "stable-${CI_COMMIT_TAG}"
+  IMAGE_TAG: "${CI_BUILD_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   MONGO_URL: "mongodb://mongodb:27017/${APPNAME}"
   INFO: "[minimeteor]"
   USERNAME: "user"
   USERHOME: "/home/user"
 
 before_script:
-  - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; IMAGE_TAG="${CI_BUILD_REF_NAME}-${CI_COMMIT_SHORT_SHA}"; fi
+  - if [[ ${CI_BUILD_REF_NAME} = "master" && $CI_COMMIT_TAG ]]; then IMAGE_TAG="stable-${CI_COMMIT_TAG}"; fi
+  - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; fi
 
 build-meteor:
   stage: meteor-build

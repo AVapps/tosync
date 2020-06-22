@@ -1,3 +1,4 @@
+import { Meteor } from 'meteor/meteor'
 import { ReactiveVar } from 'meteor/reactive-var'
 import { ReactiveDict } from 'meteor/reactive-dict'
 import { DateTime } from 'luxon'
@@ -6,8 +7,16 @@ import pify from 'pify'
 
 const CONNECT_STATE_KEY = "CONNECT_STATE"
 
+function wait(ms) {
+  return new Promise((resolve, reject) => {
+    Meteor.setTimeout(resolve, ms)
+  })
+}
+
 Connect = {
   _timeoutHandle: null,
+  _retryCount: 0,
+  _backOffDelay: 2000,
 	_tasks: {},
   state: new ReactiveDict(CONNECT_STATE_KEY, {
     username: null,
@@ -15,7 +24,8 @@ Connect = {
     changesPending: false,
     signNeeded: false,
     working: false,
-    credentials: null
+    credentials: null,
+    message: ''
   }),
 
 	init() {
@@ -24,7 +34,7 @@ Connect = {
       const lastSessionCheck = Config.get('lastSessionCheck')
       const now = +new Date()
       if (now - lastSessionCheck > (1000 * 60 * 2)) {
-        this.checkSession()
+        this.checkSession(true)
       }
     })
 		return this
@@ -33,20 +43,34 @@ Connect = {
 	async login(username, password, doneCb) {
 		check(username, String)
 		check(password, String)
-    // console.log('Connect.login')
+    console.log('Connect.login')
 		this.startTask('login')
-    let state
-    try {
-      await pify(Meteor.loginConnect)(username, password)
-      this.state.set('credentials',[ username, password ])
-      this.state.set('username', username)
-      state = await this.checkSession()
-      if (_.isFunction(doneCb)) doneCb()
-
-    } catch (error) {
-      this._handleError(error)
-      if (_.isFunction(doneCb)) doneCb(error)
-    }
+    this.state.set('message', "Connexion...")
+    let state, shouldRetry
+    do {
+      try {
+        if (this._retryCount) {
+          this.state.set('message', `${ this._retryCount + 1 }e tentative...`)
+        }
+        await pify(Meteor.loginConnect)(username, password)
+        state = await this.checkSession(false)
+        // console.log('Connect.login state', state)
+        if (state && state.connected) {
+          this.state.set('credentials',[ username, password ])
+          this.state.set('username', username)
+          this.resetBackoff()
+        }
+        if (_.isFunction(doneCb)) doneCb()
+      } catch (error) {
+        // console.log('Connect.login error', error)
+        shouldRetry = await this.backoff(error)
+        if (!shouldRetry) {
+          this._handleError(error)
+          if (_.isFunction(doneCb)) doneCb(error)
+        }
+      }
+    } while (shouldRetry)
+    this.state.set('message', "")
     this.endTask('login')
     return (state && _.has(state, 'connected')) ? state.connected : false
 	},
@@ -57,8 +81,35 @@ Connect = {
 		return this
 	},
 
+  async backoff(error) {
+    if (error && error.error == 503) {
+      if (this._retryCount < 4) {
+        this._retryCount++
+        console.log('Connect.backoff', this._retryCount, this._backOffDelay)
+        await wait(this._backOffDelay)
+        this._backOffDelay *= 2
+        return true
+      } else {
+        this.resetBackoff()
+      }
+    }
+  },
+
+  async autoBackoff() {
+    if (this._backOffDelay) {
+      await wait(this._backOffDelay)
+      this._backOffDelay *= 2
+    }
+  },
+
+  resetBackoff() {
+    this._retryCount = 0
+    this._backOffDelay = 2000
+  },
+
 	async validateChanges() {
     this.startTask('validateChanges')
+    this.state.set('message', "Validation du planning...")
     let state
     try {
       state = await TOConnect.validateChanges()
@@ -68,12 +119,14 @@ Connect = {
     if (_.isObject(state) && _.has(state, 'connected')) {
       this.handleState(state)
 		}
+    this.state.set('message', "")
     this.endTask('validateChanges')
     return state
   },
 
   async signPlanning() {
     this.startTask('signPlanning')
+    this.state.set('message', "Validation du planning...")
     let state
     try {
       state = await TOConnect.signPlanning()
@@ -83,18 +136,21 @@ Connect = {
     if (_.isObject(state) && _.has(state, 'connected')) {
       this.handleState(state)
 		}
+    this.state.set('message', "")
     this.endTask('signPlanning')
     return state
   },
 
 	async getSyncData() {
 		this.startTask('sync_data')
+    this.state.set('message', "Synchronisation...")
     let data
     try {
       data = await TOConnect.fetchSyncData()
     } catch (error) {
       this._handleError(error)
     }
+    this.state.set('message', "")
     this.endTask('sync_data')
     return data
 	},
@@ -155,15 +211,18 @@ Connect = {
 		return this
 	},
 
-	async checkSession() {
+	async checkSession(retry) {
 		this.startTask('check_session')
     // console.log('Connect.checkSession.start')
-    let state
-    try {
-      state = await pify(Meteor.call)('checkSession')
-    } catch (error) {
-      this._handleError(error, true)
-    }
+    let state, shouldRetry
+    do {
+      try {
+        state = await pify(Meteor.call)('checkSession')
+      } catch (error) {
+        shouldRetry = await this.backoff(error)
+        if (!shouldRetry) this._handleError(error, true)
+      }
+    } while (retry && shouldRetry)
     console.log('Connect.checkSession', state)
     if (_.isObject(state) && _.has(state, 'connected')) {
       this.handleState(state)
@@ -186,6 +245,7 @@ Connect = {
       this.startSession()
     } else {
       this._resetSession()
+      this.tryAutoReLogin()
     }
   },
 
@@ -199,7 +259,6 @@ Connect = {
     // console.log('Connect._resetSession()')
 		this.setDisconnedState()
 		this.clearSession()
-    this.tryAutoReLogin()
 		return this
 	},
 
@@ -207,7 +266,7 @@ Connect = {
     console.log('Connect.tryAutoReLogin')
     const credentials = this.state.get('credentials')
 		if (_.isArray(credentials)) {
-      this.debouncedLogin.apply(this, credentials)
+      return this.debouncedLogin.apply(this, credentials)
     }
   },
 
@@ -217,10 +276,11 @@ Connect = {
       switch (error.error) {
         case 401:
           this._resetSession()
-          // Notify.error(error)
+          this.tryAutoReLogin()
+          if (!silent) Notify.error(error)
           break;
         case 503:
-          if (!silent) Notify.error("TO.connect est (encore) injoignable !")
+          if (!silent) Notify.warn("connect.fr.transavia.com ne répond pas, merci de patienter quelques instants avant d'essayer de vous connecter à nouveau !")
           break;
         default:
           if (!silent) Notify.error(error)

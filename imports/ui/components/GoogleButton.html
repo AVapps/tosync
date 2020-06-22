@@ -2,8 +2,8 @@
   <div id="GoogleButton" class="btn-group btn-block" role="group">
     <button type="button" class="js-google-button btn btn-light btn-google btn-block ladda-button ellipsis" data-style="zoom-out" {{ disabled }}>
       <span class="ladda-label">
-        <i class="fas fa-sync-alt"></i>
         {{#if isSignedIn }}
+        <span class="icon"><i class="fas fa-sync-alt"></i></span>
         <span class="label">Synchroniser Google Agenda</span>
         {{ else }}
         <img src="./google_logo.svg" alt="G"/>

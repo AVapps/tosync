@@ -45,22 +45,30 @@ export default {
     'OFFC': 'repos', // Jour OFF couple
   	'OFFD': 'repos', // JOUR OFF DESIDERATA
 		'OFFE': 'repos',
+    'OFFH': 'repos', // OFF HS maladie
 		'OFFR': 'repos',
     'RPC': 'repos',
+    'JISA': 'jisap',
     'JISAP': 'jisap',
 		'CP': 'conges',
-		'CPE': 'sanssolde', // Congé parental d'éducation
+    'CEX': 'conges', // Congés exceptionnels familiaux
 		'CA': 'conges',
+		'CAP': 'conges',
 		'CAHC': 'conges',
 		'CPI': 'conges',
 		'CPD': 'conges',
     'CPBLANC': 'conges', // CP sur jour blanc
     'CPBL': 'conges', // CP sur jour blanc
 		'CAPA': 'sanssolde',
+		'CPE': 'sanssolde', // Congé parental d'éducation
 		'INST': 'instructionSol',
-		'CSM': 'instructionSol', // 'CS_M'
+		'CS_M': 'sol', // MDC
+    'CS_C': 'instructionSol', // MDC INST
+    'MINT': 'sol', // Réunion Inst
+    'WORK': 'sol', // Réunion
 		'SIMU': 'simu',
 		'SIM': 'simu',
+		'LVO': 'simu',
 		'ENT': 'simu',
 		'E1': 'simu',
 		'E2': 'simu',
@@ -96,15 +104,15 @@ export default {
 		'SUR': 'sol',
 		'CRMT': 'sol',
 		'SS1': 'sol',
-		'MDT': 'sol',
-    'MDE': 'sol',
+		'MD_T': 'sol',
+    'MD_E': 'sol',
 		'MEET': 'sol', // Réunion compagnie
 		'EFB': 'sol',
 		'ENTP': 'sol',
 		'E_LE': 'sol',  // 'E_LE'
 		'HS': 'maladie',
     'OFFHS': 'maladie', // Arrêt maladie sur OFF
-    'FATIG': 'maladie', // Clause fatigue PN
+    'FATIG': 'sanssolde', // Clause fatigue PN
 		'GREV': 'greve',
 		'NPL': 'blanc' // Non planifiable
 	},
