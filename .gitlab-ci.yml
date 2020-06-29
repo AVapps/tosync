@@ -40,8 +40,9 @@ meteor-install:
       - .meteor
     policy: pull-push
   only:
-    - master
-    - dev
+    refs:
+      - master
+      - dev
     changes:
       - .meteor/release
   tags:
@@ -103,21 +104,6 @@ kaniko-build:
     - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$IMAGE_TAG
-  only:
-    - master
-    - dev
-  tags:
-    - docker
-
-build-docker:
-  stage: docker
-  image: docker:18.06.3-ce
-  script:
-    - echo ${INFO} Starting docker image build for ${CI_BUILD_REF_NAME}
-    - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' .
-    - docker push ${$CI_REGISTRY_IMAGE}:${IMAGE_TAG}
   only:
     - master
     - dev
