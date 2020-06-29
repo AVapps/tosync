@@ -1,7 +1,8 @@
 stages:
+  - meteor-install
   - meteor-build
   - alpine-build
-  - docker
+  - kaniko
   - deploy
 
 variables:
@@ -18,8 +19,8 @@ before_script:
   - if [[ ${CI_BUILD_REF_NAME} = "master" && $CI_COMMIT_TAG ]]; then IMAGE_TAG="stable-${CI_COMMIT_TAG}"; fi
   - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; fi
 
-build-meteor:
-  stage: meteor-build
+meteor-install:
+  stage: meteor-install
   image: debian
   script:
     - echo ${INFO} Meteor container started
@@ -31,6 +32,26 @@ build-meteor:
     - useradd -m ${USERNAME}
     - chown -R ${USERNAME} .
     - sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
+  cache:
+    key:
+      files:
+        - .meteor/release
+    paths:
+      - .meteor
+    policy: pull-push
+  only:
+    - master
+    - dev
+    changes:
+      - .meteor/release
+  tags:
+    - docker
+
+
+build-meteor:
+  stage: meteor-build
+  image: debian
+  script:
     - echo ${INFO} Installing NPM build dependencies
     - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor npm --loglevel=silent install
     - echo ${INFO} Performing Meteor build
@@ -72,6 +93,22 @@ build-alpine:
   tags:
     - docker
 
+kaniko-build:
+  stage: kaniko
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - echo ${INFO} Starting docker image build with Kaniko for ${CI_BUILD_REF_NAME}
+    - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$IMAGE_TAG
+  only:
+    - master
+    - dev
+  tags:
+    - docker
+
 build-docker:
   stage: docker
   image: docker:18.06.3-ce
@@ -80,7 +117,7 @@ build-docker:
     - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --build-arg ADMIN_EMAIL='${GITLAB_USER_EMAIL}' --build-arg MONGO_URL='${MONGO_URL}' --build-arg ROOT_URL='${ROOT_URL}' .
-    - docker push ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG}
+    - docker push ${$CI_REGISTRY_IMAGE}:${IMAGE_TAG}
   only:
     - master
     - dev
