@@ -43,8 +43,6 @@ meteor-install:
     refs:
       - master
       - dev
-    changes:
-      - .meteor/release
   tags:
     - docker
 
