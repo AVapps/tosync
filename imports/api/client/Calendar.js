@@ -134,6 +134,7 @@ Calendar = {
           }
         } else {
           // Remove
+          oldDoc = _transformEvent(oldDoc)
           if (oldDoc.start.isSame(oldDoc.end, 'day')) {
             this.removeEventFromDate(oldDoc, oldDoc.start)
           } else {

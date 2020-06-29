@@ -1,7 +1,7 @@
 import Driver from 'driver.js'
 import 'driver.js/dist/driver.min.css'
 
-export default function firstUseDrive() {
+export default function firstUseDrive(count) {
   $(() => {
     const driver = new Driver({
       doneBtnText: 'Terminé',
@@ -11,8 +11,7 @@ export default function firstUseDrive() {
       prevBtnText: 'Précédent'
     })
 
-    // Define the steps for introduction
-    driver.defineSteps([
+    const steps = [
       {
         element: '#statusButton',
         popover: {
@@ -45,9 +44,34 @@ export default function firstUseDrive() {
           description: `N'oubliez pas de consulter les conditions d'utilisation et de gestion des données personnelles !`,
           position: 'top-right'
         }
+      },
+      {
+        element: '#baseSelect',
+        popover: {
+          title: 'Base',
+          description: `Sélectionnez votre base d'affectation pour améliorer la détection des rotations.`,
+          position: 'bottom-center'
+        }
       }
-    ])
+    ]
+
+    // Define the steps for introduction
+    driver.defineSteps(steps)
     // Start the introduction
-    driver.start()
+    let start
+    switch (count) {
+      case 1:
+        start = 4
+        break
+      default:
+        start = 0
+    }
+
+    $('#navbar-collapse')
+      .one('shown.bs.collapse', () => {
+        driver.start(start)
+      })
+      .collapse('show')
   })
+  return 2
 }

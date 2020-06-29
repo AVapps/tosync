@@ -241,8 +241,8 @@ Controller = {
 	setSelectedDay(day) {
     if (day.tag && !day.allday) {
       if (day.tag === 'rotation') {
-        day.events = _.map(day.events, evt => this.Remu.findEvent(evt))
-        day.etapes = _.filter(day.events, evt => evt.tag === 'vol' || evt.tag === 'mep')
+        day.events = _.map(day.events, evt => evt ? this.Remu.findEvent(evt): null)
+        day.etapes = _.filter(day.events, evt => _.has(evt, 'tag') && (evt.tag === 'vol' || evt.tag === 'mep'))
         day.rotation = _.find(day.events, { tag: 'rotation' })
         if (day.rotation) {
           day.svs = _.filter(day.rotation.sv, sv => sv.tsStart.isSame(day.date, 'day') || sv.tsEnd.isSame(day.date, 'day'))

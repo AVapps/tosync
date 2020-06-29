@@ -9,9 +9,10 @@ Template.main.onRendered(function () {
   Tracker.autorun(c => {
     if (Meteor.userId()) {
       Config.onReady(() => {
-        if (Config.get('firstUse') < 1) {
-          Config.set('firstUse', 1)
-          firstUseDrive()
+        const count = Config.get('firstUse')
+        if (!count || count < 2) {
+          const newCount  = firstUseDrive(count)
+          Config.set('firstUse', newCount)
         }
       })
       c.stop()

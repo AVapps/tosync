@@ -2,13 +2,27 @@
   {{#if isLoggedIn }}
     <div class="row">
       <div class="col-md mb-4 mb-md-0">
-        <p class="text-center">
-          <i class="fas fa-user"></i>&nbsp;
-          {{#with userProfile }}
-          <span class="text-capitalize">{{ prenom }}</span>
-          <span class="text-uppercase">{{ nom }}</span>
-          {{/with}}
-        </p>
+        <div class="d-flex justify-content-center align-items-center">
+          <p class="text-center">
+            <i class="fas fa-user"></i>&nbsp;
+            {{#with userProfile }}
+            <span class="text-capitalize">{{ prenom }}</span>
+            <span class="text-uppercase">{{ nom }}</span>
+            {{/with}}
+          </p>
+          <div class="input-group input-group-sm mb-3 w-auto ml-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Base</span>
+            </div>
+            <select id="baseSelect" class="custom-select custom-select-sm">
+              <option value="">...</option>
+              {{#each base in bases }}
+                <option value="{{ base }}" {{ selectedBase base }}>{{ base }}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+
         <button type="button" class="logout btn btn-sm btn-danger mx-auto d-block" {{ disabledOnConnectRunning }}>
       		<i class="fas fa-times"></i>&nbsp;Déconnexion
       	</button>

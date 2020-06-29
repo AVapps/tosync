@@ -25,6 +25,14 @@ Template.loginStatusBar.helpers({
     return (doneCb) => {
       App.requestPlanningSign().finally(doneCb)
     }
+  },
+
+  bases() {
+    return ['ORY','LYS','MPL','NTE']
+  },
+
+  selectedBase(base) {
+    return base === Config.get('base') ? 'selected' : ''
   }
 })
 
@@ -62,7 +70,16 @@ Template.loginStatusBar.events({
 		t.$('input[type=password]').val('')
 
 		return false
-	}
+	},
+
+  'change select#baseSelect': (e,t) => {
+    if (e.currentTarget.value && e.currentTarget.value.length === 3) {
+      Config.set('base', e.currentTarget.value)
+    } else {
+      Config.set('base', null)
+    }
+  }
+
 })
 
 /*** connectButton ***/

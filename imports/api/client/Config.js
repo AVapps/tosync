@@ -21,6 +21,7 @@ Config = {
 		Hcsr: 5.20,
     eHS: 'B',
     useCREWMobileFormat: false,
+    base: null,
     profil: {
       anciennete: 0,
       echelon: 1,

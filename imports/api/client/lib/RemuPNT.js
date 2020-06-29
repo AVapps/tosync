@@ -547,8 +547,8 @@ export default class RemuPNT {
         }
 
         const prorata = {
-          [debut.month]: (rot.split[debut.month].tv + (rot.split[debut.month].mep / 2)) / (tv + (mep / 2)),
-          [fin.month]: (rot.split[fin.month].tv + (rot.split[fin.month].mep / 2)) / (tv + (mep / 2))
+          [debut.month]: (rot.split[debut.month].tv + (rot.split[debut.month].mep / 2)) / (rot.tv + (rot.mep / 2)),
+          [fin.month]: (rot.split[fin.month].tv + (rot.split[fin.month].mep / 2)) / (rot.tv + (rot.mep / 2))
         }
 
         _.assign(rot.split[debut.month], {
@@ -620,7 +620,7 @@ export default class RemuPNT {
 
     if (sv.type === 'vol') {
       sv.debut = (first.tag === 'vol' ? first.real : first).start.toDateTime()
-      sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
+      sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start.valueOf(), { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
       sv.finTRprog = lastVol.end.toDateTime().plus({ hours: CONFIG_TO.postTR })
       sv.finTSVrAFprog = last.end.toDateTime().plus({ hours: CONFIG_AF.postTSVr })
       sv.finTR = lastVol.real.end.toDateTime().plus({ hours: CONFIG_TO.postTR })

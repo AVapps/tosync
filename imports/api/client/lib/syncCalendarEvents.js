@@ -21,7 +21,7 @@ export default {
             }
         });
 
-        const planning = new PlanningParser(events);
+        const planning = new PlanningParser(events)
 
         const first = planning.firstEvent(),
             last = planning.lastEvent(),
@@ -576,16 +576,16 @@ function _recomputeExistingRotation(rotationId) {
 }
 
 function _recomputeRotations(events, created = +moment()) {
-    const rotations = _.groupBy(events, 'rotationId');
+    const rotations = _.groupBy(events, 'rotationId')
     _.forEach(rotations, (vols, rotationId) => {
       Meteor.call('getRotation', rotationId, (error, rotation) => {
             if (error) {
-                Notify.error(error);
+                Notify.error(error)
             } else if (rotation && _.isArray(rotation.vols)) {
-                const planning = new PlanningParser(_.concat(rotation.vols, vols));
+                const planning = new PlanningParser(_.concat(rotation.vols, vols))
                 if (planning.rotations && planning.rotations.length === 1) {
                     const toInsert = [],
-                        recompRotation = planning.rotations[0];
+                        recompRotation = planning.rotations[0]
                     // Update rotation
                     Events.update(rotationId, {
                         $set: {
@@ -594,19 +594,19 @@ function _recomputeRotations(events, created = +moment()) {
                             end: recompRotation.end.valueOf(),
                             base: recompRotation.base
                         }
-                    });
+                    })
 
                     // Insert les vols ou update du svIndex des vols existants
                     _.forEach(recompRotation.vols, vol => {
                         if (vol._id) {
                             Events.update(vol._id, { $set: _.pick(vol, 'svIndex')})
                         } else {
-                            toInsert.push(vol);
+                            toInsert.push(vol)
                         }
                     });
-                    _insertEvents(toInsert, created);
+                    _insertEvents(toInsert, created)
                 } else {
-                    console.log("Impossible de recalculer la rotation avec les nouveaux vols !");
+                    console.log("Impossible de recalculer la rotation avec les nouveaux vols !", vols, rotation)
                 }
             }
         });
