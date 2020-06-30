@@ -1,5 +1,4 @@
 stages:
-  - meteor-install
   - meteor-build
   - alpine-build
   - kaniko
@@ -11,7 +10,7 @@ variables:
   ROOT_URL: "https://${APPNAME}.${DOMAIN}"
   IMAGE_TAG: "${CI_BUILD_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   MONGO_URL: "mongodb://mongodb:27017/${APPNAME}"
-  INFO: "[minimeteor]"
+  INFO: "[meteor-docker]"
   USERNAME: "user"
   USERHOME: "/home/user"
 
@@ -19,38 +18,24 @@ before_script:
   - if [[ ${CI_BUILD_REF_NAME} = "master" && $CI_COMMIT_TAG ]]; then IMAGE_TAG="stable-${CI_COMMIT_TAG}"; fi
   - if [[ ${CI_BUILD_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; fi
 
-meteor-install:
-  stage: meteor-install
-  image: debian
-  script:
-    - echo ${INFO} Meteor container started
-    - echo ${INFO} Updating apt
-    - apt-get -qq update
-    - echo ${INFO} Installing tools
-    - apt-get -qq install curl procps python g++ make sudo >/dev/null
-    - echo ${INFO} Copying files
-    - useradd -m ${USERNAME}
-    - chown -R ${USERNAME} .
-    - sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
-  cache:
-    key:
-      files:
-        - .meteor/release
-    paths:
-      - .meteor
-    policy: pull-push
-  only:
-    refs:
-      - master
-      - dev
-  tags:
-    - docker
-
-
 build-meteor:
   stage: meteor-build
   image: debian
   script:
+    - echo ${INFO} Meteor container started
+    - useradd -m $USERNAME
+    - chown -R $USERNAME .
+    - |
+      if ! test -x "$USERHOME/.meteor/meteor"
+      then
+        echo ${INFO} Installing meteor;
+        echo ${INFO} Updating apt;
+        apt-get -qq update;
+        echo ${INFO} Installing tools;
+        apt-get -qq install curl procps python g++ make sudo >/dev/null
+        echo ${INFO} Copying files
+        sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
+      fi
     - echo ${INFO} Installing NPM build dependencies
     - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor npm --loglevel=silent install
     - echo ${INFO} Performing Meteor build
@@ -58,22 +43,25 @@ build-meteor:
     - chown -R ${USERNAME} meteor-build
     - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor build --directory ./meteor-build
     - echo ${INFO} Meteor build container finished
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - meteor-build
   cache:
     key:
       files:
         - .meteor/release
     paths:
-      - .meteor
-    policy: pull
+      - $USERHOME/.meteor/
+      - node_modules/
+    policy: pull-push
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - meteor-build
   only:
-    - master
-    - dev
+    refs:
+      - master
+      - dev
   tags:
     - docker
+    - cache
 
 build-alpine:
   stage: alpine-build
