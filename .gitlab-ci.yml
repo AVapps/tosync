@@ -62,6 +62,13 @@ build-meteor:
     expire_in: 1 day
     paths:
       - meteor-build
+  cache:
+    key:
+      files:
+        - .meteor/release
+    paths:
+      - .meteor
+    policy: pull
   only:
     - master
     - dev
