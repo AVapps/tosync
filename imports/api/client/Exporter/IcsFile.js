@@ -73,6 +73,7 @@ export const IcsFile = {
     const tags = Config.get('iCalendarTags')
     const useCREWMobileFormat = Config.get('useCREWMobileFormat')
     const filteredEvents = Export.filterEventsByTags(events, tags)
+    const exportOptions = Config.get('exportOptions')
 
 		_.forEach(filteredEvents, (event, index) => {
 			switch (event.tag) {
@@ -89,7 +90,7 @@ export const IcsFile = {
 					vevent.push(
             "CATEGORIES:" + event.tag.toUpperCase(),
             "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
-            "DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+            "DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
           )
 					endVEvent(vevent)
 					break
@@ -100,10 +101,9 @@ export const IcsFile = {
             "DTEND;VALUE=DATE:" + event.end.clone().startOf('day').add(1,'d').format(dateFormat),
             "CATEGORIES:" + event.tag.toUpperCase(),
             "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
-            "DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+            "DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
           )
 					endVEvent(veventR)
-          console.log(veventR)
 					break
 				case 'vol':
         case 'mep':
@@ -112,7 +112,7 @@ export const IcsFile = {
 					_vevent.push(
 						"CATEGORIES:" + event.tag.toUpperCase(),
 						"SUMMARY:" + Export.titre(_.defaults(event, {from: '', to: '', type: '', num: ''}), useCREWMobileFormat),
-						"DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+						"DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
 					)
 					endVEvent(_vevent)
 					break
@@ -122,7 +122,7 @@ export const IcsFile = {
 					__vevent.push(
 						"CATEGORIES:" + event.tag.toUpperCase(),
 						"SUMMARY:" + event.summary,
-						"DESCRIPTION:" + Export.description(event).replace(/\n/g, "\\n")
+						"DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
 					)
 					endVEvent(__vevent)
 					break

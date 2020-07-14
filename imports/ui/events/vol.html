@@ -1,34 +1,34 @@
 <template name="volDescriptionText">
-Départ  : {{ formatUTC start 'llll[Z]'}} {{ from }}
-Arrivée : {{ formatUTC end 'llll[Z]'}} {{ to }} ({{ tz }})
+Départ  : {{ formatUTC event.start 'llll[Z]'}} {{ event.from }}
+Arrivée : {{ formatUTC event.end 'llll[Z]'}} {{ event.to }} ({{ event.tz }}){{#if options.airport }}
 {{#each airports }}
-{{#if iata }}{{ iata }} : {{ city }} {{ name }} ({{ country }}) - {{ oaci }} ({{ altitude }}ft){{/if}}{{#if code }}{{ code }} : {{ nom }}{{/if}}{{/each}}
+{{#if iata }}{{ iata }} : {{ city }} {{ name }} ({{ country }}) - {{ oaci }} ({{ altitude }}ft){{/if}}{{#if code }}{{ code }} : {{ nom }}{{/if}}{{/each}}{{/if}}{{#if options.hdv }}
 
-{{#if isMEP}}Temps de MEP : {{ duree mep }}{{else}}Temps de vol : {{ duree tvp }}{{/if}}
+{{#if isMEP}}Temps de MEP : {{ duree event.mep }}{{else}}Temps de vol : {{ duree event.tvp }}{{/if}}{{/if}}
 
-Type avion : {{ type }}
-Fonction à bord : {{ fonction }}
-{{#if hasPEQ this }}
-{{> listeEquipageVol this }}{{/if}}
-{{#if remark }}
-Remarque : {{ remark }}
-{{/if}}{{#if isPNT }}
+Type avion : {{ event.type }}
+Fonction à bord : {{ event.fonction }}{{#if options.equipage }}
+{{#if hasPEQ event }}
+{{> listeEquipageVol event }}{{/if}}{{/if}}
+{{#if event.remark }}
+Remarque : {{ event.remark }}
+{{/if}}{{#if isPNT }}{{#if options.remuA }}
 Rémunération A
 --------------
-HV100%(r) : {{ duree hv100TO }}
-HVnuit : {{ duree HVnuit }}
-
+HV100%(r) : {{ duree event.hv100TO }}
+HVnuit : {{ duree event.HVnuit }}{{/if}}
+{{#if options.remuB }}
 Rémunération B et C
 ----------------
-Temps de vol de référence : {{ duree tvrefAF }}
-HV100% : {{ duree hv100AF }}
-HV100%(r) : {{ duree hv100rAF }}
-{{ else }}
+Temps de vol de référence : {{ duree event.tvrefAF }}
+HV100% : {{ duree event.hv100AF }}
+HV100%(r) : {{ duree event.hv100rAF }}{{/if}}
+{{ else }}{{#if options.remu }}
 Rémunération
 ------------
-HV100%(r) : {{ duree hv100TO }}
-HVnuit : {{ duree HVnuit }}
-{{/if}}
+HV100%(r) : {{ duree event.hv100TO }}
+HVnuit : {{ duree event.HVnuit }}
+{{/if}}{{/if}}
 </template>
 
 <template name="listeEquipageVol">

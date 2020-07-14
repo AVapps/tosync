@@ -14,6 +14,25 @@ Config = {
 		calendarMode: 'table',
 		googleCalendarIds: {},
     iCalendarTags: ['rotation', 'vol', 'sol', 'instruction', 'repos', 'conges'],
+    eventsColors: {
+      'vol': undefined,
+      'rotation': undefined,
+      'repos': undefined,
+      'conges': undefined,
+      'sol': undefined,
+      'instruction': undefined,
+      'sanssolde': undefined,
+      'maladie': undefined,
+      'blanc': undefined
+    },
+    exportOptions: {
+      airport: true,
+      hdv: true,
+      equipage: true,
+      remu: true,
+      remuA: true,
+      remuB: true
+    },
 		currentMonth: {
 			month: moment().month(),
 			year: moment().year()
@@ -53,13 +72,16 @@ Config = {
           if (config.googleCalendarIds && _.some(config.googleCalendarIds, (list, key) => _.includes(Utils.tags, key))) {
             this.resetCalendarIds()
           }
-          if (!_.has(config, 'iCalendarTags')) {
-            this._collection.update(config._id, {
-              $set: {
-                iCalendarTags: _.get(this._defaults, 'iCalendarTags')
-              }
-            })
-          }
+
+          _.forEach(['iCalendarTags', 'eventsColors', 'exportOptions'], option => {
+            if (!_.has(config, option)) {
+              this._collection.update(config._id, {
+                $set: {
+                  [option]: _.get(this._defaults, option)
+                }
+              })
+            }
+          })
 				}
 
 				this._ready.set(true)
@@ -89,6 +111,15 @@ Config = {
 	ready() {
 		return this._ready.get()
 	},
+
+  defaults(field) {
+    if (field) {
+			this._checkField(field)
+      return _.get(this._defaults, field)
+		} else {
+			return this._defaults
+		}
+  },
 
 	get(field) {
 		if (field) {
@@ -171,13 +202,9 @@ Config = {
 		});
 	},
 
-	defaults() {
-		return this._defaults;
-	},
-
 	_checkField(field) {
-		check(field, String);
-		if (!_.has(this._defaults, field)) throw new Meteor.Error('Unknown Config field', "Please provide à supported field !");
+		check(field, String)
+		if (!_.has(this._defaults, field)) throw new Meteor.Error('Unknown Config field', "Please provide à supported field !")
 	},
 
 	_selector() {

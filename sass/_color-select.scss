@@ -1,0 +1,44 @@
+.color-select {
+  display: inline-block;
+
+  .cs-items {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 2px;
+
+    .cs-item {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      border: none;
+      width: 20px;
+      height: 20px;
+      margin: 2px;
+      cursor: pointer;
+
+      &.cs-default {
+        color: #000;
+        background-color: #eee;
+
+        > svg {
+          color: #000;
+        }
+      }
+
+      > svg {
+        display: none;
+        margin: auto;
+        height: 12px;
+        width: 12px;
+        color: #fff;
+      }
+    }
+
+    .cs-item[data-selected] {
+      > svg {
+        display: inline-block;
+      }
+    }
+  }
+}

@@ -18,13 +18,39 @@ Template.google.helpers({
     return []
 	},
 
+  colors() {
+    const colors = Gapi.getColors()
+  	if (_.isArray(colors)) return colors
+    return []
+	},
+
+  selectedColor(tag) {
+    return Config.get(['eventsColors', tag].join('.'))
+  },
+
   calendarTags(calendar) {
     return _.get(Config.getCalendarTags(), calendar.id) || []
   },
 
   isSignedIn() {
     return Gapi.isSignedIn()
-  }
+  },
+
+  colorChanged(tag) {
+    return (color) => {
+      return (color) => {
+        Config.set(['eventsColors', tag].join('.'), color)
+      }
+    }
+  },
+
+  categories() {
+		return Export.getSyncCategories()
+	},
+
+  categoryLabel(tag) {
+		return Export.getSyncCategoryLabel(tag)
+	}
 })
 
 Template.google.events({
@@ -49,7 +75,11 @@ Template.google.events({
         t.ladda.stop()
   		},
       error => {
-        App.error(error)
+        if (error.error == 'sync-warning') {
+          App.warn(error.reason)
+        } else {
+          App.error(error)
+        }
         t.ladda.stop()
       }
     )

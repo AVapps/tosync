@@ -31,13 +31,14 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content text-body">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Sélectionnez les évènements à exporter</h5>
+            <h5 class="modal-title" id="exampleModalLongTitle">Options d'exportation</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
-            <form class="row">
+            <h5>Evènements à exporter</h5>
+            <div class="row">
               {{#with tags=iCalendarTags categories=categories }}
                 {{#each tag in categories }}
                   <div class="col-sm-6 text-left">
@@ -45,7 +46,10 @@
                   </div>
                 {{/each}}
               {{/with}}
-            </form>
+            </div>
+            <hr>
+            <h5>Informations à inclure dans le champ description</h5>
+            {{> exportOptions }}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>

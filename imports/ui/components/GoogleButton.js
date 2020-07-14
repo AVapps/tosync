@@ -49,7 +49,12 @@ Template.GoogleButton.events({
           t.state.set('loading', false)
     		},
         error => {
-          App.error(error)
+          if (error.error == 'sync-warning') {
+            App.warn(error.reason)
+            Modals.Google.open()
+          } else {
+            App.error(error)
+          }
           t.setProgress(0)
           t.state.set('loading', false)
         }

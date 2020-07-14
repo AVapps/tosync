@@ -1,0 +1,12 @@
+<template name="exportOptions">
+  <div class="export-options row">
+    {{#each option in options }}
+      <div class="col-sm-6 text-left">
+        <label class="custom-control custom-switch custom-control-inline">
+          <input type="checkbox" class="custom-control-input js-eo-checkbox" name="{{ option }}" checked={{ optionChecked option }}>
+          <span class="custom-control-label" for="{{ option }}">{{ optionLabel option }}</span>
+        </label>
+      </div>
+    {{/each}}
+  </div>
+</template>

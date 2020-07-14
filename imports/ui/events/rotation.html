@@ -1,38 +1,37 @@
 <template name="rotationDescriptionText">
-Départ  : {{ formatUTC start 'llll[Z]'}}
-Arrivée : {{ formatUTC end 'llll[Z]'}}
+Départ  : {{ formatUTC event.start 'llll[Z]'}}
+Arrivée : {{ formatUTC event.end 'llll[Z]'}}{{#if options.hdv }}
 
-Temps de vol total : {{ duree tvp }}
-Temps de MEP : {{ duree mep }}
-Nombre de jours : {{ nbjoursTO }}
+Temps de vol total : {{ duree event.tvp }}
+Temps de MEP : {{ duree event.mep }}
+Nombre de jours : {{ event.nbjoursTO }}{{/if}}{{#if options.equipage}}
 
-{{> listeEquipageRotation this }}
-
-{{#if isPNT }}Rémunération A
+{{> listeEquipageRotation event }}{{/if}}
+{{#if isPNT }}
+{{#if options.remuA }}Rémunération A
 --------------
-HCa : {{ numFormat HcaTO }}
-ΣH1 : {{ numFormat H1TO }}
-H2  : {{ numFormat H2TO }}
+HCa : {{ numFormat event.HcaTO }}
+ΣH1 : {{ numFormat event.H1TO }}
+H2  : {{ numFormat event.H2TO }}
 
-HVnuit : {{ duree HVnuit }}
-
-Rémunération B et C
+HVnuit : {{ duree event.HVnuit }}{{/if}}
+{{#if options.remuB }}Rémunération B et C
 ----------------
-HCa : {{ numFormat HcaAF }}
-ΣH1 : {{ numFormat H1AF }}
-H2  : {{ numFormat H2AF }}
-ΣH1(r) : {{ numFormat H1rAF }}
-H2(r)  : {{ numFormat H2rAF }}
+HCa : {{ numFormat event.HcaAF }}
+ΣH1 : {{ numFormat event.H1AF }}
+H2  : {{ numFormat event.H2AF }}
+ΣH1(r) : {{ numFormat event.H1rAF }}
+H2(r)  : {{ numFormat event.H2rAF }}
 
-TSV de nuit : {{ duree TSVnuit }}
-{{ else }}Rémunération
+TSV de nuit : {{ duree event.TSVnuit }}{{/if}}
+{{ else }}{{#if options.remu }}
+Rémunération
 ------------
-HCa : {{ numFormat HcaTO }}
-ΣH1 : {{ numFormat H1TO }}
-H2  : {{ numFormat H2TO }}
+HCa : {{ numFormat event.HcaTO }}
+ΣH1 : {{ numFormat event.H1TO }}
+H2  : {{ numFormat event.H2TO }}
 
-HVnuit : {{ duree HVnuit }}
-{{/if}}
+HVnuit : {{ duree event.HVnuit }}{{/if}}{{/if}}
 </template>
 
 <template name="listeEquipageRotation">

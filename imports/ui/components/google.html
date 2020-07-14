@@ -24,7 +24,7 @@
 
       		<h4>Sélectionnez les catégories d'évènements à importer dans vos calendriers Google Agenda</h4>
       		<form id="googleCalendarIds">
-        		<table class="table table-bordered table-condensed">
+        		<table class="table table-bordered table-condensed table-events">
         			<thead>
                 <tr>
         					<th class="label">Calendriers</th>
@@ -38,6 +38,31 @@
         			</tbody>
         		</table>
       		</form>
+
+          <hr>
+
+          <h4>Couleurs des évènements</h4>
+          <div class="row justify-content-center">
+            <div class="col-xl-8">
+              <div class="table-responsive">
+                <table class="table table-sm table-colors">
+                  <tbody>
+                    {{#each tag in categories }}
+                      <tr>
+                        <td class="tag"><span>{{ categoryLabel tag }}</span></td>
+                        <td class="select w-100">{{> colorSelect colors=colors value=(selectedColor tag) onChange=(colorChanged tag) }}</td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+
+          <h4>Informations à inclure dans le champ description</h4>
+          {{> exportOptions }}
 
           <hr>
 

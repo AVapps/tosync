@@ -23,7 +23,7 @@ const SYNC_CATEGORIES_LABEL = {
   'instruction': 'Instruction',
   'sanssolde': 'Sans solde',
   'maladie': 'Maladie',
-  'blanc': 'Blanc'
+  'blanc': 'Blancs'
 }
 
 const SYNC_TAG_CATEGORIES = {
@@ -49,6 +49,10 @@ const SYNC_TAG_CATEGORIES = {
 }
 
 export default {
+  getSyncCategorie(tag) {
+    return _.get(SYNC_TAG_CATEGORIES, tag)
+  },
+
   getSyncCategories() {
     return _.keys(SYNC_CATEGORIES)
   },
@@ -64,17 +68,19 @@ export default {
     })
   },
 
-  description(event) {
+  description(event, options) {
+    event.description = event.description ? event.description.replace(/\\n/g, "\n") : ""
+    const data = { event, options }
 		switch (event.tag) {
 			case 'conges':
-				return TemplatesIndex.events.conge ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.conge], event) : event.description.replace(/\\n/g, "\n")
+				return TemplatesIndex.events.conge ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.conge], data) : event.description
 			case 'repos':
-				return TemplatesIndex.events.repos ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.repos], event) : event.description.replace(/\\n/g, "\n")
+				return TemplatesIndex.events.repos ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.repos], data) : event.description
 			case 'rotation':
-				return TemplatesIndex.events.rotation ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.rotation], event) : event.description.replace(/\\n/g, "\n")
+				return TemplatesIndex.events.rotation ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.rotation], data) : event.description
 			case 'vol':
 			case 'mep':
-				return TemplatesIndex.events.vol ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.vol], event) : event.description.replace(/\\n/g, "\n")
+				return TemplatesIndex.events.vol ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.vol], data) : event.description
       case 'sol':
       case 'stage':
       case 'simu':
@@ -82,9 +88,9 @@ export default {
       case 'delegation':
       case 'instructionSol':
       case 'instructionSimu':
-        return TemplatesIndex.events.sol ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.sol], event) : event.description.replace(/\\n/g, "\n")
+        return TemplatesIndex.events.sol ? Blaze.toHTMLWithData(Template[TemplatesIndex.events.sol], data) : event.description
 			default:
-				return event.description.replace(/\\n/g, "\n")
+				return event.description
 		}
 	},
 

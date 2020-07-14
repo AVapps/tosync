@@ -43,10 +43,10 @@
 
   .modal-body {
     h4 {
-      font-size: 1rem;
+      font-size: 1.2rem;
     }
 
-    table {
+    table.table-events {
       width: 100%;
       table-layout: fixed;
 
@@ -56,42 +56,57 @@
         overflow-x: hidden;
       }
 
+      th {
+        vertical-align: middle;
+
+        h3, h4 {
+          margin: 0;
+          text-overflow: ellipsis;
+          overflow-x: hidden;
+        }
+
+        span.badge {
+          display: block;
+          text-align: center;
+          text-overflow: ellipsis;
+          overflow-x: hidden;
+          hyphens: auto;
+        }
+      }
+
+      td {
+        text-align: center;
+        vertical-align: middle;
+        overflow-y: visible;
+
+        &.input {
+          cursor: pointer;
+        }
+
+        input[type=checkbox] {
+          height: 24px;
+          width: 24px;
+          cursor: pointer;
+        }
+      }
+
       .chosen-drop {
         z-index: 5000;
       }
     }
 
-    th {
-      vertical-align: middle;
-
-      h3, h4 {
-        margin: 0;
-        text-overflow: ellipsis;
-        overflow-x: hidden;
+    table.table-colors {
+      tr td {
+        vertical-align: middle;
       }
 
-      span.badge {
-        display: block;
-        text-align: center;
-        text-overflow: ellipsis;
-        overflow-x: hidden;
-        hyphens: auto;
-      }
-    }
-
-    td {
-      text-align: center;
-      vertical-align: middle;
-      overflow-y: visible;
-
-      &.input {
-        cursor: pointer;
+      td.tag span {
+        display: inline-block;
+        font-weight: bold;
       }
 
-      input[type=checkbox] {
-        height: 24px;
-        width: 24px;
-        cursor: pointer;
+      td.select {
+        text-align: right;
       }
     }
   }

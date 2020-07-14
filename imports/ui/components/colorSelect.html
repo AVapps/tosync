@@ -1,0 +1,15 @@
+<template name="colorSelect">
+  <div class="color-select">
+
+    <div class="cs-items">
+      <div class="cs-item cs-default" {{ colorItemAttr 0 selectedId }}>
+        <i class="fas fa-ban"></i>
+      </div>
+      {{#each color in colors }}
+        <div class="cs-item" {{ colorItemAttr color selectedId }}>
+          <i class="fas fa-check"></i>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+</template>

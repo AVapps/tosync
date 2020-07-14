@@ -6,6 +6,7 @@ import 'bootstrap/js/dist/util.js'
 import 'bootstrap/js/dist/collapse.js'
 import 'bootstrap/js/dist/dropdown.js'
 import 'bootstrap/js/dist/modal.js'
+import 'bootstrap/js/dist/tooltip.js'
 
 import 'sweetalert2/dist/sweetalert2.css'
 // import 'ladda/dist/ladda-themeless.min.css'
@@ -26,6 +27,8 @@ import '/imports/ui/components/eventLabel.js'
 import '/imports/ui/components/removeButton.js'
 import '/imports/ui/components/LaddaButton.js'
 import '/imports/ui/components/GoogleButton.js'
+import '/imports/ui/components/colorSelect.js'
+import '/imports/ui/components/exportOptions.js'
 import '/imports/ui/components/adminPNImport.js'
 
 

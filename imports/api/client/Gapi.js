@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor'
 import { ReactiveVar } from 'meteor/reactive-var'
 import _ from 'lodash'
 
+import Modals from './Modals.js'
 import Export from './lib/Export.js'
 import GapiBatch from './lib/GapiBatch.js'
 
@@ -19,6 +20,7 @@ class Gapi {
     	this._ready = new ReactiveVar(false)
       this._isSignedIn = new ReactiveVar(false)
     	this._calendarList = new ReactiveVar([])
+      this._colors = new ReactiveVar([])
       this._backoffDelay = 1000
       this.auth = false
       this.currentUser = false
@@ -68,6 +70,7 @@ class Gapi {
     this._isSignedIn.set(isSignedIn)
     if (isSignedIn) {
       this.loadCalendarList()
+      this.loadColors()
     }
   }
 
@@ -118,12 +121,35 @@ class Gapi {
 		return this._calendarList.get()
 	}
 
+  getColors() {
+		return this._colors.get()
+	}
+
 	async loadCalendarList() {
     const calendarList = await this._getCalendarList()
     if (_.isArray(calendarList)) {
       this._calendarList.set(calendarList)
     }
     return calendarList
+	}
+
+  async loadColors() {
+    try {
+      const resp = await gapi.client.request({
+  			'path': '/calendar/v3/colors',
+  			'params': { fields: 'event' }
+  		})
+      if (_.has(resp, 'result.event')) {
+        const colors = []
+        _.forEach(resp.result.event, (color, id) => {
+          colors.push(_.extend({ id }, color))
+        })
+        this._colors.set(colors)
+        return colors
+      }
+    } catch (error) {
+      console.log(error)
+    }
 	}
 
   addTagToCalendarId(calendarId, tag) {
@@ -139,14 +165,16 @@ class Gapi {
 		progress(0)
 		const startOfMonth = moment().startOf('month')
 
-		if (!events.length) return error("Rien à synchroniser !")
+		if (!events.length) return []
 
 		const config = Config.getCalendarTags()
 		const authorizedCalendars = _.map(this.getCalendarList(), 'id')
 
 		if (!_.some(authorizedCalendars, calId => {
       return !_.isEmpty(config[calId])
-    })) return App.error("Sélectionnez au moins un calendrier !")
+    })) {
+      throw new Meteor.Error('sync-warning', "Sélectionnez au moins un type d'évènement à exporter dans un calendrier !")
+    }
 
 		const syncList = _.chain(authorizedCalendars)
       .map(calId => {
@@ -165,7 +193,9 @@ class Gapi {
 
 		const suffix = ('-' + Meteor.user().username) || 'METEORCREW'
 
-		if (suffix.length < 4) return App.error("Chaîne d'identification des évènements introuvable !")
+		if (suffix.length < 4) {
+      throw new Meteor.Error('sync-error', "Chaîne d'identification des évènements introuvable !")
+    }
 
 		const total = 2 * _.reduce(syncList, (count, sync) => {
       return count + sync.events.length
@@ -276,8 +306,12 @@ class Gapi {
 		const baseId = '' + Date.now() + ''
     const auth = this.currentUser.getAuthResponse()
     const useCREWMobileFormat = Config.get('useCREWMobileFormat')
+    const colors = Config.get('eventsColors')
+    const exportOptions = Config.get('exportOptions')
+
     const requests = _.map(events, (evt, index) => {
-      const data = this._transform(evt, baseId, index, useCREWMobileFormat)
+      const colorId = _.get(colors, Export.getSyncCategorie(evt.tag))
+      const data = this._transform(evt, baseId, index, useCREWMobileFormat, colorId, exportOptions)
 			return {
         'method': 'POST',
 				'path': '/calendar/v3/calendars/' + calendarId + '/events',
@@ -362,7 +396,7 @@ class Gapi {
     return batch
 	}
 
-	_transform(event, baseId, index, useCREWMobileFormat) {
+	_transform(event, baseId, index, useCREWMobileFormat, colorId, exportOptions) {
 		let body = {
 			iCalUID: baseId + index + '-METEORCREW',
 			start: {
@@ -375,6 +409,8 @@ class Gapi {
 				useDefault: false
 			}
 		}
+
+    if (colorId) body.colorId = colorId
 
 		switch (event.tag) {
 			case 'absence':
@@ -392,7 +428,7 @@ class Gapi {
 						date: event.start.clone().add(1, 'd').format('YYYY-MM-DD')
 					},
 					summary: Export.titre(event, useCREWMobileFormat),
-					description: Export.description(event)
+					description: Export.description(event, exportOptions)
 				})
       case 'rotation':
 				return _.extend(body, {
@@ -403,22 +439,22 @@ class Gapi {
 						date: event.end.clone().add(1, 'd').format('YYYY-MM-DD')
 					},
 					summary: Export.titre(event, useCREWMobileFormat),
-					description: Export.description(event)
+					description: Export.description(event, exportOptions)
 				})
 			case 'vol':
 				return _.extend(body, {
 					summary: Export.titre(_.defaults(event, {from: '', to: '', type: '', num: ''}), useCREWMobileFormat),
-					description: Export.description(event),
+					description: Export.description(event, exportOptions),
 				})
 			case 'mep':
 				return _.extend(body, {
 					summary: Export.titre(event, useCREWMobileFormat),
-					description: Export.description(event),
+					description: Export.description(event, exportOptions),
 				})
 			default:
 				return _.extend(body, {
           summary: event.summary,
-          description: Export.description(event)
+          description: Export.description(event, exportOptions)
         })
 		}
 	}

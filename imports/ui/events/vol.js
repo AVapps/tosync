@@ -5,7 +5,7 @@ import AirportsData from '/imports/api/client/lib/AirportsData.js'
 
 Template.volDescriptionText.helpers({
 	airports() {
-		return _.chain([this.from, this.to])
+		return _.chain([this.event.from, this.event.to])
 			.without('ORY', 'CDG')
 			.map(code => AirportsData.find(code))
 			.filter(_.identity)
@@ -13,7 +13,7 @@ Template.volDescriptionText.helpers({
 	},
 
 	isMEP() {
-		return this.tag === 'mep';
+		return this.event.tag === 'mep';
 	},
 
   hasPEQ(vol) {

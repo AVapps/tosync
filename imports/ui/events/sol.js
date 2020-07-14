@@ -11,6 +11,6 @@ Template.solDescriptionText.helpers({
   },
 
   content() {
-    return this.description.replace(/\\n/g, "\n")
+    return this.event.description
   }
 })

@@ -1,23 +1,23 @@
 <template name="solDescriptionText">
 {{ content }}
-
-{{#with jourSol start }}{{#if isPNT }}Rémunération A
---------------{{# if HcsTO }}
-Hcs : {{ numFormat HcsTO }}{{/if}}{{# if HcsiTO }}
-Hcsi : {{ numFormat HcsiTO }}{{/if}}{{# if HcSimuInstTO }}
-HcSimuInst : {{ numFormat HcSimuInstTO }}{{/if}}{{# if HcsrTO }}
-Hcsr : {{ numFormat HcsrTO }}{{/if}}
-
+{{#let jour=(jourSol event.start) options=options }}{{#if isPNT }}{{#if options.remuA }}
+Rémunération A
+--------------{{# if jour.HcsTO }}
+Hcs : {{ numFormat jour.HcsTO }}{{/if}}{{# if jour.HcsiTO }}
+Hcsi : {{ numFormat jour.HcsiTO }}{{/if}}{{# if jour.HcSimuInstTO }}
+HcSimuInst : {{ numFormat jour.HcSimuInstTO }}{{/if}}{{# if jour.HcsrTO }}
+Hcsr : {{ numFormat jour.HcsrTO }}{{/if}}
+{{/if}}{{#if options.remuB }}
 Rémunération B et C
-------------------{{# if HcsAF }}
-Hcs : {{ numFormat HcsAF }}{{/if}}{{# if PVAF }}
-PV : {{ numFormat PVAF }}{{/if}}{{# if majoNuitPVAF }}
-PVnuit : {{ numFormat majoNuitPVAF }}{{/if}}
-{{ else }}Rémunération
-------------{{# if HcsTO }}
-Hcs : {{ numFormat HcsTO }}{{/if}}{{# if HcsiTO }}
-Hcsi : {{ numFormat HcsiTO }}{{/if}}{{# if HcSimuInstTO }}
-HcSimuInst : {{ numFormat HcSimuInstTO }}{{/if}}{{# if HcsrTO }}
-Hcsr : {{ numFormat HcsrTO }}{{/if}}
-{{/if}}{{/with}}
+------------------{{# if jour.HcsAF }}
+Hcs : {{ numFormat jour.HcsAF }}{{/if}}{{# if jour.PVAF }}
+PV : {{ numFormat jour.PVAF }}{{/if}}{{# if jour.majoNuitPVAF }}
+PVnuit : {{ numFormat jour.majoNuitPVAF }}{{/if}}{{/if}}
+{{ else }}{{#if options.remu }}Rémunération
+------------{{# if jour.HcsTO }}
+Hcs : {{ numFormat jour.HcsTO }}{{/if}}{{# if jour.HcsiTO }}
+Hcsi : {{ numFormat jour.HcsiTO }}{{/if}}{{# if jour.HcSimuInstTO }}
+HcSimuInst : {{ numFormat jour.HcSimuInstTO }}{{/if}}{{# if jour.HcsrTO }}
+Hcsr : {{ numFormat jour.HcsrTO }}{{/if}}{{/if}}{{/if}}
+{{/let}}
 </template>
