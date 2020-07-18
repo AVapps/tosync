@@ -5,7 +5,7 @@ import Export from '/imports/api/client/lib/Export.js'
 import TemplatesIndex from '/imports/api/client/lib/TemplatesIndex.js'
 
 export const IcsFile = {
-	generate(events) {
+	generate(events, filename = 'TOSync_plannning.ics') {
 		const calArray = [
 			"BEGIN:VCALENDAR",
 			"VERSION:2.0",
@@ -131,9 +131,11 @@ export const IcsFile = {
 
 		calArray.push("END:VCALENDAR")
 
+    filename = filename || 'TOSync_plannning.ics'
+
     let shared = false
     try {
-      const filesArray = [ new File([calArray.join("\r\n")], 'TOSync_plannning.ics', { type: "text/calendar" }) ]
+      const filesArray = [ new File([calArray.join("\r\n")], filename, { type: "text/calendar" }) ]
       if (navigator.canShare && navigator.canShare({ files: filesArray })) {
         // const blob = new Blob(, { type: "text/calendar" })
         navigator.share({
@@ -152,7 +154,7 @@ export const IcsFile = {
     if (!shared) {
       console.log(`[Your system doesn't support sharing files.]`)
       const blob = new Blob([calArray.join("\r\n")], { type: "text/calendar" })
-      saveAs(blob, 'TOSync_plannning.ics')
+      saveAs(blob, filename)
     }
 	}
 }

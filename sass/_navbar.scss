@@ -21,6 +21,10 @@
   margin: 0 -1.5rem;
   box-shadow: inset 0 0 10px -1px black;
 
+  .container-xl {
+    padding: 0px;
+  }
+
   form#login {
     display: block;
     margin-left: auto;

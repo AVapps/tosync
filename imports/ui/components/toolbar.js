@@ -39,6 +39,11 @@ Template.toolbar.events({
 		App.exportIcs()
 	},
 
+  'click button.js-csv-export': function (e, t) {
+		e.preventDefault()
+		App.exportHdvTable()
+	},
+
 	'click button.js-icalendar-import': function (e, t) {
 		e.preventDefault()
 

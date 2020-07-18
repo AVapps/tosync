@@ -1,17 +1,17 @@
 <template name="toolbar">
 	<div id="toolbar">
     <div class="row justify-content-center">
-      <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+      <div class="col-lg-3 col-sm-6 mt-0">
         <button type="button" class="js-icalendar-import btn btn-success btn-block">
   				<i class="fas fa-file-import"></i>
   				<span class="label">Importer un fichier ics</span>
   			</button>
 			  <input id="filereader" type="file" class="d-none" accept="text/calendar" />
       </div>
-      <div class="col-lg-4 col-md-6 mt-2 mt-md-0">
+      <div class="col-lg-3 col-sm-6 mt-sm-0 mt-2">
         <div class="btn-group btn-block" role="group">
     	    <button type="button" class="js-icalendar-export btn btn-primary ladda-button ellipsis flex-grow-1" data-style="zoom-out" {{ disabledIfNoEvents }}>
-    				<i class="fas fa-file-export"></i>
+    				<i class="fas fa-calendar-plus"></i>
     				<span class="label">Exportation iCalendar</span>
     			</button>
           <button type="button" class="js-icalendar-settings btn btn-primary flex-grow-0">
@@ -19,8 +19,14 @@
           </button>
         </div>
       </div>
-      <div class="col-lg-4 col-md-6 mt-2 mt-md-3 mt-lg-0">
+      <div class="col-lg-3 col-sm-6 mt-lg-0 mt-2">
   			{{> GoogleButton disabled=disabledIfNoEvents }}
+      </div>
+      <div class="col-lg-3 col-sm-6 mt-lg-0 mt-2">
+        <button type="button" class="js-csv-export btn btn-secondary btn-block" {{ disabledIfNoEvents }}>
+  				<i class="fas fa-file-csv"></i>
+  				<span class="label">Heures de vol</span>
+  			</button>
       </div>
     </div>
     <div class="custom-control custom-switch mt-3 text-md-center">
