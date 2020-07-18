@@ -159,6 +159,14 @@ Calendar = {
     })
   },
 
+  addBlancs() {
+    const weekday = moment().weekday()
+    const maxDate = moment().weekday(weekday >= 4 ? 4 : -3).add(31, 'days').format('YYYY-MM-DD')
+    this.days.update({ events: [], slug: { $lte: maxDate }}, {
+      $set: { tag: 'blanc', allday: true, label: 'Blanc' }
+    }, { multi: true })
+  },
+
   addEventToDate(doc, date) {
     const slug = date.format('YYYY-MM-DD')
     Tracker.nonreactive(() => {
@@ -221,60 +229,6 @@ Calendar = {
     })
   },
 
-	generateDaysData(events) {
-    events = _.filter(events, evt => {
-			if (evt.start && evt.end && moment.isMoment(evt.start) && moment.isMoment(evt.end)) {
-				return evt.end.isAfter(this.start) && evt.start.isBefore(this.end)
-			} else {
-				return false
-			}
-		})
-
-    const eventsByDate = {}
-
-    _.forEach(events, evt => {
-      if (evt.start.isSame(evt.end, 'day')) {
-        const slug = evt.start.format('YYYY-MM-DD')
-        if (!_.has(eventsByDate, slug)) eventsByDate[slug] = []
-        eventsByDate[slug].push(evt)
-      } else {
-        const cursor = evt.start.clone()
-        while (cursor.isBefore(evt.end, 'day') || cursor.isSame(evt.end, 'day')) {
-          const slug = cursor.format('YYYY-MM-DD')
-          if (!_.has(eventsByDate, slug)) eventsByDate[slug] = []
-          eventsByDate[slug].push(evt)
-          cursor.add(1, 'day')
-        }
-      }
-    })
-
-    this.days.find().forEach(day => {
-      if (_.has(eventsByDate, day.slug)) {
-        const events = _.get(eventsByDate, day.slug)
-        const params = this.getDayParams(events)
-        this.days.update(day._id, {
-          $set: _.extend(params, { events }),
-          $addToSet: { classes: 'event' }
-        })
-      } else {
-        this.days.update(day._id, {
-          $unset: { tag: '', allday: '' },
-          $pull: { classes: 'event' },
-          $set: { events: [] }
-        })
-      }
-    })
-
-    _.forEach(eventsByDate, (events, slug) => {
-      const params = this.getDayParams(events)
-
-      this.days.update({ slug }, {
-        $set: _.extend(params, { events }),
-        $addToSet: { classes: 'event' }
-      })
-    })
-	},
-
   getDayParams(events) {
     // console.log('getDayParams', events)
     const hasRotation = _.some(events, evt => {
@@ -283,10 +237,13 @@ Calendar = {
     if (hasRotation) {
       return {
         tag: 'rotation',
-        allday: false
+        allday: false,
+        label: 'Rotation'
       }
     } else {
-      if (!events.length || !_.has(_.first(events), 'tag')) debugger
+      if (!events.length || !_.has(_.first(events), 'tag')) {
+        return { tag: 'blanc', allday: true, label: 'Blanc' }
+      }
       const specialCategoryEvent = _.find(events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
       const tag = specialCategoryEvent ? specialCategoryEvent.tag : _.first(events).tag
       return { tag, allday: _.includes(Utils.alldayTags, tag) }
@@ -299,5 +256,17 @@ Calendar = {
 
   getDays() {
     return this.days.find({}, { sort: [['slug', 'asc']] })
+  },
+
+  getBlancEvents() {
+    return this.days.find({ tag: 'blanc', events: [] }).map(day => {
+      return {
+        tag: 'blanc',
+        start: day.date.clone(),
+        end: day.date.clone().endOf('day'),
+        summary: 'Blanc',
+        description: ''
+      }
+    })
   }
 };

@@ -37,7 +37,7 @@ export default {
   ],
 
   categories: {
-    'ABSJ': 'blanc', // Absence excusée payée
+    'ABSJ': 'autre', // Absence excusée payée
     'ABSNJ': 'absence', // Absence PN non excusée non payée
     'BLANC': 'blanc',
     'BLANCVOL': 'blanc', // Blanc suite à un swap vol contre blanc
@@ -62,7 +62,7 @@ export default {
 		'CAPA': 'sanssolde',
 		'CPE': 'sanssolde', // Congé parental d'éducation
 		'INST': 'instructionSol',
-		'CS_M': 'sol', // MDC
+		'CS_M': 'instructionSol', // MDC
     'CS_C': 'instructionSol', // MDC INST
     'MINT': 'sol', // Réunion Inst
     'WORK': 'sol', // Réunion
@@ -114,7 +114,7 @@ export default {
     'OFFHS': 'maladie', // Arrêt maladie sur OFF
     'FATIG': 'sanssolde', // Clause fatigue PN
 		'GREV': 'greve',
-		'NPL': 'blanc' // Non planifiable
+		'NPL': 'autre' // Non planifiable
 	},
 
 	titre(evt) {

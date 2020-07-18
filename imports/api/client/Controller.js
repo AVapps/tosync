@@ -115,6 +115,7 @@ Controller = {
         }, { sort: [['start', 'asc'], ['end', 'desc']] })
 
         this.Calendar.observeEvents(eventsCursor)
+        this.Calendar.addBlancs()
 
         console.timeEnd('Controller.updateCalendarEventsObserver')
       }

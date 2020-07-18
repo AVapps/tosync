@@ -4,6 +4,7 @@ import { IcsFile } from './Exporter/IcsFile.js'
 import parseIcsFile from '/imports/api/toconnect/client/parseICSFile.js'
 import Modals from '/imports/api/client/Modals.js'
 import Swal from 'sweetalert2'
+import _ from 'lodash'
 
 App = {
 	async sync() {
@@ -80,7 +81,7 @@ App = {
   },
 
 	eventsToSync() {
-		return Controller.Planning.eventsToSync()
+		return _.sortBy(Controller.Planning.eventsToSync().concat(Controller.Calendar.getBlancEvents()), 'start')
 	},
 
 	support: {
