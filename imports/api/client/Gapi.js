@@ -13,6 +13,12 @@ const SCOPES = [
 ]
 const DISCOVERY_DOCS = [ 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest' ]
 
+function wait(ms) {
+  return new Promise((resolve, reject) => {
+    Meteor.setTimeout(resolve, ms)
+  })
+}
+
 class Gapi {
   constructor() {
     if (!Gapi.instance) {
@@ -70,7 +76,7 @@ class Gapi {
     this._isSignedIn.set(isSignedIn)
     if (isSignedIn) {
       this.loadCalendarList()
-      this.loadColors()
+      wait(100).then(() => this.loadColors())
     }
   }
 
@@ -97,12 +103,9 @@ class Gapi {
 	async _getCalendarList() {
 		// Charge la liste des agendas
     try {
-      const resp = await gapi.client.request({
-  			'path': '/calendar/v3/users/me/calendarList',
-  			'params': {
-  				minAccessRole: 'owner',
-  				fields: 'items(accessRole,backgroundColor,foregroundColor,id,primary,summary,timeZone)'
-  			}
+      const resp = await gapi.client.calendar.calendarList.list({
+				minAccessRole: 'owner',
+				fields: 'items(accessRole,backgroundColor,foregroundColor,id,primary,summary,timeZone)'
   		})
       if (_.has(resp, 'result.items') && resp.result.items.length) {
         return _.sortBy(resp.result.items, item => {
@@ -135,10 +138,7 @@ class Gapi {
 
   async loadColors() {
     try {
-      const resp = await gapi.client.request({
-  			'path': '/calendar/v3/colors',
-  			'params': { fields: 'event' }
-  		})
+      const resp = await gapi.client.calendar.colors.get({ fields : 'event' })
       if (_.has(resp, 'result.event')) {
         const colors = []
         _.forEach(resp.result.event, (color, id) => {
@@ -215,17 +215,18 @@ class Gapi {
     const results = []
     for (const sync of syncList) {
       results.push(await this._processSyncTask(sync, start, end, suffix, incrProgress))
+      await wait(500)
     }
     return Promise.all(results)
 	}
 
 	async _processSyncTask(sync, start, end, suffix, incrProgress) {
-    const respClear = await this._clearEvents(sync.calendarId, start, end, suffix)
+    const respClear = await this._clearEventsGapiClientBatch(sync.calendarId, start, end, suffix)
     console.log(respClear)
     if (respClear) {
       incrProgress(sync.events.length)
-
-      const respInsert = await this._insertEvents(sync.calendarId, sync.events)
+      await wait(500)
+      const respInsert = await this._insertEventsGapiClientBatch(sync.calendarId, sync.events)
 
       incrProgress(sync.events.length)
 
@@ -326,30 +327,44 @@ class Gapi {
     return resp
 	}
 
-	async __clearEventsBatch(calendarId, start, end, suffix) {
+  async _insertEventsGapiClientBatch(calendarId, events) {
+		const baseId = '' + Date.now() + ''
+    const auth = this.currentUser.getAuthResponse()
+    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
+    const colors = Config.get('eventsColors')
+    const exportOptions = Config.get('exportOptions')
+
+    const insertBatch = gapi.client.newBatch()
+    _.forEach(events, (evt, index) => {
+      const colorId = _.get(colors, Export.getSyncCategorie(evt.tag))
+      const data = this._transform(evt, baseId, index, useCREWMobileFormat, colorId, exportOptions)
+      insertBatch.add(gapi.client.calendar.events.insert({ calendarId, resource: data }), { id: data.iCalUID })
+    })
+
+    return insertBatch
+	}
+
+	async _clearEventsGapiClientBatch(calendarId, start, end, suffix) {
+    const respFind = await gapi.client.calendar.events.list({
+      calendarId,
+			timeMin: start.format(),
+			timeMax: end.format(),
+			maxResults: 999,
+      singleEvents: true,
+			fields: 'items(iCalUID,id)'
+    })
+
 		const deleteBatch = gapi.client.newBatch()
 		let count = 0
 
-		const resp = await gapi.client.request({
-			'path': '/calendar/v3/calendars/'+calendarId+'/events',
-			'params': {
-				timeMin: start.format(),
-				timeMax: end.format(),
-				maxResults: 999,
-				fields: 'items(iCalUID,id)'
-			}
-		})
-
-    if (_.has(resp, 'result.items') && resp.result.items.length) {
-      _.forEach(resp.result.items, function (item, index) {
+    if (_.has(respFind, 'result.items') && respFind.result.items.length) {
+      _.forEach(respFind.result.items, item => {
         if (item.iCalUID.substr(-7) === 'CHOPETO' || item.iCalUID.substr(-10) === 'METEORCREW' || item.iCalUID.substr(-4) === suffix || item.id.substr(-4) === suffix) {
-          deleteBatch.add(
-            gapi.client.request({
-              'method': 'DELETE',
-              'path': '/calendar/v3/calendars/'+calendarId+'/events/'+item.id,
-              'params': { sendUpdates: 'none' }
-            })
-          )
+          deleteBatch.add(gapi.client.calendar.events.delete({
+            calendarId,
+            eventId: item.id,
+            sendUpdates: 'none',
+          }), { id: item.iCalUID })
           count++
         }
       })
@@ -357,43 +372,30 @@ class Gapi {
 
     if (count) {
       console.log('gapiClient : ' + count + ' events to delete found in "' + calendarId + '"')
-      const resp = await deleteBatch
+      await wait(500)
+      const respDelete = await deleteBatch
 
-      if (_.has(resp, 'result') && _.isObject(resp.result)) {
-        const clearCount = _.reduce(resp.result, (count, result, id) => {
-          return result && _.isEmpty(result.result) && result.status == 204 ? count+1 : count
+      if (_.has(respDelete, 'result') && _.isObject(respDelete.result)) {
+        let clearCount = _.reduce(respDelete.result, (t, result, id) => {
+          return result && _.isEmpty(result.result) && result.status == 204 ? t+1 : t
         }, 0)
 
         const diff = count - clearCount
 
         if (diff === 0) {
-          return resp
+          return respDelete
         } else if (diff < 5) {
           App.error(`${diff} évènements n'ont pas été supprimés de l'agenda !`)
-          return resp
+          return respDelete
         } else {
           throw new Meteor.Error("Echec", "Trop d'évènements n'ont pu être supprimés de l'agenda : " + calendarId + ": Synchronisation annulée !")
         }
       } else {
-        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n!!! Synchronisation annulée !!!")
+        throw new Meteor.Error("Echec", "Des évènements n'ont pu être supprimés de l'agenda : " + calendarId + "\n\n Synchronisation annulée !")
       }
     } else {
       return true
     }
-	}
-
-	__insertEventsBatch(calendarId, events) {
-		const baseId = '' + Date.now() + ''
-		const batch = gapi.client.newBatch()
-    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
-		_.forEach(events, (evt, index) => {
-			batch.add(gapi.client.request({
-				'path': '/calendar/v3/calendars/'+calendarId+'/events',
-				'method': 'POST',
-				'body': JSON.stringify(this._transform(evt, baseId, index, useCREWMobileFormat))
-			}))
-		})
-    return batch
 	}
 
 	_transform(event, baseId, index, useCREWMobileFormat, colorId, exportOptions) {
