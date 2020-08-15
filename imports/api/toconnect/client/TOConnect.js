@@ -51,7 +51,19 @@ const TOConnect = {
   			}
   		})
     })
+	},
+
+  async getPlanning(type = 'calendar') {
+		return new Promise((resolve, reject) => {
+      Meteor.call('getPlanning', type, (error, data) => {
+  			if (error) {
+  				reject(error)
+  			} else {
+          resolve(data)
+  			}
+  		})
+    })
 	}
-};
+}
 
 export { parseICSFile, parseActivitePN, TOConnect };

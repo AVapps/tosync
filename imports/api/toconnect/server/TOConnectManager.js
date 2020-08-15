@@ -86,8 +86,8 @@ export default class TOConnectManager {
     return resp
 	}
 
-	async getPlanning() {
-		const resp = await this.toconnect.getPlanning()
+	async getPlanning(type) {
+		const resp = await this.toconnect.getPlanning(type)
     this.saveSession()
     return resp
 	}

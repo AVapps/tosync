@@ -11,20 +11,60 @@
     		<div class="modal-body">
           <div class="card text-white bg-danger mb-4">
     				<div class="card-body">
-              <div class="card-title">
-                <h4><i class="fas fa-exclamation-circle"></i>&nbsp;Seule la première page des modifciations de planning sont affichées ci-dessous !</h4>
-              </div>
               <p class="lead">
                 TO.sync peut valider les modifications pour vous, mais seul le planning publié sur TO.connect fait foi !
               </p>
               <p>L'importation et la synchronisation de votre planning par TO.sync ne peuvent être garanties à 100%, <strong>il est nécessaire de consulter votre planning sur TO.connect.</strong></p>
     				</div>
-    			</div>
+          </div>
+          {{#if showTable }}
           <div class="table-responsive">
             <table class="table table-sm">
-              {{{ tableContent }}}
+              <thead>
+                <tr>
+                  <th class="ui-state-default select-head" role="columnheader"><span></span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader" colspan="7">
+                    <span>AVANT</span></th>
+                  <th class="ui-state-default after-head" role="columnheader" colspan="7">
+                    <span>APRÈS</span></th>
+                  <th class="ui-state-default status-head" role="columnheader"><span>Statut</span>
+                  </th>
+                </tr>
+                <tr>
+                  <th class="ui-state-default select-head" role="columnheader"><span></span></th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>Type</span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>Date</span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>STD</span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>STA</span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>From</span>
+                  </th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>To</span></th>
+                  <th class="ui-state-default before-head" role="columnheader"><span>A/C</span>
+                  </th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>Type</span>
+                  </th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>Date</span>
+                  </th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>STD</span></th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>STA</span></th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>From</span>
+                  </th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>To</span></th>
+                  <th class="ui-state-default after-head" role="columnheader"><span>A/C</span></th>
+                  <th class="ui-state-default status-head" role="columnheader"><span></span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{{ tableContent }}}
+              </tbody>
             </table>
           </div>
+          {{/if}}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>

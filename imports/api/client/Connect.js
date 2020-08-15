@@ -155,6 +155,20 @@ Connect = {
     return data
 	},
 
+  async getPlanning(type) {
+		this.startTask('sync_data')
+    this.state.set('message', "Synchronisation...")
+    let data
+    try {
+      data = await TOConnect.getPlanning(type)
+    } catch (error) {
+      this._handleError(error)
+    }
+    this.state.set('message', "")
+    this.endTask('sync_data')
+    return data
+	},
+
 	// Reactive datasource to check TO.Connect session state. true = online, false = offline
 	authentificated() {
 		return this.state.get('connected')
@@ -235,7 +249,7 @@ Connect = {
   handleState(state) {
     this.state.set('connected', state.connected)
     if (state.connected) {
-      this.state.set('changesPending', state.changesPending)
+      this.state.set('changesPending', this.parsePendingChanges(state.changesPending))
       this.state.set('signNeeded', state.signNeeded)
       if (state.changesPending) {
         App.requestChangesValidation()
@@ -247,6 +261,24 @@ Connect = {
       this._resetSession()
       this.tryAutoReLogin()
     }
+  },
+
+  parsePendingChanges(changesPending) {
+    if (!_.isString(changesPending)) return changesPending
+    const m = changesPending.match(/<\!\[CDATA\[(<tr.+<\/tr>)\]\]/)
+    if (m) {
+      const rows = m[1]
+      const data = _.sortBy(
+        $(rows).map((i,el) => {
+          const tds = $('td', el)
+          return {
+            html: el.outerHTML,
+            date: (tds[2].innerText || tds[9].innerText).split('/').reverse().join('-') + ' ' + (tds[3].innerText || tds[10].innerText)
+          }
+        }).get(), 'date').map(r => r.html).join()
+      return data
+    }
+    return true
   },
 
   setDisconnedState() {

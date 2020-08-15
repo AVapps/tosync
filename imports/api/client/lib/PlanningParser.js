@@ -1,5 +1,5 @@
-import { _ } from 'meteor/underscore';
-import moment from 'moment';
+import { _ } from 'meteor/underscore'
+import moment from 'moment'
 
 const BASES = [ 'ORY', 'CDG', 'LYS', 'MPL', 'NTE' ]
 

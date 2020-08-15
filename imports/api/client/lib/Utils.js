@@ -374,7 +374,7 @@ function findInObject(object, code) {
   }
 
   if (code.length > 2 && /\d$/.test(code) && _.has(object, code.substring(0, code.length-1))) {
-    return _.get(object, code.length-1)
+    return _.get(object, code.substring(0, code.length-1))
   }
 
   const shortCode = code.includes('_') ? code.replace(/_/g,"") : undefined

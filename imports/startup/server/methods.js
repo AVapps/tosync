@@ -57,10 +57,10 @@ Meteor.methods({
     return isPNT(this.userId)
   },
 
-	async getPlanning() {
+	async getPlanning(type) {
 		check(this.userId, Match.OneOf(String, Object))
 		this.unblock()
-		return Connect.getPlanning(this.userId)
+		return Connect.getPlanning(this.userId, type)
 	},
 
   async validateChanges() {

@@ -5,8 +5,8 @@ export const TOConnect = {
 		return new TOConnectManager(userId).checkSession()
 	},
 
-	async getPlanning(userId) {
-		return new TOConnectManager(userId).getPlanning()
+	async getPlanning(userId, type) {
+		return new TOConnectManager(userId).getPlanning(type)
 	},
 
   async validateChanges(userId) {
