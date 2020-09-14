@@ -56,26 +56,42 @@ Template.toolbar.events({
 		t.$('#filereader').trigger('click')
 	},
 
-	'change #filereader': function (e, t) {
+	'change #filereader': (e, t) => {
 		if (e.target.files && e.target.files.length) {
-			if (e.target.files[0].type === 'text/calendar') {
+      const file = e.target.files[0]
+			if (file.type === 'text/calendar') {
 				const fr = new FileReader()
 
-				fr.onload = function () {
+				fr.onload = () => {
 					App.importIcs(fr.result)
           e.target.value = ""
 				}
 
-				fr.onerror = function () {
+				fr.onerror = () => {
 					App.error("Une erreur s'est produite durant la lecture du fichier !")
           e.target.value = ""
 				}
 
-				fr.readAsText(e.target.files[0])
-
-			} else {
-				App.error('Format de fichier incorrect. Vous devez séléctionner un fichier .ics encodé utf-8.')
+				return fr.readAsText(file)
 			}
+
+      if (file.type === 'application/pdf') {
+        const fr = new FileReader()
+
+				fr.onload = () => {
+					App.importPdf(fr.result)
+          e.target.value = ""
+				}
+
+				fr.onerror = () => {
+					App.error("Une erreur s'est produite durant la lecture du fichier !")
+          e.target.value = ""
+				}
+
+				return fr.readAsArrayBuffer(file)
+      }
+
+			App.error('Format de fichier incorrect. Vous devez séléctionner un fichier .ics encodé utf-8 ou un fichier pdf.')
 		}
 	},
 

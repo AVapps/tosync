@@ -2,6 +2,8 @@ import { Meteor } from 'meteor/meteor'
 import { Excel } from './Exporter/Excel.js'
 import { IcsFile } from './Exporter/IcsFile.js'
 import { HdvTable } from './Exporter/HdvTable.js'
+import Pdf from './lib/Pdf.js'
+import PdfPlanningParser from './lib/PdfPlanningParser.js'
 import parseIcsFile from '/imports/api/toconnect/client/parseICSFile.js'
 import Modals from '/imports/api/client/Modals.js'
 import Swal from 'sweetalert2'
@@ -74,6 +76,13 @@ App = {
 			App.warn('Aucun évènement trouvé !')
 		}
 	},
+
+  async importPdf(arrayBuffer) {
+    const pdf = await Pdf.extractData(arrayBuffer)
+    console.log(pdf)
+    const planning = new PdfPlanningParser(pdf)
+    console.log(planning)
+  },
 
 	updateTags(cb) {
     Meteor.call('getAllEventsOfMonth', Controller.currentMonth.get(), (error, eventsOfMonth) => {
