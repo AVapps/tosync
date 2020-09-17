@@ -331,118 +331,103 @@ export default {
     },
 
     reparseEvents(events) {
-        events.forEach((evt, index) => console.log(index, evt.slug));
+        events.forEach((evt, index) => console.log(index, evt.slug))
 
         // Update tag of events
-        const slugs = [];
+        const slugs = []
         _.forEach(events, evt => {
-            if (evt.category && _.has(Utils.categories, evt.category)) {
-                evt.tag = _.get(Utils.categories, evt.category);
-                evt.slug = Utils.slug(evt);
-                if (_.includes(slugs, evt.slug)) {
-                    // Event will be removed later: do not update !
-                } else {
-                    console.log("UPDATING event tag", evt.slug);
-                    slugs.push(evt.slug);
-                    Events.update(evt._id, {
-                        $set: {
-                            tag: evt.tag,
-                            slug: evt.slug
-                        }
-                    });
+            if (evt.category) {
+                const tag = Utils.findTag(evt.category)
+                if (tag !== evt.tag) {
+                    evt.tag = tag
+                    evt.slug = Utils.slug(evt)
+                    if (!_.includes(slugs, evt.slug)) {
+                        console.log("UPDATING event tag", evt.slug, tag)
+                        slugs.push(evt.slug)
+                        Events.update(evt._id, {
+                            $set: {
+                                tag: evt.tag,
+                                slug: evt.slug
+                            }
+                        })
+                    }
                 }
             }
-        });
+        })
 
-        const eventsWithoutRotations = _.reject(events, { tag: 'rotation' });
-        const duplicatesFree = _.uniqBy(eventsWithoutRotations, 'slug');
-        const toRemove = _.difference(_.map(events, '_id'), _.map(duplicatesFree, '_id'));
+        const eventsWithoutRotations = _.reject(events, { tag: 'rotation' })
+        const duplicatesFree = _.uniqBy(eventsWithoutRotations, 'slug')
+        const toRemove = _.difference(_.map(events, '_id'), _.map(duplicatesFree, '_id'))
 
-        console.log(duplicatesFree, toRemove);
+        console.log(duplicatesFree, toRemove)
 
-        console.log("---- EVENTS without DUPLICATES -----");
-        duplicatesFree.forEach((evt, index) => console.log(index, evt.slug));
+        console.log("---- EVENTS without DUPLICATES -----")
+        duplicatesFree.forEach((evt, index) => console.log(index, evt.slug))
 
-        console.log("---- EVENTS TO REMOVE -----");
-        toRemove.forEach((evt, index) => console.log(index, evt));
-
-        // Update tag of events
-        _.forEach(duplicatesFree, evt => {
-            if (evt.tag == 'autre' && evt.category && _.has(Utils.categories, evt.category)) {
-                evt.tag = _.get(Utils.categories, evt.category);
-                evt.slug = Utils.slug(evt);
-                console.log("UPDATING event tag", evt.slug);
-                Events.update(evt._id, {
-                    $set: {
-                        tag: evt.tag,
-                        slug: evt.slug
-                    }
-                });
-            }
-        });
+        console.log("---- EVENTS TO REMOVE -----")
+        toRemove.forEach((evt, index) => console.log(index, evt))
 
         // Removes duplicates and rotations
         if (toRemove && toRemove.length) {
             Meteor.call('batchEventsRemove', toRemove, (error, result) => {
                 if (error) {
-                    Notify.error(error);
+                    Notify.error(error)
                 } else {
                     if (result !== toRemove.length) {
-                        Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)");
+                        Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)")
                     }
-                    update();
+                    update()
                 }
             });
         } else {
-            update();
+            update()
         }
 
         function update() {
-            const planning = new PlanningParser(duplicatesFree),
-                now = +moment();
-            console.log(planning);
+            const planning = new PlanningParser(duplicatesFree)
+            const now = +moment()
+
+            console.log(planning)
+
             _.forEach(planning.rotations, rot => {
                 rot.created = now;
-                const rotationId = Events.insert(_completeEvent(_.omit(rot, 'vols', 'services')));
+                const rotationId = Events.insert(_completeEvent(_.omit(rot, 'vols', 'services')))
                 if (rotationId) {
-                    _.forEach(rot.vols, vol => {
-                        Events.update(vol._id, {
+                    const results = _.map(rot.vols, vol => {
+                        return Events.update(vol._id, {
                             $set: {
                                 updated: now,
                                 rotationId,
                                 svIndex: vol.svIndex
                             }
-                        });
-                    });
+                        })
+                    })
+                    console.log('Rotation ids updated for :', rot.vols, results)
                 } else {
                     Notify.error('Impossible de sauvegarder la rotation du ' + moment(rotation.start).format('LL'));
-                    return;
+                    return
                 }
-            });
+            })
         }
     },
 
     recomputeExistingRotation(rotationId) {
-        return _recomputeExistingRotation(rotationId);
+        return _recomputeExistingRotation(rotationId)
     },
 
     recomputeRotations(events, created = +moment()) {
-        return _recomputeRotations(events, created);
+        return _recomputeRotations(events, created)
     }
 };
 
 function findEvent(evt, eventsByTag) {
-    if (!_.has(eventsByTag, evt.tag)) return;
+    if (!_.has(eventsByTag, evt.tag)) return
 
-    if (Utils.slug(evt) == 'IEN20200304-SIMU_QT-1005-simu') {
-      console.log(evt, eventsByTag)
-    }
-
-    const found = _.find(eventsByTag[evt.tag], { slug: Utils.slug(evt) });
+    const found = _.find(eventsByTag[evt.tag], { slug: Utils.slug(evt) })
 
     if (found) {
         // console.log('> FOUND BY SLUG <');
-        return found;
+        return found
     }
 
     switch (evt.tag) {

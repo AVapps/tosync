@@ -265,6 +265,7 @@ Controller = {
 
   _reparseEventsOfCurrentMonth(cb) {
     this._stopPlanningCompute = true
+    console.log('Controller._reparseEventsOfCurrentMonth')
   	Meteor.call('getAllEventsOfMonth', this.currentMonth.get(), (error, eventsOfMonth) => {
   		if (eventsOfMonth) {
   			Sync.reparseEvents(eventsOfMonth)

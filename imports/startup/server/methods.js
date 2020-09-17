@@ -186,7 +186,7 @@ Meteor.methods({
 	},
 
 	getAllEventsOfMonth(month) {
-		const m = moment(month);
+		check(this.userId, Match.OneOf(String, Object));
 		const monthStart = moment(month).startOf('month'), monthEnd = moment(month).endOf('month');
 
 		const overlapStart = Events.findOne({

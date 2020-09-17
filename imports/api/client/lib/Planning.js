@@ -8,7 +8,7 @@ export default class Planning {
     this._groupedEvents = {}
 
 		if (this._checkDuplicates()) {
-      Controller.askForPlanningReparsing("Votre planning comporte des doublons. Cliquez sur OK pour les supprimer.");
+      Controller.askForPlanningReparsing("Votre planning comporte des doublons. Cliquez sur OK pour les supprimer.")
 		}
 
 		this._groupEvents()
@@ -119,10 +119,10 @@ export default class Planning {
 	}
 
 	_checkDuplicates() {
-		const counts = _.countBy(this._events, 'slug');
-		return _.some(counts, (count, slug) => {
-			return count > 1;
-		});
+		const counts = _.countBy(this._events, 'slug')
+		const hasDuplicates = _.some(counts, count => count > 1)
+		if (hasDuplicates) console.log('[ Doublons trouvés ]', counts)
+		return hasDuplicates
 	}
 
 	_filterEventsByDates(events, start, end) {

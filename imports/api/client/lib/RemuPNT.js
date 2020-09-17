@@ -628,7 +628,7 @@ export default class RemuPNT {
       sv.HctTO = Math.max(sv.finTR.diff(sv.debutTR).as('hours'), CONFIG_TO.TRMini) * CONFIG_TO.coefTR
 
       const tsvrAF = sv.finTSVrAF.diff(sv.debutTR).as('hours')
-      if (CONFIG_AF.coefTSV10 && sv.TSVrAF > 10) {
+      if (CONFIG_AF.coefTSV10 && tsvrAF > 10) {
         sv.HctAF = tsvrAF * CONFIG_AF.coefTSV10
       } else {
         sv.HctAF = Math.max(tsvrAF, CONFIG_AF.tsvMini) * CONFIG_AF.coefTSV

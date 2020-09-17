@@ -81,6 +81,7 @@ Template.modal.helpers({
 			switch (_.first(selectedDay.events).tag) {
 				case 'rotation':
 				case 'vol':
+				case 'mep':
 					return TemplatesIndex.modal.rotation;
 				// case 'sol':
 					// return TemplatesIndex.modal.sol;
