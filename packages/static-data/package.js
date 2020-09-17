@@ -18,7 +18,7 @@ Package.onUse(function (api) {
     'reactive-var',
     'minimongo',
     'mongo',
-    'ground:db'
+    'adrienv:grounddb'
   ], ['client', 'server']);
 
   api.use('mikowals:batch-insert', 'server');

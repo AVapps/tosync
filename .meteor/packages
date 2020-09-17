@@ -32,5 +32,5 @@ standard-minifier-js@2.6.0
 shell-server@0.5.0
 dynamic-import@0.5.2
 fourseven:scss
-ground:db@2.0.0
+adrienv:grounddb
 mikowals:batch-insert

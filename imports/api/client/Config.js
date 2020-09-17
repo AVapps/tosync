@@ -1,6 +1,6 @@
 import moment from 'moment'
 import _ from 'lodash'
-import { Ground } from 'meteor/ground:db'
+import { Ground } from 'meteor/adrienv:grounddb'
 import Utils from './lib/Utils.js'
 import Export from './lib/Export.js'
 
