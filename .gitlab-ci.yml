@@ -65,7 +65,7 @@ build-meteor:
 
 build-alpine:
   stage: alpine-build
-  image: mhart/alpine-node:12.16.1
+  image: mhart/alpine-node:12.18.3
   script:
     - echo ${INFO} Alpine container started, installing tools
     - apk add --no-cache make gcc g++ python sudo
