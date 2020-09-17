@@ -7,7 +7,7 @@ import RemuPNT from './lib/RemuPNT.js'
 import RemuPNC from './lib/RemuPNC.js'
 
 import _ from 'lodash'
-import swal from 'sweetalert2'
+import Swal from 'sweetalert2'
 
 const NOW = new Date()
 const isPNT = new ReactiveVar(false)
@@ -278,10 +278,10 @@ Controller = {
   },
 
   askForPlanningReparsing(message, cb) {
-		swal({
+		Swal.fire({
 		  title: 'Erreur de planning',
 		  text: message,
-		  type: 'warning',
+		  icon: 'warning',
 		  showCancelButton: true,
 			// buttonsStyling: false,
 			// confirmButtonClass: 'btn btn-primary',
@@ -290,16 +290,18 @@ Controller = {
 		  cancelButtonColor: '#ff3268',
 		  confirmButtonText: 'Ok',
 			cancelButtonText: 'Annuler'
-		}).then(() => {
-			this.reparseEventsOfCurrentMonth(cb);
-		  swal(
-		    'Terminé !',
-		    'Votre planning a été recalculé.',
-		    'success'
-		  )
-		}, (dismiss) => {
-			if (_.isFunction(cb)) cb(dismiss);
-		});
+		}).then((result) => {
+      if (result.value) {
+        this.reparseEventsOfCurrentMonth(cb)
+        Swal.fire(
+          'Terminé !',
+          'Votre planning a été recalculé.',
+          'success'
+        )
+      } else {
+        if (_.isFunction(cb)) cb(dismiss)
+      }
+		})
 	},
 
   _sortEvents(events) {
