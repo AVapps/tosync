@@ -8,6 +8,7 @@ import RemuPNC from './lib/RemuPNC.js'
 
 import _ from 'lodash'
 import Swal from 'sweetalert2'
+import pify from 'pify'
 
 const NOW = new Date()
 const isPNT = new ReactiveVar(false)
@@ -263,19 +264,17 @@ Controller = {
 		this.selectedDay.set(null)
 	},
 
-  _reparseEventsOfCurrentMonth(cb) {
+  async _reparseEventsOfCurrentMonth() {
     this._stopPlanningCompute = true
     console.log('Controller._reparseEventsOfCurrentMonth')
-  	Meteor.call('getAllEventsOfMonth', this.currentMonth.get(), (error, eventsOfMonth) => {
-  		if (eventsOfMonth) {
-  			Sync.reparseEvents(eventsOfMonth)
-  			if (_.isFunction(cb)) cb(undefined, true)
-  		} else if (error) {
-  			console.log(error)
-  			if (_.isFunction(cb)) cb(error)
-  		}
+    try {
+      const eventsOfMonth = await pify(Meteor.call)('getAllEventsOfMonth', this.currentMonth.get())
+      Sync.reparseEvents(eventsOfMonth)
+    } catch (error) {
+      console.log(error)
+    } finally {
       this._stopPlanningCompute = false
-  	})
+    }
   },
 
   askForPlanningReparsing(message, cb) {
@@ -291,9 +290,9 @@ Controller = {
 		  cancelButtonColor: '#ff3268',
 		  confirmButtonText: 'Ok',
 			cancelButtonText: 'Annuler'
-		}).then((result) => {
+		}).then(async (result) => {
       if (result.value) {
-        this.reparseEventsOfCurrentMonth(cb)
+        await this.reparseEventsOfCurrentMonth()
         Swal.fire(
           'Terminé !',
           'Votre planning a été recalculé.',

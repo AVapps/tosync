@@ -13,7 +13,11 @@
 					  {{> monthModalContentPNT }}
           {{ else }}
             {{> monthModalContentPNC }}
-          {{/if}}
+					{{/if}}
+					<hr>
+					{{#LaddaButton class="btn-danger" onClick=onReparseClick }}
+						<i class="fas fa-calculator"></i>&nbsp;Recalculer mon planning
+					{{/LaddaButton}}
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
