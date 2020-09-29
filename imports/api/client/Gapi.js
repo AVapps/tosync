@@ -32,7 +32,7 @@ class Gapi {
       this.currentUser = false
       Gapi.instance = this
     }
-   return Gapi.instance
+    return Gapi.instance
   }
 
   loadClient() {

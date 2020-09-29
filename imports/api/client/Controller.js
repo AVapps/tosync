@@ -262,11 +262,20 @@ Controller = {
 
 	resetSelectedDay() {
 		this.selectedDay.set(null)
-	},
+  },
+  
+  forceSync() {
+    Events.removeLocalOnlyFrom({
+      userId: Meteor.userId(),
+      end: { $gte: +this.eventsStart },
+      start: { $lte: +this.eventsEnd }
+    })
+  },
 
   async _reparseEventsOfCurrentMonth() {
     this._stopPlanningCompute = true
     console.log('Controller._reparseEventsOfCurrentMonth')
+    this.forceSync()
     try {
       const eventsOfMonth = await pify(Meteor.call)('getAllEventsOfMonth', this.currentMonth.get())
       Sync.reparseEvents(eventsOfMonth)

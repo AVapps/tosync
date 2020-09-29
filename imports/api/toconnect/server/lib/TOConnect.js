@@ -102,11 +102,27 @@ export default class TOConnect {
         changesPending = await this.getChangesPending()
       }
 
+      let primes = resp.data.indexOf('<td colspan="2">Aucun bonus trouvé.</td>') === -1
+      if (primes) {
+        const $ = cheerio.load(resp.data)
+        primes = $('#tablePrimesMoisCourant_data tr')
+          .map((index, row) => {
+            const $cells = $(row).find('td')
+            if ($cells.length >= 2) {
+              return {
+                date: $cells.eq(0).text().trim(),
+                raison: $cells.eq(1).text().trim()
+              }
+            }
+          }).get()
+      }
+
       const signNeeded = resp.data.indexOf("Please validate your planning</a>") !== -1
       return {
         connected: true,
         changesPending,
-        signNeeded
+        signNeeded,
+        primes
       }
     } else {
       return { connected: false }

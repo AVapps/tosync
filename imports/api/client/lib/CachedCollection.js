@@ -40,6 +40,15 @@ export class CachedCollection extends Mongo.Collection {
   }
 
   sync(selector) { // Same selector as find
+    this.removeLocalOnlyFrom(selector)
+    return this._cacheCollection.observeSource(this.orgFind(selector))
+  }
+
+  stopSync() {
+    this._cacheCollection.stopObserver()
+  }
+
+  removeLocalOnlyFrom(selector) { // Same selector as find
     // Map the ground db storage into an array of id's
     const currentIds = this.find(selector, { reactive: false }).map((doc) => strId(doc._id))
     // Map MiniMongo find in an array of id's
@@ -52,14 +61,6 @@ export class CachedCollection extends Mongo.Collection {
       this._cacheCollection.saveDocument({ _id: id }, true)
     })
     this._cacheCollection.invalidate()
-
-    const handle = this._cacheCollection.observeSource(this.orgFind(selector))
-
-    return handle
-  }
-
-  stopSync() {
-    this._cacheCollection.stopObserver()
   }
 
   removeFromCacheBefore(time) {

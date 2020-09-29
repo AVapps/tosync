@@ -8,14 +8,18 @@ Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = 'Europe/Paris'
 
 const BASES = [ 'ORY', 'CDG', 'LYS', 'MPL', 'NTE' ]
-const FLIGHT_REG = /^([A-Z]{3})\-([A-Z]{3})\s\(([A-Z]+)\)/
-const MEP_REG = /^([A-Z]{3})\-([A-Z]{3})/
+const FLIGHT_REG = /([A-Z]{3})\-([A-Z]{3})\s\(([A-Z]+)\)/
+const MEP_REG = /([A-Z]{3})\-([A-Z]{3})/
 const DATE_REG = /^[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
 
 export default class PdfPlanningParser {
-  constructor(pdf) {
+  constructor(pdf, options) {
+    this.options = _.defaults(options, {
+      bases: BASES
+    })
     this.events = []
+    this.sv = []
     this.rotations = []
     this.sols = []
     this.meta = pdf.meta
@@ -23,8 +27,16 @@ export default class PdfPlanningParser {
     this.parse(pdf.table)
   }
 
+  /***
+   * (1) Parser les activités / repos / services
+   * (2) Grouper les services de vol en rotation en déterminant la base d'arrivée au premier repos
+   */
   parse(lines) {
-    this._rotation = null
+    this.parseDuties(lines)
+    this.groupRotations()
+  }
+  
+  parseDuties(lines) {
     this._precDuty = null
     this._duty = null
     this._hotel = null
@@ -45,10 +57,10 @@ export default class PdfPlanningParser {
         continue
       }
 
-      const type = line[0]
-      if (type.length) {
+      const header = line[0]
+      if (header.length) {
         const event = {
-          type,
+          header,
           start: line[1],
           end: line[2],
           category: line[3].replace(/\s/g, ''),
@@ -66,7 +78,11 @@ export default class PdfPlanningParser {
         }
 
         if (event.instruction) {
-          event.instruction = this._parseInstruction(event.instruction)
+          const tasks = this._parseInstruction(event.instruction)
+          const userTasks = _.remove(tasks, task => !_.isEmpty(task.fonction))
+          event.instruction = {}
+          if (userTasks.length) event.instruction.own = userTasks
+          if (tasks.length) event.instruction.other = tasks
         }
 
         /*
@@ -81,16 +97,22 @@ export default class PdfPlanningParser {
           H = découcher
         */
 
-        switch (type) {
+        switch (header) {
           case 'Begin Duty': // B
             this.beginDuty(event)
             break
           case 'Duty Flight': // F
+            if (!FLIGHT_REG.test(event.summary) && lines[i+1] && FLIGHT_REG.test(lines[i + 1][5])) {
+              event.summary = lines[i + 1][5]
+            }
             this.addFlight(event)
             break
           case 'DHD Flight': // O | P
           case 'Train': // T
           case 'Transfert': // S
+            if (!MEP_REG.test(event.summary) && lines[i + 1] && MEP_REG.test(lines[i + 1][5])) {
+              event.summary = lines[i + 1][5]
+            }
             this.addMEP(event)
             break
           case 'End Duty': // D
@@ -100,70 +122,25 @@ export default class PdfPlanningParser {
             this.endRest(event)
             break
           case 'Ground Act.': // G
-            if (!['ENGS', 'ENGST'].includes(event.category)) this.addGround(event)
+            // if (!['ENGS', 'ENGST'].includes(event.category))
+            this.addGround(event)
             break
           case 'HOTAC': // H
             this.addHotel(event)
             break
           default:
-            console.log(`Type Inconnu : ${type}`)
+            console.log(`Type Inconnu : ${header}`)
         }
       }
-
       i++
     }
 
-    if (this._rotation) this.endRotation()
-  }
-
-  beginRotation(start, base, events = []) {
-    console.log('[beginRotation]', start.toLocaleString())
-    this._rotation = {
-      type: 'rotation',
-      tag: 'rotation',
-      debut: start,
-      sv: [],
-      etapes: events,
-      base
+    if (this._duty) {
+      this.endDuty()
     }
-  }
-
-  endRotation() {
-    console.log('[endRotation]', _.map(this._rotation.etapes, 'num'))
-
-    this._rotation.debut = _.first(this._rotation.sv).debut
-    this._rotation.fin = _.last(this._rotation.sv).fin
-
-    this._rotation.nbjours = this._rotation.fin.startOf('day').diff(this._rotation.debut.startOf('day')).as('days') + 1
-
-    this._rotation.tv = _.sumBy(this._rotation.sv, 'tv')
-    this._rotation.countVol = _.sumBy(this._rotation.sv, 'countVol')
-    this._rotation.mep = _.sumBy(this._rotation.sv, 'mep')
-    this._rotation.countMEP = _.sumBy(this._rotation.sv, 'countMEP')
-
-    if (this._rotation.sv.length > 1) {
-      this._rotation.decouchers = _.reduce(this._rotation.sv, (list, sv, index, svs) => {
-        if (sv.hotel) {
-          if (index === 0 || (svs[index-1].hotel && svs[index-1].hotel.location != sv.hotel.location)) {
-            list.push(sv.hotel.location)
-          }
-        }
-        return list
-      }, [])
-    }
-
-    this.rotations.push(this._rotation)
-    this.events.push(this._rotation)
-    this._rotation = null
   }
 
   beginDuty(event) {
-    if (this._hotel) {
-      this._hotel = null
-    } else if (this._rotation && _.includes(BASES, _.last(this._rotation.etapes).to)) {
-      this.endRotation()
-    }
-
     console.log('[beginDuty]', event.summary, this._date.toLocaleString(), event.start.toString())
 
     if (this._duty) {
@@ -175,6 +152,11 @@ export default class PdfPlanningParser {
       summary: event.summary,
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),
       events: []
+    }
+
+    if (this._hotel) { // un évènement HOTEL est en suspens (pas de OFF ou de SV avant la nouvelle duty)
+      this._duty.fromHotel = this._hotel
+      this._hotel = null
     }
   }
 
@@ -197,13 +179,16 @@ export default class PdfPlanningParser {
     if (event.peq) vol.peq = event.peq
     if (event.instruction) vol.instruction = event.instruction
 
-    if (!this._duty.from) {
-      this._duty.from = vol.from
+    if (!this._duty) {
+      this.beginDuty(event)
     }
 
-    if (!this._duty.type || this._duty.type === 'mep') {
-      this._duty.type = 'sv'
-      if (!this._rotation) this.beginRotation(this._duty.debut, vol.from, _.clone(this._duty.events))
+    // if (!this._duty.type || this._duty.type === 'mep') {
+      this._duty.type = 'sv' // Les journées qui commencent par une activité sol sont considérées comme des SV
+    // }
+
+    if (!this._duty.from) {
+      this._duty.from = vol.from
     }
 
     console.log('[addFlight]', event.summary, this._date.toLocaleString())
@@ -214,7 +199,6 @@ export default class PdfPlanningParser {
       console.log(vol.fin.toString())
     }
 
-    this._rotation.etapes.push(vol)
     this._duty.events.push(vol)
   }
 
@@ -236,6 +220,10 @@ export default class PdfPlanningParser {
     if (event.peq) mep.peq = event.peq
     if (event.instruction) mep.instruction = event.instruction
 
+    if (!this._duty) {
+      this.beginDuty(event)
+    }
+
     if (!this._duty.from) {
       this._duty.from = mep.from
     }
@@ -252,23 +240,25 @@ export default class PdfPlanningParser {
 
     mep.mep = mep.fin.diff(mep.debut).as('hours')
 
-    if (this._rotation) this._rotation.etapes.push(mep)
-
     this._duty.events.push(mep)
   }
 
   endDuty(event) {
+    if (_.isEmpty(this._duty.events)) {
+      this._duty = null
+      return
+    }
+
+    if (_.isUndefined(event)) {
+      event = _.last(this._duty.events)
+    }
+
     console.log('[endDuty]', event.summary, this._date.toLocaleString())
     this._duty.fin = this._date.set(this._parseTime(event.end)).setZone('Europe/Paris')
 
     if (this._duty.fin < this._duty.debut) {
       console.log("Heure de fin du vol inférieure à heure de début de vol : ", this._duty.debut.toString(), this._duty.fin.toString())
       throw new Error("Heure de fin du vol inférieure à heure de début de vol")
-    }
-
-    if (_.isEmpty(this._duty.events)) {
-      this._duty = null
-      return
     }
 
     if (!_.has(this._duty, 'type')) {
@@ -281,42 +271,29 @@ export default class PdfPlanningParser {
 
       if (this._duty.ts > 16.5 || this._duty.ts < 0) {
         console.log("TS incohérent : ", this._duty)
-        throw new Error("TS incohérent")
+        throw new Error(`Temps de service incohérent : ${ this._duty.ts }`)
       }
 
-      const counts = _.countBy(this._duty.events, 'tag')
       const groups = _.groupBy(this._duty.events, 'tag')
       const etapes = _.filter(this._duty.events, evt => evt.tag === 'vol' || evt.tag === 'mep')
-      this._duty.countVol = counts.vol || 0
-      this._duty.tv = counts.vol ? _.sumBy(groups.vol, 'tv') : 0
-      this._duty.tme = counts.vol ? this._duty.tv / this._duty.countVol : 0
-      this._duty.cmt = counts.vol ? Math.max(70 / ( 21 * Math.max(this._duty.tme, 1) + 30), 1) : 0
-      this._duty.countMEP = counts.mep || 0
-      this._duty.mep = counts.mep ? _.sumBy(groups.mep, 'mep') : 0
+      this._duty.countVol = groups.vol ? groups.vol.length : 0
+      this._duty.countMEP = groups.mep ? groups.mep.length : 0
+      this._duty.mep = groups.mep ? _.sumBy(groups.mep, 'mep') : 0
       this._duty.to = _.last(etapes).to
 
-      if (!this._rotation) this.beginRotation(this._duty.debut, this._duty.to, _.clone(this._duty.events)) // Cas d'un premier SV de MEP isolée ! et si SV de MEP isolée pour activités sol ?
-
-      this._rotation.sv.push(this._duty)
+      this.sv.push(this._duty)
+      this.events.push(this._duty)
     }
 
     if (this._duty.type === 'sol') {
-      const firstSol = _.find(this._duty.events, { type: 'sol'})
-      const sol = {
-        type: 'sol',
-        category: firstSol.category,
-        tag: firstSol.tag,
-        summary: firstSol.summary,
-        debut: this._duty.debut,
-        fin: this._duty.fin,
-        fonction: firstSol.fonction,
-        events: this._duty.events
-      }
+      const firstSol = _.find(this._duty.events, { type: 'sol' })
+      const specialCategoryEvent = _.find(this._duty.events, evt => {
+        return _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag)
+      })
 
-      sol.duree = sol.fin.diff(sol.debut).as('hours')
-
-      this.events.push(sol)
-      this.sols.push(sol)
+      this._duty.tag = specialCategoryEvent ? specialCategoryEvent.tag : firstSol.tag
+      this.events.push(this._duty)
+      this.sols.push(this._duty)
     }
 
     this._precDuty = this._duty
@@ -335,8 +312,8 @@ export default class PdfPlanningParser {
       category: 'BLANC',
       tag: 'blanc',
       summary: 'Blanc',
-      start: this._date.setZone('Europe/Paris').startOf('day'),
-      end: this._date.setZone('Europe/Paris').endOf('day')
+      debut: this._date.setZone('Europe/Paris').startOf('day'),
+      fin: this._date.setZone('Europe/Paris').endOf('day')
     }
     this.events.push(evt)
     this.sols.push(evt)
@@ -348,29 +325,13 @@ export default class PdfPlanningParser {
       category: event.category,
       tag: this._findTag(event.category),
       summary: event.summary,
-      debut: (event.start && event.start !== '>>>') ? this._date.set(this._parseTime(event.start)).setZone('Europe/Paris') : undefined,
-      fin: (event.end && event.end !== '>>>') ? this._date.set(this._parseTime(event.end)).setZone('Europe/Paris') : undefined,
+      debut: (event.start && TIME_REG.test(event.start)) ? this._date.set(this._parseTime(event.start)).setZone('Europe/Paris') : undefined,
+      fin: (event.end && TIME_REG.test(event.end)) ? this._date.set(this._parseTime(event.end)).setZone('Europe/Paris') : undefined,
       fonction: event.fonction
     }
 
     if (event.peq) sol.peq = event.peq
-    if (event.instruction && event.instruction) {
-      sol.instruction = _.find(event.instruction, group => _.some(group.peq, value => _.isArray(value) && _.includes(value, this.meta.trigramme)))
-
-      if (sol.instruction) {
-        const details = Utils.findCodeInstruction(event.category)
-        if (details) {
-          _.extend(sol.instruction, details)
-        }
-        sol.instruction.instructeur = sol.instruction.peq.Ins && _.includes(sol.instruction.peq.Ins , this.meta.trigramme)
-        if (sol.instruction.instructeur) {
-          if (sol.instruction.type === 'sol') sol.tag = 'instructionSol'
-          if (sol.instruction.type === 'simu') sol.tag = 'instructionSimu'
-        }
-      }
-    }
-
-    if (this._rotation && !['simu', 'instructionSimu'].includes(sol.tag)) this.endRotation()
+    if (event.instruction) sol.instruction = event.instruction
 
     console.log('[addGround]', event.summary)
 
@@ -392,15 +353,14 @@ export default class PdfPlanningParser {
     }
 
     if (this._duty) {
-      if (!this._duty.type || this._duty.type === 'mep') {
+      if (!this._duty.type || this._duty.type === 'mep') { // TODO : MEP incluses dans activité sol ?
         this._duty.type = 'sol'
-        this._duty.tag = sol.tag
       }
       this._duty.events.push(sol)
     } else {
       this._hotel = null
       this._precDuty = null
-      sol.duree = sol.fin.diff(sol.debut).as('hours')
+      // sol.duree = sol.fin.diff(sol.debut).as('hours')
       this.events.push(sol)
       this.sols.push(sol)
     }
@@ -422,11 +382,173 @@ export default class PdfPlanningParser {
     if (this._hotel && event.end && TIME_REG.test(event.end)) {
       console.log('[endHotel]', event.summary)
       this._hotel.fin = this._date.set(this._parseTime(event.end)).setZone('Europe/Paris')
-      this._hotel.duree = this._hotel.fin.diff(this._hotel.debut).as('hours')
+      // this._hotel.duree = this._hotel.fin.diff(this._hotel.debut).as('hours')
       if (this._precDuty) {
         this._precDuty.hotel = this._hotel
+        this._hotel = null
       }
     }
+  }
+
+  groupRotations() {
+    this.events = _.sortBy(this.events, ['debut', 'fin'])
+
+    let startIndex = _.findIndex(this.events, evt => ['repos', 'conges'].includes(evt.tag))
+    console.log(this.events, startIndex)
+
+    let rotations
+    if (startIndex != -1) {
+      rotations = [
+        ...this._getRotationsFromRight(_.slice(this.events, 0, startIndex)),
+        ...this._getRotationsFromLeft(_.slice(this.events, startIndex))
+      ]
+    } else {
+      rotations = this._getRotationsFromRight(this.events)
+    }
+
+    _.forEach(rotations, rot => {
+      if (rot) {
+        console.log('[Rotation]', rot.base, rot.nbjours, rot.decouchers)
+        _.forEach(rot.sv, sv => {
+          console.log('[SV]', sv.type, sv.summary, sv.from, sv.to, sv.hotel)
+          _.forEach(sv.events, evt => console.log('['+evt.tag.toUpperCase()+']', evt.num, evt.from, evt.to, evt.debut.toLocaleString(DateTime.DATETIME_FULL)))
+        })
+      }
+    })
+
+    this.rotations = rotations
+  }
+
+  _getRotationsFromLeft(events) {
+    const rotations = []
+    let rotation = null
+    let prevDuty = null
+
+    _.forEach(events, evt => {
+      console.log(evt, evt.type, evt.tag, _.map(evt.events, evt => [ evt.num, evt.from, evt.to, evt.debut.toLocaleString(DateTime.DATETIME_SHORT) ]))
+      if (evt.type === 'sv' || evt.type === 'mep') {
+        if (!rotation) { // Cas d'un premier SV de MEP isolée ! et si SV de MEP isolée pour activités sol ?
+          rotation = this.beginRotation(evt.from)
+        } else if (this._shouldCompleteRotation(rotation, prevDuty, evt)) {
+          rotations.push(this.endRotation(rotation))
+          rotation = this.beginRotation(evt.from)
+        }
+        rotation.sv.push(evt)
+        prevDuty = evt
+      } else if (rotation) {
+        rotations.push(this.endRotation(rotation))
+        rotation = null
+        prevDuty = null
+      }
+    })
+
+    if (rotation) {
+      rotations.push(this.endRotation(rotation))
+    }
+
+    return rotations
+  }
+
+  _getRotationsFromRight(events) {
+    const rotations = []
+    let rotation = null
+    let nextDuty = null
+
+    _.forEachRight(events, evt => {
+      if (evt.type === 'sv' || evt.type === 'mep') {
+        if (!rotation) {
+          rotation = this.beginRotation(evt.to)
+        } else if (this._shouldCompleteRotationRight(rotation, evt, nextDuty)) {
+          rotations.push(this.endRotation(rotation))
+          rotation = this.beginRotation(evt.to)
+        }
+        rotation.sv.unshift(evt)
+        nextDuty = evt
+      } else if (rotation) {
+        rotations.push(this.endRotation(rotation))
+        rotation = null
+        nextDuty = null
+      }
+    })
+
+    if (rotation) {
+      rotations.push(this.endRotation(rotation))
+    }
+
+    return rotations.reverse()
+  }
+
+  _shouldCompleteRotation(rotation, prevDuty, evt) {
+    if (!prevDuty || prevDuty.hotel) return false
+    
+    if (rotation.base) {
+      return prevDuty.to === rotation.base 
+        || prevDuty.to === 'CDG' && rotation.base === 'ORY'
+    } else {
+      return _.includes(this.options.bases, evt.from)
+    }
+  }
+
+  _shouldCompleteRotationRight(rotation, evt, nextDuty) {
+    if (!nextDuty || evt.hotel) return false
+
+    if (rotation.base) {
+      return nextDuty.from === rotation.base
+        || nextDuty.from === 'CDG' && rotation.base === 'ORY'
+    } else {
+      return _.includes(this.options.bases, nextDuty.from)
+    }
+  }
+
+  beginRotation(base) {
+    console.log('[beginRotation]')
+    if (base === 'CDG') base = 'ORY'
+    return {
+      type: 'rotation',
+      tag: 'rotation',
+      sv: [],
+      base: _.includes(this.options.bases, base) ? base : undefined
+    }
+  }
+
+  endRotation(rotation) {
+    console.log('[endRotation]', rotation)
+    const firstSV = _.first(rotation.sv)
+    const lastSV = _.last(rotation.sv)
+
+    rotation.debut = firstSV.debut
+    rotation.fin = lastSV.fin
+
+    if (_.isUndefined(rotation.base)) {
+      if (_.includes(this.options.bases, firstSV.from)) {
+        rotation.base = firstSV.from
+      } else if (_.includes(this.options.bases, lastSV.to)) {
+        rotation.base = lastSV.to
+      }
+      if (rotation.base === 'CDG') {
+        rotation.base = 'ORY'
+      }
+    }
+
+    rotation.nbjours = rotation.fin.startOf('day').diff(rotation.debut.startOf('day')).as('days') + 1
+
+    rotation.tv = _.sumBy(rotation.sv, 'tv')
+    rotation.countVol = _.sumBy(rotation.sv, 'countVol')
+    rotation.mep = _.sumBy(rotation.sv, 'mep')
+    rotation.countMEP = _.sumBy(rotation.sv, 'countMEP')
+
+    if (rotation.sv.length > 1) {
+      rotation.decouchers = _.reduce(rotation.sv, (list, sv, index, svs) => {
+        if (sv.hotel) {
+          if (index === 0 || (svs[index-1].hotel && svs[index-1].hotel.location != sv.hotel.location)) {
+            list.push(sv.hotel.location)
+          }
+        }
+        return list
+      }, [])
+    }
+
+    return rotation
   }
 
   _findTag(category) {
@@ -465,8 +587,8 @@ export default class PdfPlanningParser {
   }
 
   _parseInstruction(str) {
-    str = str.replace(/SIMU CPT/g, 'SIMU_CPT')
-    const groups = [...str.matchAll(/\s?([A-z0-9_]{2,})\sIns.:\s([A-Z]{3})/g)]
+    str = str.replace(/\s/g, '_')
+    const groups = [...str.matchAll(/\s?([A-z0-9_]{2,})\sIns\.:\s([A-Z]{3})/g)]
     if (groups.length) {
       return _.chain(groups)
         .map((match, index) => {
@@ -478,6 +600,28 @@ export default class PdfPlanningParser {
             const endOfGroup = index === groups.length-1 ? str.length : groups[index+1].index
             const sub = str.substring(match.index + result.code.length, endOfGroup)
             result.peq = this._parsePeq(sub)
+
+            const details = Utils.findCodeInstruction(result.code)
+            if (details) _.extend(result, details)
+
+            const fonction = _.findKey(result.peq, peq => _.includes(peq, this.meta.trigramme))
+            switch (fonction) {
+              case 'Ins':
+              case 'Inst':
+                result.fonction = 'instructeur'
+                break
+              case 'Tr':
+                result.fonction = 'stagiaire'
+                break
+              case 'StIn':
+                result.fonction = 'support'
+                break
+              case undefined:
+                break
+              default:
+                result.fonction = fonction
+            }
+
             return result
           }
         })

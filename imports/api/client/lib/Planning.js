@@ -151,7 +151,7 @@ export default class Planning {
 
 	eventsToSync(month) {
 		month = month || this.currentMonth;
-		const monthStart = moment(month).startOf('month'), nextMonthEnd = moment(month).endOf('month').add(1, 'month');
+		const monthStart = moment(month).startOf('month'), nextMonthEnd = moment(month).add(1, 'month').endOf('month');
 		let events = this._filterEventsByDates(this._events, monthStart, nextMonthEnd);
 		const earliest = _.first(events);
 		const latest = _.find(events, evt => evt.end.isAfter(nextMonthEnd));

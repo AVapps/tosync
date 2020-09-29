@@ -233,12 +233,13 @@ export default {
     'VSS_CDB': { type: 'vol', tags: ['vss', 'stage', 'qt'], title: "Vol sous supervision CDB" },
     'VSS_CPT': { type: 'vol', tags: ['vss', 'stage', 'cdb'], title: "Vol sous supervision CPT" },
     'VSS_OPL': { type: 'vol', tags: ['vss', 'stage', 'qt'], title: "Vol sous supervision OPL" },
-    'VSS_PRE_CPT': { type: 'vol', tags: ['vss', 'cdb'], title: "Vol sous supervision pour Pré CPT" },
+		'VSS_PRE_CPT': { type: 'vol', tags: ['vss', 'cdb'], title: "Vol sous supervision pour Pré CPT" },
+		'VSS_PRECPT': { type: 'vol', tags: ['vss', 'cdb'], title: "Vol sous supervision pour Pré CPT" },
     'VSS_R_CDB': { type: 'vol', tags: ['vss', 'reprise'], title: "Vol sous supervision CDB" },
     'VSS_R_OPL': { type: 'vol', tags: ['vss', 'reprise'], title: "Vol sous supervision OPL" },
 
     // pnc
-    'VOL_AC': { type: 'vol', tags: [], title: "Vol d'accompagnement" }, // A confirmer
+    'VOL_AC': { type: 'vol', tags: [], title: undefined }, // A confirmer
   },
 
 
@@ -328,25 +329,38 @@ export default {
 	},
 
 	slug(event, username, index) {
-		var prefix = (username || Meteor.user().username) + event.start.format('YYYYMMDD'),
-			suffix = event.tag + (index || "");
-		switch (event.tag) {
-			case 'rotation':
-			case 'repos':
-			case 'conges':
-			case 'maladie':
-			case 'greve':
-			case 'sanssolde':
-			case 'blanc':
-			case 'jisap':
-      case 'absence':
-				return [prefix, suffix].join('-');
-			case 'vol':
-				return [prefix, event.num, event.from, event.to, suffix].join('-');
-			case 'mep':
-				return [prefix, event.title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-');
-			default:
-				return [prefix, event.summary.replace(/\W+/g, '_'), event.start.format('HHmm'), suffix].join('-');
+		const prefix = (username || Meteor.user().username) + event.start.format('YYYYMMDD')
+		const suffix = event.tag + (index || "")
+
+		if (_.has(event, 'events') && !_.isEmpty(event.events)) {
+			// Duty sol ou vol
+			switch (event.tag) {
+				case 'sv':
+					return [prefix, _.first(event.events).num, event.from, event.to, suffix].join('-')
+				case 'mep':
+					return [prefix, _.first(event.events).title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+				default:
+					return [prefix, _.first(event.events).summary.replace(/\W+/g, '_'), event.start.format('HHmm'), suffix].join('-')
+			}
+		} else {
+			switch (event.tag) {
+				case 'rotation':
+				case 'repos':
+				case 'conges':
+				case 'maladie':
+				case 'greve':
+				case 'sanssolde':
+				case 'blanc':
+				case 'jisap':
+				case 'absence':
+					return [prefix, suffix].join('-')
+				case 'vol':
+					return [prefix, event.num, event.from, event.to, suffix].join('-')
+				case 'mep':
+					return [prefix, event.title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+				default:
+					return [prefix, event.summary.replace(/\W+/g, '_'), event.start.format('HHmm'), suffix].join('-')
+			}
 		}
 	},
 
