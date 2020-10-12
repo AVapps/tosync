@@ -22,6 +22,15 @@ import '/imports/api/client/Modals.js'
 
 import '/imports/lib/moment-ejson.js'
 
+// Service worker for offline access
+Meteor.startup(() => {
+  if (navigator && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('Service Worker successfully registered !'))
+      .catch(err => console.log('ServiceWorker registration failed: ', err))
+  }
+})
+
 // Session Init
 Session.set('calendarList', [])
 Session.set('calendarLoading', false)
