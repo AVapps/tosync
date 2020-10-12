@@ -27,7 +27,7 @@ ecmascript@0.14.3
 es5-shim@4.8.0
 meteorhacks:subs-manager
 adrienv:static-data
-standard-minifier-css@1.6.0
+standard-minifier-css@1.6.1
 standard-minifier-js@2.6.0
 shell-server@0.5.0
 dynamic-import@0.5.2
