@@ -19,7 +19,7 @@ async function loadPage(doc, pageNum) {
     if (PDFJS.OPS.constructPath == fn) {
       while (args[0].length) {
         const op = args[0].shift();
-        if (op == PDFJS.OPS.rectangle) {
+        if (op == PDFJS.OPS.rectangle) { // Lister les rectangles qui constituent les cellules
           // console.log('RECTANGLE', args[1].toString())
           const x = args[1].shift()
           const y = args[1].shift()
@@ -36,6 +36,7 @@ async function loadPage(doc, pageNum) {
     }
   }
 
+  // 1- Détermine la structure du tableau à partir des rectangles listés précédemment en les regroupant en lignes de tableau
   const table = _.chain(cells)
     .groupBy('y')
     .values()
@@ -56,8 +57,8 @@ async function loadPage(doc, pageNum) {
     .reverse()
     .value()
 
+  // 2- positionner le contenu texte dans les cellules du tableau
   const content = await page.getTextContent()
-
   const filledTable = []
   let item, currentRow
   const items = _.chain(content.items)
@@ -66,12 +67,13 @@ async function loadPage(doc, pageNum) {
       y: item.transform[5],
       w: item.width,
       h: item.height,
-      str: item.str.trim()
+      str: item.str
     }))
     .sortBy('y')
     .reverse()
     .value()
-
+  
+  // tri le contenu texte par ligne de tableau
   _.forEach(items, item => {
     if (currentRow) {
       if (isInside(item, currentRow)) {
@@ -99,6 +101,7 @@ async function loadPage(doc, pageNum) {
     currentRow = null
   }
 
+  // puis par sous-ligne dans chaque ligne de tableau et par colonne
   _.forEach(filledTable, row => {
     _.forEach(row.content, item => {
       const cell = _.find(row.cells, c => isInside(item, c))
@@ -121,12 +124,29 @@ async function loadPage(doc, pageNum) {
       .map(({ y, h }, index, col) => {
         const top = y + h
         const bottom = (index === col.length - 1) ? row.y : (col[index + 1].y + col[index + 1].h)
-        return _.map(row.cells, cell => _.chain(cell.items)
+        const items = _.map(row.cells, cell => _.chain(cell.items)
           .filter(item => item.y >= bottom && item.y <= top )
           .sortBy('y')
           .reverse()
           .value()
         )
+        if (row.size === 11) {
+          _.forEach(items, item => {
+            if (item.length) {
+              const first = _.first(item)
+              if ((first.y + first.h) < (top - 8)) { // Ajouter une ligne vide
+                item.unshift({
+                  x: first.x,
+                  y: top - 9,
+                  w: first.w,
+                  h: 8,
+                  str: ''
+                })
+              }
+            }
+          })
+        }
+        return items
       })
       .value()
   })
@@ -134,7 +154,9 @@ async function loadPage(doc, pageNum) {
   console.log(`Page number ${ pageNum } parsing done !`, filledTable)
 
   return _.filter(_.flatMap(filledTable, row => {
-    return _.map(row.lines, line => _.map(line, column => _.map(column, 'str').join(' ')))
+    return _.map(row.lines, line => {
+      return _.map(line, column => _.map(column, 'str').join("\n"))
+    })
   }), line => _.isArray(line) && !(line.length === 1 && _.isEmpty(line[0])))
 }
 

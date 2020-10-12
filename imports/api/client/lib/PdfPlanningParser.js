@@ -10,7 +10,7 @@ Settings.defaultZoneName = 'Europe/Paris'
 const BASES = [ 'ORY', 'CDG', 'LYS', 'MPL', 'NTE' ]
 const FLIGHT_REG = /([A-Z]{3})\-([A-Z]{3})\s\(([A-Z]+)\)/
 const MEP_REG = /([A-Z]{3})\-([A-Z]{3})/
-const DATE_REG = /^[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
+const DATE_REG = /^\s[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
 
 export default class PdfPlanningParser {
@@ -19,9 +19,9 @@ export default class PdfPlanningParser {
       bases: BASES
     })
     this.events = []
-    this.sv = []
     this.rotations = []
     this.sols = []
+    this.planning = []
     this.meta = pdf.meta
 
     this.parse(pdf.table)
@@ -34,6 +34,9 @@ export default class PdfPlanningParser {
   parse(lines) {
     this.parseDuties(lines)
     this.groupRotations()
+    this.factorSolDays()
+    this.buildPlanning()
+    this.printPlanning()
   }
   
   parseDuties(lines) {
@@ -43,46 +46,40 @@ export default class PdfPlanningParser {
     this._date = null
     this._ground = null
 
-    let i = 0
-    while (i < lines.length) {
-      const line = lines[i]
+    const rows = this.mapAndCorrectRows(lines)
 
-      if (line.length === 1 && DATE_REG.test(line[0])) {
-        const m = line[0].match(DATE_REG)
+    let i = 0
+    while (i < rows.length) {
+      const evt = rows[i]
+
+      if (evt.type === 'date') {
+        const m = evt.content.match(DATE_REG)
         this._date = DateTime.utc(parseInt(m[3]), parseInt(m[2]), parseInt(m[1]))
-        if (/BLANC$/.test(line[0])) {
+        if (/BLANC$/.test(evt.content)) {
           this.addBlanc()
         }
         i++
         continue
       }
 
-      const header = line[0]
-      if (header.length) {
-        const event = {
-          header,
-          start: line[1],
-          end: line[2],
-          category: line[3].replace(/\s/g, ''),
-          fonction: line[4],
-          summary: line[5],
-          typeAvion: line[6],
-          tv: line[7],
-          instruction: line[8],
-          peq: line[9],
-          remark: line[10]
+      if (evt.header) {
+        evt.activity = evt.activity.replace(/\s/g, '')
+        evt.summary = evt.summary.replace(/\s+/g, ' ')
+
+        if (evt.peq && evt.peq.length) {
+          evt.peq = this._parsePeq(evt.peq)
         }
 
-        if (event.peq && event.peq.length) {
-          event.peq = this._parsePeq(event.peq)
-        }
-
-        if (event.instruction) {
-          const tasks = this._parseInstruction(event.instruction)
-          const userTasks = _.remove(tasks, task => !_.isEmpty(task.fonction))
-          event.instruction = {}
-          if (userTasks.length) event.instruction.own = userTasks
-          if (tasks.length) event.instruction.other = tasks
+        if (evt.instruction) {
+          const tasks = this._parseInstruction(evt.instruction)
+          if (tasks && tasks.length) {
+            const userTasks = _.remove(tasks, task => !_.isEmpty(task.fonction))
+            evt.instruction = {}
+            if (userTasks.length) evt.instruction.own = userTasks
+            if (tasks && tasks.length) evt.instruction.other = tasks
+          } else {
+            console.log('! Impossible de parser le champ instruction:', evt.instruction)
+          }
         }
 
         /*
@@ -97,36 +94,30 @@ export default class PdfPlanningParser {
           H = découcher
         */
 
-        switch (header) {
+        switch (evt.header) {
           case 'Begin Duty': // B
-            this.beginDuty(event)
+            this.beginDuty(evt)
             break
           case 'Duty Flight': // F
-            if (!FLIGHT_REG.test(event.summary) && lines[i+1] && FLIGHT_REG.test(lines[i + 1][5])) {
-              event.summary = lines[i + 1][5]
-            }
-            this.addFlight(event)
+            this.addFlight(evt)
             break
           case 'DHD Flight': // O | P
           case 'Train': // T
           case 'Transfert': // S
-            if (!MEP_REG.test(event.summary) && lines[i + 1] && MEP_REG.test(lines[i + 1][5])) {
-              event.summary = lines[i + 1][5]
-            }
-            this.addMEP(event)
+            this.addMEP(evt)
             break
           case 'End Duty': // D
-            this.endDuty(event)
+            this.endDuty(evt)
             break
           case 'End Rest': // E
-            this.endRest(event)
+            this.endRest(evt)
             break
           case 'Ground Act.': // G
-            // if (!['ENGS', 'ENGST'].includes(event.category))
-            this.addGround(event)
+            // if (!['ENGS', 'ENGST'].includes(event.activity))
+            this.addGround(evt)
             break
           case 'HOTAC': // H
-            this.addHotel(event)
+            this.addHotel(evt)
             break
           default:
             console.log(`Type Inconnu : ${header}`)
@@ -138,6 +129,189 @@ export default class PdfPlanningParser {
     if (this._duty) {
       this.endDuty()
     }
+  }
+
+  mapAndCorrectRows(lines) {
+    const rows = _.map(lines, (line, index) => {
+      if (line.length === 1 && DATE_REG.test(line[0])) { // Ligne de Date
+        return {
+          type: 'date',
+          index,
+          content: line[0]
+        }
+      } else {
+        return {
+          type: 'event',
+          index,
+          header: line[0],
+          start: line[1],
+          end: line[2],
+          activity: line[3],
+          fonction: line[4],
+          summary: line[5],
+          typeAvion: line[6],
+          tv: line[7],
+          instruction: line[8],
+          peq: line[9],
+          remark: line[10]
+        }
+      }
+    })
+
+    let activityOffset = false
+    let summaryOffset = false
+    let followsDate = false
+    let i = 0
+    while (i < rows.length) {
+      let row = rows[i]
+
+      if (row.type === 'date') {
+        followsDate = true
+        i++
+        continue
+      }
+
+      if (followsDate) { // La première ligne suivant une ligne de date est bien alignée
+        activityOffset = 0
+        summaryOffset = false
+        followsDate = false
+        i++
+        continue
+      }
+
+      if (row.header) { // Seules les lignes ayant un entête sont traitées
+        if (!activityOffset) {
+          activityOffset = this.hasActivityOffset(row, i, rows)
+        }
+
+        if (activityOffset) {
+          // console.log('! DECALAGE de ligne de code/numéro', row, row.activity)
+          let prevActivity
+          if (row.activity.indexOf('\n') !== -1) {
+            // console.log('ACTIVITY has newline', row.activity)
+            const split = row.activity.split('\n')
+            prevActivity = split.shift()
+            row.activity = split.join('\n')
+            // console.log('NEW activity', row.activity)
+          } else {
+            // console.log('PLAIN activity', row.activity)
+            prevActivity = row.activity
+            row.activity = ''
+          }
+          if (i > 0) { // recopier le code activité dans la ligne précédente
+            rows[i - 1].activity += prevActivity
+            // console.log('PREV activity', rows[i - 1].activity)
+          }
+        }
+
+        if (!summaryOffset) {
+          summaryOffset = this.hasSummaryOffset(row, i, rows)
+        }
+
+        if (summaryOffset) {
+          // console.log('! DECALAGE de ligne de description', row, row.summary)
+          let prevSummary
+          if (row.summary.indexOf('\n') !== -1) {
+            // console.log('ROW has newline', row.summary)
+            const split = row.summary.split('\n')
+            prevSummary = split.shift()
+            row.summary = split.join('\n')
+            // console.log('NEW summary', row.summary)
+          } else {
+            // console.log('PLAIN row', row.summary)
+            prevSummary = row.summary
+            row.summary = ''
+          }
+          if (i > 0) { // recopier le titre dans la ligne précédente
+            const prev = rows[i - 1]
+            if (prev.summary.length) {
+              prev.summary += ' ' + prevSummary
+            } else {
+              prev.summary = prevSummary
+            }
+            // console.log('PREV SUMMARY', prev.summary)
+          }
+        }
+      }
+      i++
+    }
+    return rows
+  }
+
+  hasActivityOffset(row, i, rows) {
+    if (i > 0) {
+      const prev = rows[i - 1]
+      if (prev.activity.indexOf('\n') !== -1) {
+        // console.log('hasActivityOffset: saut de ligne sur ligne précédente', prev.activity, prev)
+        return true
+      }
+    }
+
+    switch (row.header) {
+      case 'Duty Flight': // F
+      case 'DHD Flight': // O | P
+      case 'Train': // T
+      case 'Transfert': // S
+      case 'Ground Act.': // G
+        if (_.isEmpty(row.activity)) {
+          // console.log('hasActivityOffset: code requis mais absent', row.activity, row)
+          return true
+        }
+        break
+      case 'Begin Duty': // B
+      case 'End Duty': // D
+      case 'End Rest': // E
+      case 'HOTAC': // H
+        if (!_.isEmpty(row.activity)) {
+          // console.log('hasActivityOffset: code devrait être vide', row.activity, row)
+          return true
+        }
+        break
+    }
+    return false
+  }
+
+  hasSummaryOffset(row, i, rows) {
+    if (i > 0) {
+      const prev = rows[i - 1]
+      if (_.includes(['Ground Act.', 'HOTAC'], prev.header) && prev.summary.indexOf('\n') !== -1) {
+        return true
+      }
+    }
+
+    const hasNewline = row.summary.indexOf('\n') !== -1
+    let summary, nextSummary
+    if (hasNewline) {
+      const split = row.summary.split('\n')
+      summary = split.shift()
+      nextSummary = split.join('\n')
+    } else {
+      summary = row.summary
+      nextSummary = i < (rows.length - 1) ? rows[i + 1].summary : null
+    }
+
+    switch (row.header) {
+      case 'Begin Duty': // B
+        // Summary peut être "Standard Duty" ou "Extended Duty"
+        if (!/duty$/i.test(summary) && /duty/i.test(nextSummary)) return true
+        break
+      case 'Duty Flight': // F
+        if (!FLIGHT_REG.test(summary) && FLIGHT_REG.test(nextSummary)) return true
+        break
+      case 'DHD Flight': // O | P
+      case 'Train': // T
+      case 'Transfert': // S
+        if (!MEP_REG.test(summary) && MEP_REG.test(nextSummary)) return true
+        break
+      case 'End Duty': // D
+      case 'End Rest': // E
+        if (summary.length && i > 0 && !nextSummary) return true
+        break
+      case 'Ground Act.': // G
+      case 'HOTAC': // H
+        break
+    }
+    return false
   }
 
   beginDuty(event) {
@@ -167,7 +341,8 @@ export default class PdfPlanningParser {
     const vol = {
       tag: 'vol',
       fonction: event.fonction,
-      num: event.category,
+      summary: `${event.activity} (${m[1]}-${m[2]})`,
+      num: event.activity,
       from: m[1],
       to: m[2],
       immat: m[3],
@@ -210,7 +385,8 @@ export default class PdfPlanningParser {
     const mep = {
       tag: 'mep',
       fonction: event.fonction,
-      num: event.category,
+      summary: `MEP ${event.activity} (${m[1]}-${m[2]})`,
+      num: event.activity,
       from: m[1],
       to: m[2],
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),
@@ -281,7 +457,6 @@ export default class PdfPlanningParser {
       this._duty.mep = groups.mep ? _.sumBy(groups.mep, 'mep') : 0
       this._duty.to = _.last(etapes).to
 
-      this.sv.push(this._duty)
       this.events.push(this._duty)
     }
 
@@ -290,11 +465,14 @@ export default class PdfPlanningParser {
       const specialCategoryEvent = _.find(this._duty.events, evt => {
         return _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag)
       })
-
       this._duty.tag = specialCategoryEvent ? specialCategoryEvent.tag : firstSol.tag
       this.events.push(this._duty)
       this.sols.push(this._duty)
     }
+
+    let found
+    if (found = _.find(this._duty.events, evt => _.isObject(evt.peq))) this._duty.peq = found.peq
+    if (found = _.find(this._duty.events, evt => _.isObject(evt.instruction))) this._duty.instruction = found.instruction
 
     this._precDuty = this._duty
     this._duty = null
@@ -322,8 +500,8 @@ export default class PdfPlanningParser {
   addGround(event) {
     let sol = {
       type: 'sol',
-      category: event.category,
-      tag: this._findTag(event.category),
+      category: event.activity,
+      tag: this._findTag(event.activity),
       summary: event.summary,
       debut: (event.start && TIME_REG.test(event.start)) ? this._date.set(this._parseTime(event.start)).setZone('Europe/Paris') : undefined,
       fin: (event.end && TIME_REG.test(event.end)) ? this._date.set(this._parseTime(event.end)).setZone('Europe/Paris') : undefined,
@@ -353,7 +531,7 @@ export default class PdfPlanningParser {
     }
 
     if (this._duty) {
-      if (!this._duty.type || this._duty.type === 'mep') { // TODO : MEP incluses dans activité sol ?
+      if (!this._duty.type || this._duty.type === 'mep') {
         this._duty.type = 'sol'
       }
       this._duty.events.push(sol)
@@ -394,7 +572,7 @@ export default class PdfPlanningParser {
     this.events = _.sortBy(this.events, ['debut', 'fin'])
 
     let startIndex = _.findIndex(this.events, evt => ['repos', 'conges'].includes(evt.tag))
-    console.log(this.events, startIndex)
+    // console.log(this.events, startIndex)
 
     let rotations
     if (startIndex != -1) {
@@ -406,16 +584,6 @@ export default class PdfPlanningParser {
       rotations = this._getRotationsFromRight(this.events)
     }
 
-    _.forEach(rotations, rot => {
-      if (rot) {
-        console.log('[Rotation]', rot.base, rot.nbjours, rot.decouchers)
-        _.forEach(rot.sv, sv => {
-          console.log('[SV]', sv.type, sv.summary, sv.from, sv.to, sv.hotel)
-          _.forEach(sv.events, evt => console.log('['+evt.tag.toUpperCase()+']', evt.num, evt.from, evt.to, evt.debut.toLocaleString(DateTime.DATETIME_FULL)))
-        })
-      }
-    })
-
     this.rotations = rotations
   }
 
@@ -425,7 +593,7 @@ export default class PdfPlanningParser {
     let prevDuty = null
 
     _.forEach(events, evt => {
-      console.log(evt, evt.type, evt.tag, _.map(evt.events, evt => [ evt.num, evt.from, evt.to, evt.debut.toLocaleString(DateTime.DATETIME_SHORT) ]))
+      // console.log(evt, evt.type, evt.tag, _.map(evt.events, evt => [ evt.num, evt.from, evt.to, evt.debut.toLocaleString(DateTime.DATETIME_SHORT) ]))
       if (evt.type === 'sv' || evt.type === 'mep') {
         if (!rotation) { // Cas d'un premier SV de MEP isolée ! et si SV de MEP isolée pour activités sol ?
           rotation = this.beginRotation(evt.from)
@@ -551,8 +719,66 @@ export default class PdfPlanningParser {
     return rotation
   }
 
-  _findTag(category) {
-    return Utils.findTag(category)
+  factorSolDays() {
+    const result = []
+    let memo = null
+    _.forEach(this.sols, sol => {
+      if (_.includes(Utils.alldayTags, sol.tag)) {
+        if (memo) {
+          if (memo.activity === sol.activity
+            && memo.summary === sol.summary
+            && memo.fin.plus({ days: 1 }).hasSame(sol.debut, 'day')) {
+            memo.fin = sol.fin
+          } else {
+            result.push(memo)
+            memo = sol
+          }
+        } else {
+          memo = sol
+        }
+      } else {
+        if (memo) {
+          result.push(memo)
+          memo = null
+        }
+        result.push(sol)
+      }
+    })
+    this.sols = result
+  }
+
+  buildPlanning() {
+    const acheminements = _.remove(this.rotations, rotation => rotation.countVol === 0 && rotation.countMEP > 0)
+    _.forEach(acheminements, group => {
+      _.forEach(group.sv, mep => mep.tag = 'mep')
+      this.sols.push(...group.sv)
+    })
+    this.planning = _.sortBy(this.sols.concat(this.rotations), ['debut', 'fin'])
+  }
+
+  printPlanning() {
+    console.log('--- PLANNING ---')
+    _.forEach(this.planning, evt => {
+      if (evt.tag === 'rotation') {
+        console.log(`[ROTATION] ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+        _.forEach(evt.sv, sv => {
+          if (_.has(sv, 'fromHotel')) console.log(`{...HOTEL} ${ sv.fromHotel.summary }`)
+          console.log(`[${sv.type}] ${sv.summary} - ${sv.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+          _.forEach(sv.events, etape => console.log(`-> ${etape.summary} - ${etape.debut.toLocaleString(DateTime.DATETIME_FULL)}`))
+          if (_.has(sv, 'hotel')) console.log(`{HOTEL} ${sv.hotel.summary}`)
+        })
+      } else {
+        console.log(`[${evt.tag}] (${evt.summary}) ${evt.debut.toLocaleString(DateTime.DATETIME_FULL)}`)
+        if (evt.events && evt.events.length) {
+          _.forEach(evt.events, subEvt => console.log(`-> ${subEvt.tag} - ${subEvt.summary} - ${subEvt.debut.toLocaleString(DateTime.DATETIME_FULL)}`))
+        }
+      }
+    })
+    console.log('----------------')
+  }
+
+  _findTag(code) {
+    return Utils.findTag(code)
   }
 
   _parseTime(timeStr) {
@@ -587,14 +813,13 @@ export default class PdfPlanningParser {
   }
 
   _parseInstruction(str) {
-    str = str.replace(/\s/g, '_')
-    const groups = [...str.matchAll(/\s?([A-z0-9_]{2,})\sIns\.:\s([A-Z]{3})/g)]
+    const groups = [...str.matchAll(/\s?([A-z0-9_ ]{2,})\s+Ins\.:\s+([A-Z]{3})/g)]
     if (groups.length) {
       return _.chain(groups)
         .map((match, index) => {
           if (match && match.length === 3) {
             const result = {
-              code: match[1],
+              code: match[1].replace(/\s/g, '_'),
               inst: match[2]
             }
             const endOfGroup = index === groups.length-1 ? str.length : groups[index+1].index
