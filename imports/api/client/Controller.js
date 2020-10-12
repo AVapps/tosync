@@ -124,12 +124,14 @@ Controller = {
 
     Tracker.autorun(() => {
       if (this.EventsSubs.ready() && Events.loaded) {
-        console.timeEnd('Events.loaded & EventsSubs.ready : syncing db')
+        console.timeEnd('Events.loaded & EventsSubs.ready')
         Events.sync({
           userId: Meteor.userId(),
           end: { $gte: +this.eventsStart },
           start: { $lte: +this.eventsEnd }
         })
+        // Force l'invalidation pour éviter un bug lorsque IndexedDB est vide lors du chargement de la page
+        Meteor.setTimeout(() => Events._cacheCollection.invalidate(), 300)
       }
     })
 
