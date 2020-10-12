@@ -20,6 +20,7 @@ Connect = {
 	_tasks: {},
   state: new ReactiveDict(CONNECT_STATE_KEY, {
     username: null,
+    online: false,
     connected: false,
     changesPending: false,
     signNeeded: false,
@@ -30,12 +31,29 @@ Connect = {
 
 	init() {
     this.debouncedLogin = _.debounce(this.login, 120000, { leading: true })
+
+    window.addEventListener('offline', () => {
+      this.state.set('online', false)
+    }, false)
+
+    window.addEventListener('online', () => {
+      this.state.set('online', true)
+    }, false)
+
+    this.state.set('online', navigator.onLine)
+
     Config.onReady(() => {
       const lastSessionCheck = Config.get('lastSessionCheck')
-      const now = +new Date()
-      if (now - lastSessionCheck > (1000 * 60 * 2)) {
-        this.checkSession(true)
-      }
+      Tracker.autorun(() => {
+        if (this.state.get('online')) {
+          const now = +new Date()
+          if (now - lastSessionCheck > (1000 * 60 * 2)) {
+            this.checkSession(true)
+          }
+        } else {
+          this.clearSession()
+        }
+      })
     })
 		return this
 	},
@@ -172,7 +190,11 @@ Connect = {
 	// Reactive datasource to check TO.Connect session state. true = online, false = offline
 	authentificated() {
 		return this.state.get('connected')
-	},
+  },
+
+  isOnline() {
+    return this.state.get('online')
+  },
 
   isWorking() {
 		return this.state.get('working')

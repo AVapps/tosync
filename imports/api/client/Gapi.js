@@ -36,6 +36,7 @@ class Gapi {
   }
 
   loadClient() {
+    if (!gapi) return
     return gapi.load('client:auth2', async () => {
       try {
         await this.initClient()
