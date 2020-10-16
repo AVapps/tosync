@@ -8,7 +8,7 @@ export default {
     syncCalendarEvents(events, options = {}) {
         _.defaults(options, {
             restrictToLastEventEnd: true
-        });
+        })
 
         if (!Meteor.userId() || !events.length) return false;
 
@@ -29,7 +29,7 @@ export default {
 
         console.log('syncCalendarEvents', events, planning, first, last, hasSols)
 
-        Meteor.call('getEvents', first.start, options.restrictToLastEventEnd ? last.end : false, (error, savedEvents) => {
+        Meteor.call('getEvents', first.start.valueOf(), options.restrictToLastEventEnd ? last.end.valueOf() : false, (error, savedEvents) => {
             if (error) {
                 Notify.error(error);
             } else if (savedEvents && savedEvents.length) {
@@ -103,7 +103,7 @@ export default {
 
                         // Rotation programmée
                         if (oldRot.start.isAfter(now)) {
-                            // Si la rotation est inclus dans le planning: mise à jour de l'heure de début et de fin.
+                            // Si la rotation est incluse dans le planning: mise à jour de l'heure de début et de fin.
                             if (oldRot.start >= first.start && (!options.restrictToLastEventEnd || oldRot.end <= last.end)) {
                                 if (!_.isMatchWith(oldRot, _.pick(rot, 'start', 'end', 'base'), matchMoment)) {
                                     updateLog.update.push({
@@ -216,7 +216,7 @@ export default {
         const first = _.first(events),
             last = _.last(events);
 
-        Meteor.call('getEvents', first.start, last.end, (error, savedEvents) => {
+        Meteor.call('getEvents', first.start.valueOf(), last.end.valueOf(), (error, savedEvents) => {
             if (error) {
                 Notify.error(error);
             } else if (savedEvents && savedEvents.length) {

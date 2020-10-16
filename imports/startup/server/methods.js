@@ -1,5 +1,6 @@
 import moment from 'moment'
 import { Meteor } from 'meteor/meteor'
+import { Match, check } from 'meteor/check'
 import '/imports/lib/moment-ejson.js'
 import { TOConnect as Connect } from '/imports/api/toconnect/server/TOConnect'
 import _ from 'lodash'
@@ -139,34 +140,31 @@ Meteor.methods({
 		}).fetch();
 	},
 
+	// start, end as timestamps
 	getEvents(start, end) {
-		check(this.userId, Match.OneOf(String, Object));
-		let query;
-		if (moment.isMoment(start) && moment.isMoment(end) && start.isBefore(end)) {
+		check(this.userId, Match.OneOf(String, Object))
+		check(start, Number)
+
+		let query
+		if (start < end) {
 			query = {
 				userId: this.userId,
-				start: {
-					$lte: end.valueOf()
-				},
-				end: {
-					$gte: start.valueOf()
-				}
-			};
-		} else if (moment.isMoment(start) && !end) {
+				start: { $lte: end },
+				end: { $gte: start }
+			}
+		} else if (start && !end) {
 			query = {
 				userId: this.userId,
-				end: {
-					$gte: start.valueOf()
-				}
-			};
+				end: { $gte: start }
+			}
 		} else {
-			throw new Meteor.Error(500, 'Requète invalide !');
+			throw new Meteor.Error('invalid-request', 'Requète invalide !')
 		}
 
 		if (query) {
 			return Events.find(query, {
 				sort: [['start', 'asc'], ['end', 'desc']]
-			}).fetch();
+			}).fetch()
 		}
 	},
 

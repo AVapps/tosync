@@ -3,7 +3,7 @@ import { ReactiveVar } from 'meteor/reactive-var'
 import { ReactiveDict } from 'meteor/reactive-dict'
 import { DateTime } from 'luxon'
 import { TOConnect } from '../toconnect/client/TOConnect.js'
-import pify from 'pify'
+import PifyMeteor from './lib/PifyMeteor'
 
 const CONNECT_STATE_KEY = "CONNECT_STATE"
 
@@ -70,7 +70,7 @@ Connect = {
         if (this._retryCount) {
           this.state.set('message', `${ this._retryCount + 1 }e tentative...`)
         }
-        await pify(Meteor.loginConnect)(username, password)
+        await Meteor.loginWithTOConnect(username, password)
         state = await this.checkSession(false)
         // console.log('Connect.login state', state)
         if (state && state.connected) {
@@ -253,7 +253,7 @@ Connect = {
     let state, shouldRetry
     do {
       try {
-        state = await pify(Meteor.call)('checkSession')
+        state = await PifyMeteor.call('checkSession')
       } catch (error) {
         shouldRetry = await this.backoff(error)
         if (!shouldRetry) this._handleError(error, true)

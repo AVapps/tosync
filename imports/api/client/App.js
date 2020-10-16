@@ -82,6 +82,7 @@ App = {
     console.log(pdf)
     const planning = new PdfPlanningParser(pdf)
     console.log(planning)
+    Sync.importPdfPlanning(planning)
   },
 
 	updateTags(cb) {

@@ -2,8 +2,6 @@ import { DateTime, Duration, Settings } from 'luxon'
 import _ from 'lodash'
 import Utils from './Utils.js'
 
-window.Utils = Utils
-
 Settings.defaultLocale = 'fr'
 Settings.defaultZoneName = 'Europe/Paris'
 
@@ -387,6 +385,7 @@ export default class PdfPlanningParser {
       fonction: event.fonction,
       summary: `MEP ${event.activity} (${m[1]}-${m[2]})`,
       num: event.activity,
+      title: event.activity,
       from: m[1],
       to: m[2],
       debut: this._date.set(this._parseTime(event.start)).setZone('Europe/Paris'),

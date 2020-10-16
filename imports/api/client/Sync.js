@@ -1,8 +1,9 @@
-import { Meteor } from 'meteor/meteor';
-import _ from 'lodash';
-import moment from 'moment';
-import SyncTools from './lib/syncCalendarEvents.js';
-import Utils from './lib/Utils.js';
+import { Meteor } from 'meteor/meteor'
+import _ from 'lodash'
+import moment from 'moment'
+import SyncTools from './lib/syncCalendarEvents.js'
+import PdfPlanningImporter from './lib/PdfPlanningImporter'
+import Utils from './lib/Utils.js'
 
 Sync = {
 
@@ -26,6 +27,12 @@ Sync = {
 		return SyncTools.syncCalendarEvents(events, {
 			restrictToLastEventEnd: false
 		});
+	},
+
+	// Importe les évènements en synchronisant les évènements sur le période importée
+	importPdfPlanning(planning) {
+		const PdfImport = new PdfPlanningImporter(planning)
+		console.log(PdfImport)
 	},
 
 	// Importe des évènements

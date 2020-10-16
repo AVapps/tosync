@@ -8,7 +8,7 @@ import RemuPNC from './lib/RemuPNC.js'
 
 import _ from 'lodash'
 import Swal from 'sweetalert2'
-import pify from 'pify'
+import PifyMeteor from './lib/PifyMeteor'
 
 const NOW = new Date()
 const isPNT = new ReactiveVar(false)
@@ -279,7 +279,7 @@ Controller = {
     console.log('Controller._reparseEventsOfCurrentMonth')
     this.forceSync()
     try {
-      const eventsOfMonth = await pify(Meteor.call)('getAllEventsOfMonth', this.currentMonth.get())
+      const eventsOfMonth = await PifyMeteor.call('getAllEventsOfMonth', this.currentMonth.get())
       Sync.reparseEvents(eventsOfMonth)
     } catch (error) {
       console.log(error)
