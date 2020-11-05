@@ -50,20 +50,23 @@ export default function (str) {
 			_.extend(evt, { category, tag });
 
 			switch (tag) {
-        case 'absence':
-    		case 'conges':
-    		case 'sanssolde':
-        case 'blanc':
-    		case 'repos':
-    		case 'maladie':
-    		case 'greve':
-    		case 'stage':
-    		case 'sol':
-    		case 'instructionSol':
-    		case 'simu':
-    		case 'instructionSimu':
-    		case 'reserve':
-    		case 'delegation':
+        case 'rotation':
+				case 'absence':
+				case 'conges':
+				case 'sanssolde':
+				case 'blanc':
+				case 'jisap':
+				case 'repos':
+				case 'maladie':
+				case 'greve':
+				case 'stage':
+				case 'sol':
+				case 'instructionSol':
+				case 'simu':
+				case 'instructionSimu':
+				case 'reserve':
+				case 'delegation':
+				case 'autre':
 					return evt;
 
 				case 'vol':
