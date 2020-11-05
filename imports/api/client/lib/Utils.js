@@ -310,6 +310,7 @@ export default {
 			case 'maladie':
 			case 'absence':
 			case 'sanssolde':
+			case 'jisap':
 				return 'badge-warning';
 			case 'reserve':
 			case 'sol':
@@ -321,7 +322,6 @@ export default {
 			case 'autre':
 				return 'badge-secondary';
 			case 'blanc':
-			case 'jisap':
 				return 'badge-light';
 			default:
 				return 'badge-dark';
