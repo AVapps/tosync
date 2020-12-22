@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:12.18.3
+FROM mhart/alpine-node:12.18.4
 RUN adduser -D -h /home/user user
 ADD alpine-build/bundle /home/user
 WORKDIR /home/user
