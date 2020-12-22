@@ -2,13 +2,7 @@
   <div id="mainView">
   	{{> navbar isLoggedIn=isLoggedIn connectAuthentificated=connectAuthentificated }}
     <div id="content">
-      {{#if isLoggedIn }}
-      	<div id="calendar-container">
-          {{> calendar }}
-        </div>
-      {{ else }}
-        {{> home }}
-      {{/if}}
+      {{> yield }}
     </div>
     <footer>
   		<div class="container-xl">

@@ -1,82 +1,84 @@
 <template name="calendar">
-	<div class="affix sticky-top">
-		<div class="container-xl">
-      <div class="row justify-content-between align-items-center">
-				<div class="col-2 px-0">
-          {{#if isTableStyle }}
-					<button class="btn btn-link fc-style">
-            <i class="fas fa-list"></i>
-          </button>
-          {{else}}
-          <button class="btn btn-link fc-style">
-            <i class="fas fa-calendar"></i>
-          </button>
-          {{/if}}
-        </div>
-        <div class="col-auto flex-grow-1 px-0">
-					<div class="fc-controls d-flex justify-content-center align-items-center">
-						<button class="clndr-previous-button btn btn-link">
-							<i class="fas fa-chevron-left"></i>
+	<div id="calendar-container">
+		<div class="affix sticky-top">
+			<div class="container-xl">
+				<div class="row justify-content-between align-items-center">
+					<div class="col-2 px-0">
+						{{#if isTableStyle }}
+						<button class="btn btn-link fc-style">
+							<i class="fas fa-list"></i>
 						</button>
-						<button class="btn btn-link fc-month" disabled>{{ format month 'MMMM YYYY' }}</button>
-						<button class="clndr-next-button btn btn-link">
-							<i class="fas fa-chevron-right"></i>
+						{{else}}
+						<button class="btn btn-link fc-style">
+							<i class="fas fa-calendar"></i>
 						</button>
+						{{/if}}
 					</div>
-        </div>
-	      <div class="col-2 text-right px-0">
-					<button type="button" class="btn btn-link remu">
-						<i class="fas fa-chart-bar"></i>
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div id="HC">
-		{{#with stats=remu }}
-		<div class="container-xl text-muted text-center">
-      <button id="statsButton" type="button" class="btn btn-light remu">
-        <i class="fas fa-file-invoice"></i>
-        <span class="badge {{ eHSclass stats.eHS }} remu">eHS {{ numFormat stats.eHS }}</span>
-  			<span class="badge badge-default remu">HDV {{ duree stats.tv }}</span>
-      </button>
-		</div>
-		{{/with}}
-	</div>
-	<div id="planningContent">
-		<div class="container-xl">
-			<div id="calendar" class="fc-calendar-container">
-        <h4 class="d-none d-print-block text-capitalize">{{ format month 'MMMM YYYY' }}</h4>
-				<div class="fc-calendar {{ displayStyle }}">
-					<div class="fc-head text-muted">
-						<div class="fc-row fc-small">
-							<span class="fc-cell">Lun.</span>
-							<span class="fc-cell">Mar.</span>
-							<span class="fc-cell">Mer.</span>
-							<span class="fc-cell">Jeu.</span>
-							<span class="fc-cell">Ven.</span>
-							<span class="fc-cell">Sam.</span>
-							<span class="fc-cell">Dim.</span>
-						</div>
-						<div class="fc-row fc-large">
-							<span class="fc-cell">Lundi</span>
-							<span class="fc-cell">Mardi</span>
-							<span class="fc-cell">Mercredi</span>
-							<span class="fc-cell">Jeudi</span>
-							<span class="fc-cell">Vendredi</span>
-							<span class="fc-cell">Samedi</span>
-							<span class="fc-cell">Dimanche</span>
+					<div class="col-auto flex-grow-1 px-0">
+						<div class="fc-controls d-flex justify-content-center align-items-center">
+							<button class="clndr-previous-button btn btn-link">
+								<i class="fas fa-chevron-left"></i>
+							</button>
+							<button class="btn btn-link fc-month" disabled>{{ format month 'MMMM YYYY' }}</button>
+							<button class="clndr-next-button btn btn-link">
+								<i class="fas fa-chevron-right"></i>
+							</button>
 						</div>
 					</div>
-					<div class="fc-body">
-						{{#each day in days}}
-							{{> planningCalendarDay day=day }}
-						{{/each}}
+					<div class="col-2 text-right px-0">
+						<button type="button" class="btn btn-link remu">
+							<i class="fas fa-chart-bar"></i>
+						</button>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div><!-- /content -->
+		<div id="HC">
+			{{#with stats=remu }}
+			<div class="container-xl text-muted text-center">
+				<button id="statsButton" type="button" class="btn btn-light remu">
+					<i class="fas fa-file-invoice"></i>
+					<span class="badge {{ eHSclass stats.eHS }} remu">eHS {{ numFormat stats.eHS }}</span>
+					<span class="badge badge-default remu">HDV {{ duree stats.tv }}</span>
+				</button>
+			</div>
+			{{/with}}
+		</div>
+		<div id="planningContent">
+			<div class="container-xl">
+				<div id="calendar" class="fc-calendar-container">
+					<h4 class="d-none d-print-block text-capitalize">{{ format month 'MMMM YYYY' }}</h4>
+					<div class="fc-calendar {{ displayStyle }}">
+						<div class="fc-head text-muted">
+							<div class="fc-row fc-small">
+								<span class="fc-cell">Lun.</span>
+								<span class="fc-cell">Mar.</span>
+								<span class="fc-cell">Mer.</span>
+								<span class="fc-cell">Jeu.</span>
+								<span class="fc-cell">Ven.</span>
+								<span class="fc-cell">Sam.</span>
+								<span class="fc-cell">Dim.</span>
+							</div>
+							<div class="fc-row fc-large">
+								<span class="fc-cell">Lundi</span>
+								<span class="fc-cell">Mardi</span>
+								<span class="fc-cell">Mercredi</span>
+								<span class="fc-cell">Jeudi</span>
+								<span class="fc-cell">Vendredi</span>
+								<span class="fc-cell">Samedi</span>
+								<span class="fc-cell">Dimanche</span>
+							</div>
+						</div>
+						<div class="fc-body">
+							{{#each day in days}}
+								{{> planningCalendarDay day=day }}
+							{{/each}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div><!-- /content -->
+	</div>
 </template>
 
 <template name="planningCalendarDay">

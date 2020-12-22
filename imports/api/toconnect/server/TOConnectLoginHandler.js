@@ -11,7 +11,7 @@ export default function loginHandler(loginRequest) {
 
   const connect = new TOConnectManager()
 
-  if (connect.loginSync(loginRequest.trigramme, loginRequest.password)) {
+  if (connect.loginSync(loginRequest.trigramme, loginRequest.pwd)) {
     const user = Meteor.users.findOne({ username: loginRequest.trigramme })
 
     if(!user) {

@@ -50,6 +50,7 @@ less@2.8.0
 livedata@1.0.18
 localstorage@1.2.0
 logging@1.1.20
+mdg:validated-method@1.2.0
 meteor@1.9.3
 meteor-base@1.4.0
 meteorhacks:subs-manager@1.6.4
@@ -70,6 +71,7 @@ npm-bcrypt@0.9.3
 npm-mongo@3.8.1
 observe-sequence@1.0.16
 ordered-dict@1.1.0
+ostrio:flow-router-extra@3.7.5
 promise@0.11.2
 random@1.2.0
 rate-limit@1.0.9

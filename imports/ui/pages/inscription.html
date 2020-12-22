@@ -1,0 +1,35 @@
+<template name="inscription">
+  <div id="inscription" class="container">
+    <div class="card my-4">
+      <div class="card-body">
+        <div class="card-title">
+          <h4>Inscription / Récupération de compte TO.sync</h4>
+        </div>
+        <h5 class="card-subtitle mb-2 text-muted">Suite à la fermeture de TO.connect il est recommandé de créer un compte avec des identifiants spécifiques TO.sync. Vous pouvez également récupérer ici votre compte TO.sync si vos identifiants TO.connect ne fonctionnent plus. Entrez votre trigramme et votre adresse électronique professionnelle ci-dessous puis cliquez sur « Envoyer », vous recevrez alors un e-mail de confirmation dans lequel se trouvera un lien pour terminer votre inscription ou récupération de compte.</h5>
+        <p class="card-text"></p>
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            {{#if emailSent }}
+            <div class="alert alert-success" role="alert">
+              Un e-mail a été envoyé à votre adresse professionnelle, merci de consulter votre boîte de réception.
+            </div>
+            {{ else }}
+            <form id="inscription">
+              <input name="trigramme" type="text" value="" placeholder="Trigramme" class="form-control mb-2 text-uppercase" maxlength="3" pattern="[A-z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }} required />
+
+              <input name="user-email" type="email" autocomplete="email" value="" placeholder="prenom.nom@fr.transavia.com" class="form-control mb-2" pattern="^[a-z._\-]+@fr.transavia.com$" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }} required />
+              
+
+              <button type="submit" class="btn btn-primary btn-block js-user-subscribe ladda-button"
+                data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
+                <span class="ladda-label">Envoyer</span>
+              </button>
+            </form>
+            {{/if}}
+            <a type="button" href="{{pathFor '/' }}" class="btn btn-block btn-link mt-2">Retour à l'accueil</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

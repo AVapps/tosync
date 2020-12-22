@@ -1,7 +1,7 @@
-#home {
+#loginPage {
   padding-top: 1.5rem;
 
-  .card-body a {
+  .card-body a:not(.btn) {
     color: white;
   }
 }

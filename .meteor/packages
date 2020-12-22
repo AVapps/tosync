@@ -37,3 +37,5 @@ mikowals:batch-insert
 useraccounts:bootstrap
 accounts-password
 ddp-rate-limiter
+ostrio:flow-router-extra
+mdg:validated-method

@@ -57,10 +57,10 @@ import '/imports/ui/modal/mois/profilTab.js'
 
 
 // Layouts
-import '/imports/ui/layouts/main.js'
+// import '/imports/ui/layouts/main.js'
 
 // Pages
-import '/imports/ui/pages/home.js'
+import '/imports/ui/pages/login.js'
 import '/imports/ui/pages/changelog.js'
 import '/imports/ui/pages/remu.js'
 import '/imports/ui/pages/loading.js'
