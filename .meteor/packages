@@ -34,8 +34,10 @@ dynamic-import@0.5.4
 fourseven:scss
 adrienv:grounddb
 mikowals:batch-insert
-useraccounts:bootstrap
 accounts-password
+accounts-google
+oauth-encryption
+service-configuration
 ddp-rate-limiter
 ostrio:flow-router-extra
 mdg:validated-method

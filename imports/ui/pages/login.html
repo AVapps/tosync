@@ -36,7 +36,18 @@
 							</form>
 							<p class="text-center mt-2 mb-0">{{ message }}</p>
 							<div class="ui horizontal inverted divider">Ou</div>
-							<a href="{{pathFor '/inscription' }}" class="btn btn-block btn-light">Inscription</a>
+							<button type="button" class="js-google-button btn btn-light btn-google btn-block" {{
+									disabledOnLoggingIn }}>
+									<img src="./google_logo.svg" alt="G" />
+									<span class="label">Connexion avec Google</span>
+							</button>
+							<div class="ui horizontal inverted divider"></div>
+							<p class="text-center">
+								Pas encore inscrit ?
+								<br>
+								<a href="{{pathFor '/inscription' }}" class="btn btn-outline-light mt-2">Créer un compte</a>
+							</p>
+							
 						</div>
 					</div>
 				</div>

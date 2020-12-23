@@ -34,10 +34,23 @@ Template.loginPage.events({
 
       Meteor.loginWithPassword(username, password, (err) => {
         if (err) {
+          // TODO : message à afficher pour proposer contact email en cas de problème
           Notify.error(err)
         }
         l.stop()
       })
     }
+  },
+
+  'click .js-google-button': (e,t) => {
+    const l = Ladda.create(e.currentTarget)
+    l.start()
+    Meteor.loginWithGoogle({ requestPermissions: ['openid', 'email'] }, (err) => {
+      if (err) {
+        // TODO : message à afficher pour proposer contact email en cas de problème
+        Notify.error(err)
+      }
+      l.stop()
+    })
   }
 })

@@ -6,6 +6,7 @@ import '/imports/api/client/lib/format.min.js'
 import '/imports/api/client/lib/moment.lang.fr'
 
 import './router.js'
+import './accounts.js'
 
 import '/imports/api/client/App.js'
 import '/imports/api/client/Notifications.js'

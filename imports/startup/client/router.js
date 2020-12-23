@@ -21,7 +21,6 @@ FlowRouter.route('/inscription', {
 FlowRouter.route('/inscription/:token', {
   name: 'inscription.validation',
   action(params) {
-    console.log(params)
     this.render('main', 'inscriptionValidation', params)
   }
 })

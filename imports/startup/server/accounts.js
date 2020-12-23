@@ -1,8 +1,57 @@
 import { Meteor } from 'meteor/meteor'
+import { OAuthEncryption } from 'meteor/oauth-encryption'
 import { Accounts } from 'meteor/accounts-base'
-import TOConnectLoginHandler from '../../api/toconnect/server/TOConnectLoginHandler.js'
+import TOConnectLoginHandler from '/imports/api/toconnect/server/TOConnectLoginHandler.js'
 
 Accounts.registerLoginHandler('TOConnect', TOConnectLoginHandler)
+
+Accounts.config({
+  restrictCreationByEmailDomain: 'fr.transavia.com',
+  forbidClientAccountCreation: true,
+  sendVerificationEmail: false
+})
+
+Accounts.beforeExternalLogin((type, data, user) => {
+  if (user) {
+    // L'utilisateur existe déjà, il s'agit d'un simple login
+    return true
+  } else {
+    // Il s'agit d'une première tentive de connexion
+    const userId = Meteor.userId()
+    if (userId && type === 'google' && data.email && data.id) {
+      // Vérifie si le compte google n'est pas déjà utilisé par un autre compte utilisateur TO.sync
+      const googleUser = Meteor.users.findOne({ 'services.google.id': data.id }, { fields: { _id: 1 }})
+      if (googleUser) {
+        throw new Meteor.Error(403, `Un autre compte TO.sync utilise déjà ce compte google pour s'authentifier !`)
+      }
+
+      // Ajoute les serviceData à l'utilisateur
+      const setAttrs = {}
+      Object.keys(data).forEach(key => {
+        let value = data[key]
+        if (OAuthEncryption && OAuthEncryption.isSealed(value)) {
+          value = OAuthEncryption.seal(OAuthEncryption.open(value), userId)
+        }
+        setAttrs[`services.google.${key}`] = value
+      })
+      Meteor.users.update(userId, { $set: setAttrs })
+      
+      Accounts.addEmail(userId, data.email, !!data.verified_email)
+      console.log(`-> Google OAuth credentials for ${ data.email } added to user ${ userId }.`)
+    }
+    return true
+  }
+})
+
+ServiceConfiguration.configurations.upsert({
+  service: "google"
+}, {
+  $set: {
+    clientId: Meteor.settings.google.clientId,
+    loginStyle: "popup",
+    secret: Meteor.settings.google.secret
+  }
+});
 
 // Paramètres e-mail compte avec mot de passe
 Accounts.urls.enrollAccount = (token) => {

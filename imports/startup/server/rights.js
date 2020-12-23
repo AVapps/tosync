@@ -10,16 +10,29 @@ function isAdmin() {
 }
 
 Events.allow({
-	insert: function (userId, doc) {
+	insert(userId, doc) {
 		return userId === doc.userId
 	},
-	update: function (userId, doc, fieldNames, modifier) {
+	update(userId, doc, fieldNames, modifier) {
 		return userId === doc.userId
 	},
-	remove: function (userId, doc) {
+	remove(userId, doc) {
 		return userId === doc.userId
 	}
 })
+
+// Used for testing only
+// Meteor.users.allow({
+// 	insert(userId, doc) {
+// 		return isAdmin()
+// 	},
+// 	update(userId, doc, fieldNames, modifier) {
+// 		return isAdmin()
+// 	},
+// 	remove(userId, doc) {
+// 		return isAdmin()
+// 	}
+// })
 
 HV100.allowStaticUpdate(function () {
 	return isAdmin()

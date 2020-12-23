@@ -28,7 +28,7 @@ export default function loginHandler(loginRequest) {
         }
       })
       // Update old events
-      Events.update({ userId: loginRequest.trigramme }, {'$set': { userId: userId }}, { multi: true })
+      Events.update({ userId: loginRequest.trigramme }, {'$set': { userId }}, { multi: true })
       return { userId }
     } else {
       connect.setUserId(user._id)
@@ -42,6 +42,7 @@ export default function loginHandler(loginRequest) {
             profile: {
               nom: profil.nom || user.profile.nom,
               prenom: profil.prenom || user.profile.prenom,
+              name: (profil.nom || user.profile.nom) + ' ' + (profil.prenom || user.profile.prenom),
               fonction: profil.fonction || user.profile.fonction,
               email: profil.email || user.profile.email,
             }

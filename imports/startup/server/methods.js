@@ -54,7 +54,8 @@ Meteor.methods({
   isPNT() {
     check(this.userId, Match.OneOf(String, Object))
     // return false
-    // Meteor._sleepForMs(3000)
+		// Meteor._sleepForMs(3000)
+		this.unblock()
     return isPNT(this.userId)
   },
 
