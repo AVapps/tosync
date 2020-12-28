@@ -6,7 +6,6 @@
 meteor-base@1.4.0
 underscore@1.0.10
 force-ssl@1.1.0
-gfk:notifications
 accounts-base@1.7.1
 http@1.4.2
 reactive-var@1.0.11

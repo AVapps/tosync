@@ -54,3 +54,21 @@ li.notification {
     font-size: 20px;
   }
 }
+
+.tosync .noty_theme__sunset {
+  &.noty_type__error {
+    background-color: $danger;
+  }
+
+  &.noty_type__success {
+    background-color: $success;
+  }
+
+  &.noty_type__info {
+    background-color: $info;
+  }
+
+  &.noty_type__warning {
+    background-color: $warning;
+  }
+}

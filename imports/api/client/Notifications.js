@@ -1,60 +1,79 @@
+import Noty from 'noty'
+import 'noty/lib/noty.css'
+import 'noty/lib/themes/sunset.css'
+
+Noty.overrideDefaults({
+	layout: 'top',
+	theme: 'sunset',
+	// closeWith: ['click', 'button'],
+	// animation: {
+	// 	open: 'animated fadeInRight',
+	// 	close: 'animated fadeOutRight'
+	// }
+})
+
 Notify = {
-	success: function (title, msg) {
-		this.notify(title, msg, {type: Notifications.TYPES.SUCCESS, timeout: 5000});
+	success(title, msg) {
+		return this.notify(title, msg, { type: 'success', timeout: 5000 })
 	},
-	error: function (err, msg) {
-		console.log(err);
-		var title = 'Erreur !',
-			msg = msg || '';
+
+	error(err, msg) {
+		console.log(err)
 		if (!_.isString(err)) {
 			if (err && err.message && err.details) {
-				title = err.message;
-				msg = err.details;
+				return this.notify(err.message, err.details, { type: 'error' })
 			} else if (err && err.message) {
-				msg = err.message;
+				return this.notify(err.message, undefined, { type: 'error' })
 			} else if (_.isObject(err)) {
-				for (var k in err) {
+				for (let k in err) {
 					if (_.isString(err[k])) {
-						msg = err[k];
-						break;
+						return this.notify(err[k], undefined, { type: 'error' })
 					}
 				}
 			}
 		} else {
-			msg = err;
+			return this.notify(err, undefined, { type: 'error' })
 		}
-		this.notify(title, msg, {type: Notifications.TYPES.ERROR});
 	},
-	warn: function (title, msg) {
-		this.notify(title, msg, {type: Notifications.TYPES.WARNING, timeout: 10000});
+
+	warn(title, msg) {
+		return this.notify(title, msg, { type: 'warning', timeout: 10000 })
 	},
-	info: function (title, msg) {
-		this.notify(title, msg, {type: Notifications.TYPES.INFO, timeout: 10000});
+
+	info(title, msg) {
+		return this.notify(title, msg, {type: 'info', timeout: 10000 })
 	},
-	notify: function(title, msg, options) {
-		options = options || {};
-		Notifications.addNotification(title, msg, options);
+
+	notify(title, msg, options) {
+		options = options || {}
+		if (title && msg) {
+			options.text = `<p class="lead mb-0">${title }</p><p class="mb-0">${ msg }</p>`
+		} else {
+			options.text = title
+		}
+
+		return new Noty(options).show()
 	}
-};
+}
 
 _.extend(App, {
-	success: function (title, msg) {
-		return Notify.success(title, msg);
+	success(title, msg) {
+		return Notify.success(title, msg)
 	},
 
-	error: function (err, msg) {
-		return Notify.error(err, msg);
+	error(err, msg) {
+		return Notify.error(err, msg)
 	},
 
-	warn: function (title, msg) {
-		return Notify.warn(title, msg);
+	warn(title, msg) {
+		return Notify.warn(title, msg)
 	},
 
-	info: function (title, msg) {
-		return Notify.info(title, msg);
+	info(title, msg) {
+		return Notify.info(title, msg)
 	},
 
 	notify: function(title, msg, options) {
-		return Notify.notify(title, msg, options);
+		return Notify.notify(title, msg, options)
 	}
-});
+})
