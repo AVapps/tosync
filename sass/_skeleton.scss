@@ -1,0 +1,29 @@
+.ui.skeleton.text {
+  display: inline-block;
+  vertical-align: middle;
+  background-color: #6c757d;
+  min-width: 10ch;
+  min-height: 1em;
+  border-radius: 3px;
+
+  &.transparent {
+    background-color: transparent;
+  }
+
+  &.w-15 {
+    min-width: 15ch;
+  }
+
+  &.w-20 {
+    min-width: 20ch;
+  }
+
+  &.w-25 {
+    min-width: 25ch;
+  }
+
+
+  &.w-30 {
+    min-width: 30ch;
+  }
+}

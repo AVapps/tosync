@@ -29,15 +29,21 @@
   			</button>
       </div>
     </div>
+
     <div class="custom-control custom-switch mt-3 text-md-center">
       <input type="checkbox" class="custom-control-input" id="exportFormat" checked={{ crewMobileFormatChecked }}>
       <label class="custom-control-label" for="exportFormat">Utiliser le format CREW Mobile pour les rotations et les vols exportés (ex: TO3434 (ORY-LIS) 73H).</label>
     </div>
+
+    <hr>
+
+    {{> authServices }}
+
     <div class="modal fade" id="iCalendarModal" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content text-body">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Options d'exportation</h5>
+            <h5 class="modal-title">Options d'exportation</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>

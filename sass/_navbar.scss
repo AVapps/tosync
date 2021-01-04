@@ -34,4 +34,71 @@
   #baseSelect .input-group {
     width: auto;
   }
+
+  hr {
+    border-top: 1px solid rgba($color: #000000, $alpha: 0.1);
+    border-bottom: 1px solid rgba($color: #ffffff, $alpha: 0.1);
+  }
+
+  .settings {
+    border: 1px solid rgba($color: #ffffff, $alpha: 0.1);
+    border-radius: 3px;
+    padding: 0;
+
+    .setting {
+      border-bottom: 1px solid rgba($color: #ffffff, $alpha: 0.1);
+      padding: 0 0.5rem 0.5rem 0.75rem;
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: space-between;
+      align-items: center;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      > * {
+        margin-top: 0.5rem;
+      }
+
+      .title {
+        flex-grow: 1;
+      }
+
+      .state {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: center;
+        justify-content: flex-end;
+
+        > * {
+          margin-right: 0.5rem;
+        }
+      }
+
+      .actions {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: flex-end;
+        align-items: center;
+
+        > * {
+          display: inline-block;
+          margin-right: 0.5rem;
+
+          &:last-child {
+            margin-right: 0;
+          }
+        }
+      }
+
+      .collapse, .collapsing {
+        width: 100%;
+
+        .settings {
+          border: none;
+        }
+      }
+    }
+  }
 }

@@ -6,6 +6,33 @@
   align-items: center;
   padding: 6px 8px;
 
+  &.btn-google-blue {
+    background-color: #4285F4;
+    color: #FFFFFF;
+    position: relative;
+
+    &:hover {
+      background-color: darken(#4285F4, 30%);
+    }
+
+    &::before {
+      display: inline-block;
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 4px;
+      height: 26px;
+      width: 26px;
+      background-color: #FFFFFF;
+      border-radius: 2px;
+    }
+
+    img {
+      position: relative;
+    }
+  }
+
   &:hover {
     background-color: #e2e6ea;
     border-color: none;

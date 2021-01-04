@@ -1,0 +1,57 @@
+<template name="enrollModal">
+  <div id="enrollModal" class="modal fade" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content text-body">
+        <div class="modal-header">
+          <h5 class="modal-title">Configuration authentification</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="card text-white bg-danger mb-4">
+            <div class="card-body">
+              <p class="lead">
+                <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;Suite à la fermeture de TO.connect, il est nécessaire de créer de nouveaux identifiants spécifiques TO.sync ou d'activer la connexion avec Google afin d'éviter de ne plus pouvoir accéder à votre compte.
+              </p>
+            </div>
+          </div>
+          <div class="row justify-content-center">
+            <div class="col-md-12">
+              <h6>Connexion par e-mail + mot de passe</h6>
+              {{#if enrollEmail }}
+                <div class="alert alert-success" role="alert">
+                  Un e-mail de confirmation a été envoyé à <strong>{{ enrollEmail }}</strong>, merci de consulter votre boîte de réception.
+                </div>
+              {{ else }}
+              <form id="enrollForm" name="tosync-login">
+                <input name="email" type="email" autocomplete="email" value="" placeholder="Adresse électronique"
+                  class="form-control mb-2" />
+          
+                <button type="submit" class="btn btn-secondary btn-block js-tosync-submit ladda-button" data-style="zoom-out">
+                  <span class="ladda-label">Inscription</span>
+                </button>
+              </form>
+              {{/if}}
+          
+              <div class="ui horizontal divider">Ou</div>
+              {{#if googleEmail }}
+                <div class="alert alert-success" role="alert">
+                  La connexion avec votre compte Google <strong>{{ googleEmail }}</strong> a été activée.
+                </div>
+              {{ else }}
+                <button type="button" class="btn btn-google btn-google-blue btn-block">
+                  <img src="./google_logo.svg" alt="G" />
+                  <span class="label">Connexion avec Google</span>
+                </button>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

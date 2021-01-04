@@ -8,6 +8,15 @@ export default {
 		}
 	},
 
+	Enroll: {
+		open() {
+			$('#enrollModal').modal('show')
+		},
+		close() {
+			$('#enrollModal').modal('hide')
+		}
+	},
+
 	Google: {
 		open() {
       $('#google').modal('show')

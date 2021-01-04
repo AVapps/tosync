@@ -1,0 +1,30 @@
+<template name="reinitialisationMdp">
+  <div id="reinit-mdp" class="container">
+    <div class="card my-4">
+      <div class="card-body">
+        <div class="card-title">
+          <h4>Mot de passe oublié</h4>
+        </div>
+        <h5 class="card-subtitle mb-2 text-muted">Entrez votre adresse électronique professionnelle Transavia, puis cliquez sur « Envoyer ».</h5>
+        <p class="card-text"></p>
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            {{#if emailSent }}
+              <div class="alert alert-success" role="alert">
+                Un e-mail de réinitialisation a été envoyé à votre adresse électronique, merci de consulter votre boîte de réception.
+              </div>
+            {{ else }}
+              <form id="reset-pwd">
+                <input name="user-email" type="email" autocomplete="email" value="" placeholder="Adresse électronique" class="form-control mb-2" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }} required />
+                <button type="submit" class="btn btn-primary btn-block js-user-submit ladda-button" data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
+                  <span class="ladda-label">Envoyer</span>
+                </button>
+              </form>
+            {{/if}}
+            <a type="button" href="{{pathFor '/' }}" class="btn btn-block btn-link mt-2">Retour</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

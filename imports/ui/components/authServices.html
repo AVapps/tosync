@@ -1,0 +1,93 @@
+<template name="authServices">
+  <div id="authServices">
+    <h6 class="title mb-3">Paramètres d'authentification</h6>
+    <div class="settings">
+      {{> emailSettings emails=emails ready=Template.subscriptionsReady }}
+
+      <div class="setting">
+        <div class="title">Mot de passe</div>
+        {{#if Template.subscriptionsReady }}
+          {{#if hasPwd }}
+            <div class="state">
+              {{#if hasEnrollToken }}
+                <span class="badge badge-pill badge-warning">En attente de confirmation</span>
+              {{ else }}
+                <span class="badge badge-pill badge-success">Activé</span>
+              {{/if}}
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#pwdCollapse">
+                <i class="fas fa-cog"></i>
+              </button>
+            </div>
+            <div id="pwdCollapse" class="collapse text-center">
+              {{#if hasEnrollToken }}
+              <p class="text-warning">Une demande d'inscription a été envoyée à <strong>{{ resetTokenEmail }}</strong>.</p>
+              <form id="enrollMiniForm" name="tosync-login" class="text-center my-2">
+                <input name="email" type="email" autocomplete="email" value="" placeholder="Adresse électronique"
+                  class="form-control form-control-sm mb-2" />
+                <button type="submit" class="btn btn-sm btn-outline-success js-tosync-submit ladda-button"
+                  data-style="zoom-out">Inscription</button>
+              </form>
+              {{ else }}
+              {{#LaddaButton class="btn btn-sm btn-outline-warning" onClick=resetPassword }}Changer de mot de passe{{/LaddaButton}}
+              {{/if}}
+            </div>
+          {{ else }}
+            <div class="state">
+              <span class="badge badge-pill badge-secondary">Non configuré</span>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-sm btn-outline-success" data-toggle="collapse" data-target="#pwdCollapse">Configurer</button>
+            </div>
+            <div id="pwdCollapse" class="collapse">
+              <form id="enrollMiniForm" name="tosync-login" class="text-center my-2">
+                <input name="email" type="email" autocomplete="email" value="" placeholder="Adresse électronique"
+                  class="form-control form-control-sm mb-2" />
+                <button type="submit" class="btn btn-sm btn-outline-success js-tosync-submit ladda-button"
+                  data-style="zoom-out">Inscription</button>
+              </form>
+            </div>
+          {{/if}}
+        {{ else }}
+          <div class="state">
+            <span class="badge badge-pill badge-secondary"><span class="ui skeleton text"></span></span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-sm btn-outline-secondary" disabled><span class="ui skeleton transparent text"></span></button>
+          </div>
+        {{/if}}
+      </div>
+
+      <div class="setting">
+        <div class="title">Connexion avec Google</div>
+        {{#if Template.subscriptionsReady }}
+          {{#if hasGoogleAuth }}
+            <div class="state">
+              <span class="text-muted">{{ googleAuthEmail }}</span>
+              &nbsp;
+              <span class="badge badge-pill badge-success">Activé</span>
+            </div>
+            <div class="actions">
+              {{#LaddaButton class="btn btn-sm btn-outline-danger" onClick=disableGoogleAuth }}Désactiver{{/LaddaButton}}
+            </div>
+          {{ else }}
+            <div class="state">
+              <span class="badge badge-pill badge-secondary">Désactivé</span>
+            </div>
+            <div class="actions">
+              {{#LaddaButton class="btn btn-sm btn-outline-success" onClick=enableGoogleAuth }}Activer{{/LaddaButton}}
+            </div>
+          {{/if}}
+        {{ else }}
+          <div class="state">
+            <span class="badge badge-pill badge-secondary"><span class="ui skeleton text"></span></span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-sm btn-outline-secondary" disabled><span class="ui skeleton transparent text"></span></button>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</template>

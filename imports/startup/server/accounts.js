@@ -22,7 +22,7 @@ Accounts.beforeExternalLogin((type, data, user) => {
       // Vérifie si le compte google n'est pas déjà utilisé par un autre compte utilisateur TO.sync
       const googleUser = Meteor.users.findOne({ 'services.google.id': data.id }, { fields: { _id: 1 }})
       if (googleUser) {
-        throw new Meteor.Error(403, `Un autre compte TO.sync utilise déjà ce compte google pour s'authentifier !`)
+        throw new Meteor.Error('tosync.googleAccountAlreadyUsed', `Un autre compte TO.sync utilise déjà ce compte google pour s'authentifier !`)
       }
 
       // Ajoute les serviceData à l'utilisateur
@@ -38,6 +38,7 @@ Accounts.beforeExternalLogin((type, data, user) => {
       
       Accounts.addEmail(userId, data.email, !!data.verified_email)
       console.log(`-> Google OAuth credentials for ${ data.email } added to user ${ userId }.`)
+      throw new Meteor.Error('tosync.googleServiceAdded', data.email)
     }
     return true
   }
@@ -71,16 +72,16 @@ Accounts.emailTemplates.from = 'TO.sync <nepasrepondre@tosync.avapps.fr>'
 
 Accounts.emailTemplates.enrollAccount = {
   subject(user) {
-    return `Bienvenue sur TO.sync ${ user.profile.prenom } !`
+    return `Bienvenue sur TO.sync !`
   },
   text(user, url) {
     return `Bonjour ${user.profile.prenom },
 
-Pour activer ou récupérer votre compte il vous suffit de cliquer sur le lien ci-dessous puis de créer un mot de passe spécifique TO.sync :
+Pour poursuivre votre inscription ou votre récupération de compte il vous suffit de cliquer sur le lien ci-dessous puis de créer un nouveau mot de passe spécifique TO.sync :
 
 ${ url }
 
-Si vous n'avez pas effectué de demande d'inscription ou de récupération de compte sur ${ Meteor.absoluteUrl() }, veuillez ignorer ce message.
+Si vous n'êtes pas à l'origne de cette demande, veuillez ignorer ce message.
 
 À bientôt sur TO.sync,
 AdrienV`
@@ -94,7 +95,7 @@ Accounts.emailTemplates.resetPassword = {
   text(user, url) {
     return `Bonjour ${user.profile.prenom},
 
-Pour réinitialiser votre mot de passe il vous suffit de cliquer sur le lien ci-dessous puis d'en créer un nouveau :
+Pour réinitialiser votre mot de passe il vous suffit de cliquer sur le lien ci-dessous puis d'en choisir un nouveau :
 
 ${url}
 
@@ -107,16 +108,16 @@ AdrienV`
 
 Accounts.emailTemplates.verifyEmail = {
   subject() {
-    return "Activez votre compte TO.sync dès maintenant !"
+    return "Confirmez votre adresse enregistrée sur TO.sync dès maintenant !"
   },
   text(user, url) {
     return `Bonjour ${user.profile.prenom},
 
-Pour activer votre compte TO.sync il vous suffit de cliquer sur le lien ci-dessous :
+Pour confirmer votre adresse électronique il vous suffit de cliquer sur le lien ci-dessous :
 
 ${url}
 
-Si vous n'avez pas effectué de demande d'inscription sur ${ Meteor.absoluteUrl() }, veuillez ignorer ce message.
+Si vous n'êtes pas à l'origne de cette demande, veuillez ignorer ce message.
 
 À bientôt sur TO.sync,
 AdrienV`

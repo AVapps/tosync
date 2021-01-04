@@ -33,12 +33,12 @@
   <div id="modals">
     {{#if isLoggedIn }}
       {{> modal }}
+      {{> enrollModal }}
     	{{> google }}
       {{> remu }}
       {{> changes }}
     {{/if}}
     {{> changelog }}
-    {{> notifications }}
   </div>
 
 </template>

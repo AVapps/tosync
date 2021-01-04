@@ -1,7 +1,7 @@
 <template name="loginForm">
   <div class="row justify-content-center">
     <div class="col-md-6">
-      <form id="login">
+      <form id="login" name="toconnect-login">
     		<input name="login" type="text" value="" placeholder="Trigramme" class="form-control mb-2 text-uppercase" maxlength="3" pattern="[A-z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
 
   		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control mb-2" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>

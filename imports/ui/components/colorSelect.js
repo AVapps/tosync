@@ -1,7 +1,6 @@
 import { Template } from 'meteor/templating'
 import './colorSelect.html'
 import _ from 'lodash'
-import Popper from 'popper.js'
 import 'bootstrap/js/dist/popover.js'
 
 Template.colorSelect.onCreated(function () {
@@ -36,22 +35,7 @@ Template.colorSelect.helpers({
 })
 
 Template.colorSelect.events({
-  'click .cs-button': (e,t) => {
-    // const hidden = t.hidden.get()
-    // if (hidden) {
-    //   t.hidden.set(false)
-    //   t.$('.cs-popper-content').show()
-    //   t.popper = new Popper(t.find('.cs-button'), t.find('.cs-popper-content'), {
-    //     placement: 'right'
-    //   })
-    // } else {
-    //   t.hidden.set(true)
-    //   t.$('.cs-popper-content').hide()
-    //   t.popper.destroy()
-    // }
-  },
-
-  'click .cs-item': (e,t) => {
+    'click .cs-item': (e,t) => {
     t.selectedId.set(e.currentTarget.dataset.value)
     if (_.isFunction(t.data.onChange)) {
       t.data.onChange(e.currentTarget.dataset.value)

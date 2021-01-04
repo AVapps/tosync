@@ -1,0 +1,79 @@
+<template name="emailSettings">
+  <div class="setting">
+    <div class="title">Adresses e-mail</div>
+    {{#if ready }}
+    <div class="state">
+      <span class="badge badge-pill badge-secondary">{{ emailsCount }}</span>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#emailsCollapse">
+        <i class="fas fa-cog"></i>
+      </button>
+    </div>
+    <div id="emailsCollapse" class="collapse">
+      <div class="emails settings">
+        {{#each email in emails }}
+          {{> emailSetting email=email showRemoveButton=showRemoveButton }}
+        {{/each}}
+      </div>
+      {{#if showAddButton }}
+      <div class="text-center my-2">
+        {{#if isEditing }}
+          <div class="input-group input-group-sm">
+            <input type="email" class="form-control js-add-email" placeholder="Adresse électronique" autocomplete="email">
+            <div class="input-group-append">
+              <button class="btn btn-outline-success js-add-email" type="button">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn btn-outline-secondary js-toggle-editing" type="button" style="min-width:28px;">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        {{ else }}
+          <button type="button" class="btn btn-sm btn-outline-success js-toggle-editing">
+            <i class="fas fa-plus"></i>&nbsp;Ajouter une adresse
+          </button>
+        {{/if}}
+      </div>
+      {{/if}}
+    </div>
+    {{ else }}
+    <div class="state">
+      <span class="badge badge-pill badge-secondary">
+        <span class="ui skeleton text"></span>
+      </span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-sm btn-outline-secondary" disabled>
+        <span class="ui skeleton transparent text"></span>
+      </button>
+    </div>
+    {{/if}}
+  </div>
+</template>
+
+<template name="emailSetting">
+  <div class="setting">
+    <div class="title">{{ email.address }}</div>
+    <div class="state">
+      {{#if email.verified }}
+      <span class="badge badge-pill badge-success">Vérifiée</span>
+      {{ else }}
+      <span class="badge badge-pill badge-secondary">Non vérifiée</span>
+      {{/if}}
+    </div>
+    <div class="actions">
+      {{#unless email.verified }}
+        {{#LaddaButton class="btn btn-sm btn-outline-warning" onClick=verifyEmail }}
+          Renvoyer un e-mail de vérification
+        {{/LaddaButton}}
+      {{/unless}}
+      {{#if showRemoveButton }}
+        {{#LaddaButton class="btn btn-sm btn-outline-danger" onClick=removeEmail }}
+          <i class="fas fa-trash"></i>
+        {{/LaddaButton}}
+      {{/if}}
+    </div>
+  </div>
+</template>

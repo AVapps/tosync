@@ -2,7 +2,6 @@ import { Meteor } from 'meteor/meteor'
 import { ReactiveVar } from 'meteor/reactive-var'
 import _ from 'lodash'
 
-import Modals from './Modals.js'
 import Export from './lib/Export.js'
 import GapiBatch from './lib/GapiBatch.js'
 

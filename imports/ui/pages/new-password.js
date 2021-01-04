@@ -1,16 +1,17 @@
 import { Template } from 'meteor/templating'
+import { ReactiveDict } from 'meteor/reactive-dict'
 import { Accounts } from 'meteor/accounts-base'
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra'
-import './inscription-validation.html'
+import './new-password.html'
 import * as Ladda from 'ladda'
 
-Template.inscriptionValidation.events({
-  'submit form#inscription': async (e, t) => {
+Template.nouveauMdp.events({
+  'submit form#password-reset': (e,t) => {
     e.preventDefault()
 
     if (e.currentTarget.checkValidity()) {
       const newPassword = t.find('input[name=user-password]').value
-      const l = Ladda.create(t.find('button.js-user-subscribe'))
+      const l = Ladda.create(t.find('button.js-user-submit'))
       l.start()
 
       Accounts.resetPassword(t.data.token, newPassword, (err) => {

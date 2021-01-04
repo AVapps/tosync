@@ -1,8 +1,8 @@
 import { Template } from 'meteor/templating'
 import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
 import './main.html'
-import firstUseDrive from '/imports/api/client/lib/Driver.js'
+
+import '../components/enrollModal.js'
 
 Template.main.helpers({
   isLoggedIn() {

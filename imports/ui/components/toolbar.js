@@ -1,9 +1,10 @@
 import { Template } from 'meteor/templating'
 import './toolbar.html'
 
+import './authServices.js'
+
 import _ from 'lodash'
 
-import Modals from '/imports/api/client/Modals.js'
 import Export from '/imports/api/client/lib/Export.js'
 
 
