@@ -29,18 +29,56 @@ export default class PdfPlanningImporter {
     this.savedEventsByTag = _.groupBy(this.savedEvents, 'tag')
     console.log('PdfPlanningImport.importPlanning savedEvents', this.savedEvents, this.savedEventsByTag)
 
-    const updateLog = {
+    this.foundIds = new Set()
+    this.updateLog = {
       insert: [],
       update: [],
       remove: []
     }
-    const founds = []
-
+    
     _.forEach(this.parser.planning, evt => {
-
-
+      if (evt.tag === 'rotation') {
+        this.importRotation(evt)
+      } else if (_.has(evt, 'events')) {
+        this.importDutySol(evt)
+      } else {
+        this.importSol(evt)
+      }
     })
   }
+
+  /**
+   * Importe tout évènement qui n'est ni un vol, ni une rotation, ni une journée sol (composée de plusieurs évènements)
+   * - si l'évènement existe => mettre à  jour
+   * - sinon l'ajouter
+   * @param {*} evt 
+   */
+  importSol(evt) {
+    const found = this.findSavedEvent(evt)
+    if (found) {
+      this.foundIds.add(found._id)
+      console.log('FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt, found)
+      if (_.isMatchWith(found, _.pick(evt, 'category', 'summary', 'description', 'start', 'end'), matchMoment)) {
+        console.log('MATCHES: nothing to update');
+      } else {
+        console.log('DOES NOT MATCH: update');
+        updateLog.update.push({ _id: found._id, modifier: { $set: _normalizeEvent(evt) } });
+      }
+    } else {
+      console.log('Not FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt);
+      updateLog.insert.push(evt);
+    }
+  }
+
+  importDutySol(duty) {
+
+  }
+
+  importRotation(rotation) {
+
+  }
+
+
 
   findSavedEvent(evt) {
     if (!_.has(this.savedEventsByTag, evt.tag)) return undefined

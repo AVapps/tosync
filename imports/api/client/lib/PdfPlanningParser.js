@@ -22,6 +22,8 @@ export default class PdfPlanningParser {
     this.planning = []
     this.meta = pdf.meta
 
+    this.printedAt = DateTime.fromFormat(this.meta.printedOn, 'dd/MM/yyyy HH:mm', { zone: 'Europe/Paris' })
+
     this.parse(pdf.table)
   }
 
@@ -356,9 +358,7 @@ export default class PdfPlanningParser {
       this.beginDuty(event)
     }
 
-    // if (!this._duty.type || this._duty.type === 'mep') {
-      this._duty.type = 'sv' // Les journées qui commencent par une activité sol sont considérées comme des SV
-    // }
+    this._duty.type = 'sv' // Tout service comprenant un vol est un SV
 
     if (!this._duty.from) {
       this._duty.from = vol.from
@@ -371,6 +371,8 @@ export default class PdfPlanningParser {
       vol.fin = vol.debut.plus({ hours: vol.tv })
       console.log(vol.fin.toString())
     }
+
+    vol.realise = vol.fin < this.printedAt
 
     this._duty.events.push(vol)
   }
