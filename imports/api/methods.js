@@ -20,7 +20,7 @@ export const subscribeUser = new ValidatedMethod({
       const user = Accounts.findUserByUsername(trigramme, { _id: 1 })
 
       if (user) {
-        if (!user.emails.find(email => email.address == pn.email)) {
+        if (!_.isArray(user.emails) || !_.find(user.emails, email => email.address == pn.email)) {
           Accounts.addEmail(user._id, pn.email, false)
         }
         Accounts.sendEnrollmentEmail(user._id, pn.email)
@@ -58,7 +58,7 @@ export const subscribeLoggedUser = new ValidatedMethod({
     if (!this.isSimulation) {
       const user = Accounts.user()
       if (user) {
-        if (!user.emails.find(em => em.address == email)) {
+        if (!_.isArray(user.emails) || !_.find(user.emails, em => em.address == email)) {
           Accounts.addEmail(this.userId, email, false)
         }
         Accounts.sendEnrollmentEmail(this.userId, email)
