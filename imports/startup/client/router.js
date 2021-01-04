@@ -69,7 +69,7 @@ FlowRouter.route('/verif-email/:token', {
       } else {
         Notify.success(`Votre adresse électronique a bien été confirmée !`)
       }
-      FlowRouter.go({ name: 'index' })
+      FlowRouter.go('/')
     })
     this.render('main', 'mainPage')
   }
