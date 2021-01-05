@@ -7,8 +7,12 @@ import _ from 'lodash'
 
 import Export from '/imports/api/client/lib/Export.js'
 
-
 Template.toolbar.helpers({
+  isAdmin() {
+    const user = Meteor.user()
+    return user && user.username && user.username === Meteor.settings.public.adminUser
+  },
+
   disabledIfNoEvents() {
     return Controller.currentEvents.get().length ? '' : 'disabled'
   },

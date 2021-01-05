@@ -39,6 +39,10 @@
 
     {{> authServices }}
 
+    {{#if isAdmin }}
+      <hr>{{> adminPNImport }}
+    {{/if}}
+
     <div class="modal fade" id="iCalendarModal" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content text-body">
