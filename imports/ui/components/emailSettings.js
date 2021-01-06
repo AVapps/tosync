@@ -16,22 +16,22 @@ Template.emailSettings.onCreated(function () {
 
 Template.emailSettings.helpers({
   emailsCount() {
-    const count = Template.currentData().emails.length
-    if (count === 0) {
+    const count = _get(Template.currentData(), 'emails.length')
+    if (!count) {
       return 'Aucune adresse'
     } else if (count === 1) {
       return '1 adresse'
     } else {
-      return `${count} adresses`
+      return `${ count } adresses`
     }
   },
 
   showAddButton() {
-    return Template.currentData().emails.length < 3
+    return _get(Template.currentData(), 'emails.length') < 3
   },
 
   showRemoveButton() {
-    return Template.currentData().emails.length > 1
+    return _get(Template.currentData(), 'emails.length') > 1
   },
 
   isEditing() {
