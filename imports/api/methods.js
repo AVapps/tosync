@@ -11,14 +11,11 @@ export const subscribeUser = new ValidatedMethod({
     email: { type: String, regEx: /^[a-z._\-]+@fr.transavia.com$/ }
   }).validator(),
   run({ trigramme, email }) {
+    if (this.isSimulation) return
+    
     const pn = PN.findOne({ trigramme, email })
     if (pn) {
-      if (this.isSimulation) {
-        return { success: true }
-      }
-
       const user = Accounts.findUserByUsername(trigramme, { _id: 1 })
-
       if (user) {
         if (!_.isArray(user.emails) || !_.find(user.emails, email => email.address == pn.email)) {
           Accounts.addEmail(user._id, pn.email, false)
