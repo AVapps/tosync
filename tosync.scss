@@ -26,6 +26,12 @@ html, body {
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
+  background-color: $success;
+}
+
+.tosync .modal-dialog {
+  margin-top: calc(env(safe-area-inset-top) + 0.5rem);
+  margin-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
 }
 
 #noty_layout__top {

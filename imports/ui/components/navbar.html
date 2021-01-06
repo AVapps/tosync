@@ -16,11 +16,14 @@
 	</nav>
   {{#if isLoggedIn }}
   <div id="navbar-collapse" class="collapse bg-dark text-white">
-    <div class="container-xl">
+    <div class="collapse-background">
+      <div class="container-xl">
         {{> loginStatusBar }}
         <hr>
         {{> toolbar }}
+      </div>
     </div>
+    
   </div>
   {{/if}}
 </template>

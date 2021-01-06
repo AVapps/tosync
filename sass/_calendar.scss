@@ -40,8 +40,12 @@
 }
 
 .affix {
+  position: -webkit-sticky;
+  top: env(safe-area-inset-top);
   width: 100%;
-  background-color: #fff;
+  background-color: rgba(255,255,255,0.8);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   padding: 0.25rem;
   z-index: 1000;
 }
