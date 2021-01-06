@@ -23,6 +23,13 @@
 html, body {
   font-size: 14px;
   font-family: 'Lato', sans-serif;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+}
+
+#noty_layout__top {
+  padding-top: calc(env(safe-area-inset-top) + 2px);
 }
 
 .table-row {

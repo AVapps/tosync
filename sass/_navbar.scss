@@ -1,8 +1,6 @@
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
 
 #navbar {
-  border-top: 2px solid $success;
-
   .container-xl {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
