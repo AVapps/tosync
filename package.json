@@ -1,6 +1,6 @@
 {
   "name": "TO.sync",
-  "version": "2.1.5",
+  "version": "2.2.0",
   "description": "Synchronisattion des plannings TO.",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "@babel/runtime": "^7.12.5",
     "@fortawesome/fontawesome-free": "^5.15.1",
     "@popperjs/core": "^2.6.0",
-    "axios": "^0.19.2",
+    "axios": ">=0.21.1",
     "axios-cookiejar-support": "^1.0.1",
     "babel-runtime": "^6.26.0",
     "bcrypt": "^5.0.0",
@@ -30,7 +30,7 @@
     "jquery": "^3.5.1",
     "jszip": "^2.6.0",
     "ladda": "^2.0.1",
-    "lodash": "^4.17.20",
+    "lodash": ">=4.17.20",
     "luxon": "^1.25.0",
     "meteor-node-stubs": "^1.0.1",
     "moment": "^2.29.1",
