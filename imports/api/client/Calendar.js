@@ -27,19 +27,19 @@ Calendar = {
 	},
 
   buildCalendarDays(currentMonth) {
-    // Clear calendar
-    this.days.remove({})
-
     this.cmonth = moment(currentMonth)
 		this.start = this.cmonth.clone().startOf('month').startOf('week')
 		this.end = this.cmonth.clone().endOf('month').endOf('week')
 
-    const days = []
     const cursor = this.start.clone()
-		const now = moment()
+    const now = moment()
+    let index = 0
 
 		while (cursor.isBefore(this.end, 'day') || cursor.isSame(this.end, 'day')) {
       const day = {
+        tag: '',
+        allday: false,
+        label: '',
   			date: cursor.clone(),
         slug: cursor.format("YYYY-MM-DD"),
   			weekday: cursor.format('dd'),
@@ -49,7 +49,7 @@ Calendar = {
         events: []
   		}
 
-  		day.classes.push('calendar-dow-' + day.dof)
+  		// day.classes.push('calendar-dow-' + day.dof)
   		day.classes.push('calendar-day-' + day.date.format("YYYY-MM-DD"))
 
   		if (cursor.isBefore(now, 'day')) {
@@ -64,10 +64,30 @@ Calendar = {
   			day.classes.push('adjacent-month', 'next-month')
   		}
 
-  		this.days.insert(day)
+      this.days.update({ index }, { $set: day })
 
-  		cursor.add(1, 'day')
-		}
+      cursor.add(1, 'day')
+      index++
+    }
+    
+    while (index <= 41) {
+      this.days.update({ index }, {
+        $set: {
+          tag: '',
+          allday: false,
+          label: '',
+          date: cursor.clone(),
+          slug: cursor.format("YYYY-MM-DD"),
+          weekday: cursor.format('dd'),
+          day: cursor.date(),
+          dof: cursor.weekday(),
+          classes: ['hidden'],
+          events: []
+        }
+      })
+      cursor.add(1, 'day')
+      index++
+    }
   },
 
   buildEmptyCalendar() {
@@ -80,12 +100,33 @@ Calendar = {
     for (let i = 0; i <= 34; i++) {
       const dow = i % 7
       this.days.insert({
+        index: i,
+        tag: '',
+        allday: false,
+        label: '',
         date: now,
         slug: i,
   			weekday: weekdays[dow],
   			day: '',
   			dof: dow,
-  			classes: ['calendar-dow-' + dow],
+  			classes: [],
+        events: []
+      })
+    }
+
+    for (let i = 35; i <= 41; i++) {
+      const dow = i % 7
+      this.days.insert({
+        index: i,
+        tag: '',
+        allday: false,
+        label: '',
+        date: now,
+        slug: i,
+        weekday: weekdays[dow],
+        day: '',
+        dof: dow,
+        classes: ['hidden'],
         events: []
       })
     }
