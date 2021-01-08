@@ -98,7 +98,11 @@ Template.calendar.helpers({
 
 Template.planningCalendarDay.helpers({
   dayClasses() {
-		return 'calendar-dow-' + this.day.dof + ' ' + this.day.classes.join(' ')
+		const classes = ['calendar-dow-' + this.day.dof].concat(this.day.classes)
+		if (this.day.allday) {
+			classes.push('allday')
+		}
+		return classes.join(' ')
   },
 
 	weekday() {

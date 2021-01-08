@@ -67,7 +67,7 @@
           }
         }
 
-        > div > .fc-title.badge-conges {
+        > .fc-title.badge-conges {
           background-color: darken($success, 30%);
           color: white;
         }
@@ -95,15 +95,18 @@
           cursor: pointer;
         }
 
-        &.hidden {
-          display: none;
-        }
-      }
-    }
+        &.allday {
+          .fc-start, .fc-end {
+            display: none !important;
+          }
 
-    .fc-title {
-      > span {
-        @include media-breakpoint-down(xs) {
+          .fc-summary {
+            color: var(--gray);
+            text-align: center;
+          }
+        }
+
+        &.hidden {
           display: none;
         }
       }
@@ -134,7 +137,7 @@
         font-weight: bold;
       }
 
-      > li {
+      > .fc-event {
         .fc-start, .fc-end {
           color: $gray-600;
         }
@@ -212,7 +215,7 @@
           }
 
           @include media-breakpoint-down(xs) {
-            height: 3.25rem;
+            height: 3.5rem;
           }
 
           &.today {
@@ -220,12 +223,12 @@
           }
 
           &.blank, &.dispersion {
-            div.fc-title {
+            .fc-title {
               display: none;
             }
           }
 
-          > span.fc-date {
+          > .fc-date {
             display: block;
             padding: .25rem .7rem 0;
 
@@ -234,206 +237,209 @@
             }
           }
 
-          > span.fc-weekday {
+          > .fc-weekday {
             display: none;
           }
 
-          > div {
+          > .fc-title {
             display: block;
-            padding: .25rem 0;
+            margin: 0.25rem .7rem 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
 
-            > div.fc-title {
-              display: block;
-              margin: 0 .7rem;
+            > span {
               text-overflow: ellipsis;
               white-space: nowrap;
               overflow: hidden;
+            }
+
+            &.span-left {
+              margin-left: 0;
+              border-top-left-radius: 0;
+              border-bottom-left-radius: 0;
+              padding-left: calc(.4em + .7rem);
 
               > span {
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
-              }
-
-              &.span-left {
-                margin-left: 0;
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
-                padding-left: calc(.4em + .7rem);
-
-                > span {
-                  visibility: hidden;
-                }
-              }
-
-              &.span-right {
-                margin-right: 0;
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
-                padding-right: calc(.4em + .7rem);
-              }
-
-              &.span-left.span-right {
+                visibility: hidden;
               }
             }
 
-            > .fc-content {
-              font-size: .7rem;
-              padding: 0 .7rem;
-              display: none;
+            &.span-right {
+              margin-right: 0;
+              border-top-right-radius: 0;
+              border-bottom-right-radius: 0;
+              padding-right: calc(.4em + .7rem);
+            }
 
-              > .fc-event {
+            @include media-breakpoint-down(xs) {
+              padding: 0.2rem 0.2rem;
+              margin: 0.25rem 0.25rem;
+              line-height: 0.5rem;
+
+              > span {
+                font-size: 0.5rem;
+                text-transform: uppercase;
+              }
+            }
+          }
+
+          > .fc-content {
+            font-size: .7rem;
+            padding: 0 .7rem;
+            display: none;
+
+            > .fc-event {
+              display: block;
+              width: 100%;
+
+              > span {
                 display: block;
-                width: 100%;
+              }
 
-                > span {
-                  display: block;
+              .fc-start, .fc-end {
+                width: 2.5rem;
+              }
+
+              .fc-end {
+                text-align: right;
+                display: none;
+              }
+
+              .fc-summary {
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
+
+                span {
+                  &.fc-from, &.fc-to {
+                    text-align: center;
+                  }
+
+                  &.fc-from {
+                    padding-right: 0.1rem;
+                  }
+
+                  &.fc-to {
+                    padding-left: 0.1rem;
+                  }
+
+                  &.fc-flight-num {
+                    display: none;
+                  }
                 }
 
-                .fc-start, .fc-end {
-                  width: 2.5rem;
-                }
+                > .table-row {
+                  display: table;
 
-                .fc-end {
-                  text-align: right;
+                  > .table-cell {
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
+                  }
+                }
+              }
+
+              .fc-summary {
+                border-bottom: 1px solid #eee;
+
+                > .table-row {
+                  margin-left: 0;
+                }
+              }
+
+              &:last-child {
+                .fc-start {
                   display: none;
                 }
 
                 .fc-summary {
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
-                  overflow: hidden;
+                  border-bottom: none;
+                }
 
-                  span {
-                    &.fc-from, &.fc-to {
-                      text-align: center;
-                    }
+                .fc-end, .fc-end {
+                  display: block;
+                  text-align: left;
+                }
+              }
+            }
 
-                    &.fc-from {
-                      padding-right: 0.1rem;
-                    }
+            &.fc-length-1 .fc-event .fc-start {
+              display: block;
 
-                    &.fc-to {
-                      padding-left: 0.1rem;
-                    }
+              @include media-breakpoint-up(lg) {
+                display: table-cell;
+              }
+            }
 
-                    &.fc-flight-num {
-                      display: none;
-                    }
-                  }
+            @include media-breakpoint-up(xs) {
+              display: none;
+            }
 
-                  > .table-row {
-                    display: table;
+            @include media-breakpoint-up(sm) {
+              display: table;
+              table-layout: fixed;
+              width: 100%;
+            }
 
-                    > .table-cell {
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                      overflow: hidden;
-                    }
-                  }
+            @include media-breakpoint-up(lg) {
+              > .fc-event {
+                display: table-row;
+
+                > span {
+                  display: table-cell;
                 }
 
                 .fc-summary {
-                  border-bottom: 1px solid #eee;
+                  text-align: center;
+                  border: none;
 
                   > .table-row {
-                    margin-left: 0;
+                    margin-left: auto;
+                    margin-right: auto;
                   }
+                }
+
+                .fc-end {
+                  display: table-cell;
                 }
 
                 &:last-child {
-                  .fc-start {
-                    display: none;
-                  }
-
-                  .fc-summary {
-                    border-bottom: none;
-                  }
-
-                  .fc-end, .fc-end {
-                    display: block;
-                    text-align: left;
-                  }
-                }
-              }
-
-              &.fc-length-1 .fc-event .fc-start {
-                display: block;
-
-                @include media-breakpoint-up(lg) {
-                  display: table-cell;
-                }
-              }
-
-              @include media-breakpoint-up(xs) {
-                display: none;
-              }
-
-              @include media-breakpoint-up(sm) {
-                display: table;
-                table-layout: fixed;
-                width: 100%;
-              }
-
-              @include media-breakpoint-up(lg) {
-                > .fc-event {
-                  display: table-row;
-
-                  > span {
+                  .fc-start, .fc-end {
                     display: table-cell;
-                  }
-
-                  .fc-summary {
-                    text-align: center;
-                    border: none;
-
-                    > .table-row {
-                      margin-left: auto;
-                      margin-right: auto;
-                    }
                   }
 
                   .fc-end {
-                    display: table-cell;
+                    text-align: right;
+                  }
+                }
+              }
+            }
+
+            @include media-breakpoint-up(xl) {
+              font-size: 0.8rem;
+
+              > .fc-event {
+                .fc-start, .fc-end {
+                  width: 2.65rem;
+                }
+              }
+            }
+
+            @include media-breakpoint-down(md) {
+              &.fc-length-5 {
+                > .fc-event {
+                  &:nth-child(4) {
+                    display: none;
+
+                    & + .fc-event:before {
+                      content: "...";
+                    }
                   }
 
                   &:last-child {
-                    .fc-start, .fc-end {
-                      display: table-cell;
-                    }
-
-                    .fc-end {
-                      text-align: right;
-                    }
-                  }
-                }
-              }
-
-              @include media-breakpoint-up(xl) {
-                font-size: 0.8rem;
-
-                > .fc-event {
-                  .fc-start, .fc-end {
-                    width: 2.65rem;
-                  }
-                }
-              }
-
-              @include media-breakpoint-down(md) {
-                &.fc-length-5 {
-                  > .fc-event {
-                    &:nth-child(4) {
+                    .fc-summary {
                       display: none;
-
-                      & + .fc-event:before {
-                        content: "...";
-                      }
-                    }
-
-                    &:last-child {
-                      .fc-summary {
-                        display: none;
-                      }
                     }
                   }
                 }
@@ -446,11 +452,7 @@
 
     /* Calendar List view */
     &.fc-list {
-      margin: 0 -10px;
-
-      @include media-breakpoint-up(xs) {
-        margin: none;
-      }
+      margin: 0;
 
       > .fc-head {
         display: none;
@@ -463,6 +465,10 @@
           white-space: nowrap;
           overflow: hidden;
           border-bottom: 1px solid #ecf0f1;
+          display: flex;
+          flex-flow: row nowrap;
+          justify-content: flex-start;
+          align-items: center;
 
           &.calendar-dow-6 {
             border-bottom: 2px solid #c4c4c4;
@@ -472,141 +478,143 @@
             display: none;
           }
 
-          > *, > div > *, > div > .fc-content > *, > div > .fc-content > ul > li {
-            display: inline-block;
-            white-space: nowrap;
-            line-height: 1rem;
-            vertical-align: middle;
-          }
-
-          > .fc-date {
-            width: 1.8rem;
-            font-size: 1.2rem;
-
-            @include media-breakpoint-down(xs) {
-              width: 1.3rem;
-              font-size: 1rem;
-            }
-          }
-
           > .fc-weekday {
-            width: 1.8rem;
+            width: 2.5ch;
             font-size: 0.9rem;
+            flex-shrink: 0;
+            flex-grow: 0;
 
             @include media-breakpoint-down(xs) {
-              width: 1.3rem;
               font-size: 0.66rem;
             }
           }
 
-          > div {
-            > .fc-title {
-              position: relative;
-              top: 1px;
-              line-height: 0.7rem;
-              margin: 0.3rem 0.7rem 0.3rem 0;
-              margin-right: 0.7rem;
-              min-width: 5rem;
+          > .fc-date {
+            width: 2.5ch;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            flex-grow: 0;
+            text-align: center;
+            margin: 0 1ch;
 
-              @include media-breakpoint-down(xs) {
-                min-width: 0.7rem;
-                margin-right: 0.5rem;
+            @include media-breakpoint-down(xs) {
+              font-size: 1rem;
+            }
+          }
+
+          > .fc-title {
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-right: 0.7rem;
+            min-width: 12ch;
+            flex-shrink: 0;
+            flex-grow: 0;
+
+            @include media-breakpoint-down(xs) {
+              margin-right: 0.5rem;
+              min-width: 3ch;
+              max-width: 10ch;
+
+              > span {
+                font-size: 0.6rem;
+                text-transform: uppercase;
+              }
+            }
+          }
+
+          > .fc-content {
+            display: flex;
+            flex-flow: row nowrap;
+            flex-shrink: 1;
+            flex-grow: 1;
+            justify-content: flex-start;
+            align-items: center;
+            white-space: nowrap;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            font-size: 0.8rem;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+
+            &::-webkit-scrollbar {
+              display: none;
+            }
+
+            > .fc-event {
+              display: inline-block;
+              line-height: 1rem;
+              white-space: nowrap;
+              vertical-align: middle;
+
+              > span {
+                display: inline-block;
               }
             }
 
-            > .fc-content {
+            > .fc-event + .fc-event::before {
+              content: "·";
+              display: inline-block;
+              padding: 0 0.25rem 0 0.6rem;
+
+            }
+
+            .fc-summary {
+              display: inline-block;
+              vertical-align: bottom;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              font-size: 0.8rem;
 
-              > li + li:before {
-                content: "·";
+              .table-row, .table-cell {
+                display: inline;
+              }
+            }
+
+            &.fc-length-3, &.fc-length-4, &.fc-length-5, &.fc-length-6 {
+              > .fc-event:not(:first-child), > .fc-event:not(:last-child) {
+                display: none;
               }
 
-              .fc-summary {
-                display: inline-block;
-                vertical-align: bottom;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-
-                .table-row, .table-cell {
-                  display: inline;
-                }
-              }
-
-              &.fc-length-5 {
-                > .fc-event:nth-child(4) {
-                  display: none;
-
-                  & + .fc-event::before {
-                    content: "...";
-                  }
-                }
-
-                .fc-flight-num {
-                  display: none;
-                }
-              }
-
-              @include media-breakpoint-down(md) {
-                .fc-summary {
-                  max-width: 6rem;
-                }
-
-                .fc-flight-num {
-                  display: none;
-                }
-              }
-
-              @include media-breakpoint-down(xs) {
-                &.fc-length-4, &.fc-length-5 {
-                  > .fc-event:nth-child(3) {
-                    display: none;
-
-                    & + .fc-event::before {
-                      content: "...";
-                    }
-                  }
-                }
-              }
-
-              @include media-breakpoint-down(xs) {
-                &.fc-length-3, &.fc-length-4, &.fc-length-5 {
-                  > .fc-event:nth-child(2) {
-                    display: none;
-
-                    & + .fc-event::before {
-                      content: "...";
-                    }
-                  }
-                }
-              }
-
-              @media all and (max-width: 599px) {
-                font-size: 0.75rem;
-
-                .fc-summary {
-                  max-width: 4rem;
-                }
-
-                > .fc-event:first-child {
-                  > .fc-end {
-                    display: none;
-                  }
-                }
-
-                > .fc-event:last-child {
-                  > .fc-start {
-                    display: none;
-                  }
-                }
-              }
-
-              &.fc-length-1 .fc-event .fc-start {
+              > .fc-event:first-child, > .fc-event:last-child {
                 display: inline-block;
               }
+
+              > .fc-event:last-child::before {
+                display: inline-block;
+                content: "...";
+              }
+            }
+
+            @include media-breakpoint-down(md) {
+              .fc-flight-num {
+                display: none;
+              }
+            }
+
+            @media all and (max-width: 599px) {
+              font-size: 0.75rem;
+
+              &:not(.fc-length-1) .fc-summary {
+                max-width: 12ch;
+              }
+
+              &:not(.fc-length-1) > .fc-event:first-child {
+                > .fc-end {
+                  display: none;
+                }
+              }
+
+              > .fc-event:last-child {
+                > .fc-start {
+                  display: none;
+                }
+              }
+            }
+
+            &.fc-length-1 .fc-event .fc-start {
+              display: inline-block;
             }
           }
         }

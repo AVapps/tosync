@@ -83,20 +83,16 @@
 
 <template name="planningCalendarDay">
 	<div class="fc-cell {{ dayClasses }}" data-date="{{ day.slug }}">
-		<span class="fc-weekday text-muted">{{ day.weekday }}</span>
-		<span class="fc-date text-muted">{{ day.day }}</span>
-		<div>
-			{{> planningCalendarDayLabel day }}
-      {{#unless day.allday }}
-  			{{#with eventsList }}
-  			<ul class="fc-content fc-length-{{ this.length }}">
-  				{{#each evt in this }}
-  					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
-  				{{/each}}
-  			</ul>
-  			{{/with}}
-			{{/unless}}
-		</div>
+		<div class="fc-weekday text-muted">{{ day.weekday }}</div>
+		<div class="fc-date text-muted">{{ day.day }}</div>
+		{{> planningCalendarDayLabel day }}
+			{{#with eventsList }}
+			<div class="fc-content fc-length-{{ this.length }}">
+				{{#each evt in this }}
+					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
+				{{/each}}
+			</div>
+			{{/with}}
 	</div>
 </template>
 
@@ -109,7 +105,7 @@
 </template>
 
 <template name="planningCalendarVol">
-	<li class="fc-event fc-flight {{ classes }}">
+	<div class="fc-event fc-flight {{ classes }}">
 		<span class="fc-start">{{ heure start }}</span>
 		<span class="fc-summary">
 			<div class="table-row">
@@ -125,13 +121,13 @@
 			</div>
 		</span>
 		<span class="fc-end">{{ heure end }}</span>
-	</li>
+	</div>
 </template>
 
 <template name="planningCalendarEvent">
-	<li class="fc-event {{ classes }}">
+	<div class="fc-event {{ classes }}">
 		<span class="fc-start">{{ heure start }}</span>
 		<span class="fc-summary">{{ summary }}</span>
 		<span class="fc-end">{{ heure end }}</span>
-	</li>
+	</div>
 </template>
