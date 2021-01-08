@@ -51,18 +51,17 @@ Template.toolbar.events({
 
 	'click button.js-icalendar-import': function (e, t) {
 		e.preventDefault()
-
-		if (App.support.isMobile) return App.warn("Cette fonctionnalité n'est pas disponible sur les terminaux mobiles !")
-
-		if (!App.support.filereader) return App.warn("Votre navigateur ne prend pas en charge la lecture de fichiers !", "Utilisez la dernière version de Firefox, Safari ou Chrome.")
-
 		if (!Meteor.userId()) return App.warn("Non connecté !", "Vous devez vous connecter pour pouvoir importer un fichier ics.")
-
 		t.$('#filereader').trigger('click')
 	},
 
 	'change #filereader': (e, t) => {
 		if (e.target.files && e.target.files.length) {
+      if (!window.FileReader) {
+        Notify.error(`Votre navigateur ne supporte pas l'importation de fichiers !`)
+        throw new Error(`Votre navigateur ne supporte pas l'importation de fichiers !`)
+      }
+
       const file = e.target.files[0]
 			if (file.type === 'text/calendar') {
 				const fr = new FileReader()
