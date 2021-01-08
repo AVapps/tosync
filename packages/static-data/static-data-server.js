@@ -111,11 +111,7 @@ Static.Collection = class StaticCollection extends Mongo.Collection {
 		check(data, Array);
 		let result = {};
 		result.removed = this.remove({});
-		if (this.batchInsert) {
-			result.inserted = this.batchInsert(data);
-		} else {
-			result.inserted = _.map(data, rec => this.insert(rec));
-		}
+		result.inserted = _.map(data, rec => this.insert(rec));
 		this.incVersion();
 		return result;
 	}

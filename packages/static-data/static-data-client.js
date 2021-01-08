@@ -88,19 +88,22 @@ Static.Collection = class StaticCollection extends Ground.Collection {
 
 	updateStaticData(successCb) {
 		// console.log('Updating data of ' + this._name + '...')
-		Meteor.call('fetchStaticData', this._name, (err,data) => {
+		Meteor.call('fetchStaticData', this._name, (err, data) => {
 			if (err) {
 				throw err;
 			} else if (_.isArray(data) && data.length) {
 				// console.log('Receiving data for ' + this._name + ' : ', data);
-				this.remove({});
-				let res;
-				if (this.batchInsert) {
-					res = this.batchInsert(data);
-				} else {
-					res = _.map(data, rec => this.insert(rec));
-				}
-				if (_.isFunction(successCb)) successCb(res);
+				this.clear();
+				console.time(`${ this._name }.updateStaticData`)
+				const res = _.map(data, rec => this.insert(rec));
+				Tracker.autorun(c => {
+					// console.log(`${this._name}.updateStaticData Tracker called`, this.pendingWrites.isDone())
+					if (this.pendingWrites.isDone()) {
+						if (_.isFunction(successCb)) successCb(res)
+						console.timeEnd(`${this._name}.updateStaticData`)
+						c.stop()
+					}
+				})
 			} else {
 				// console.log('... no data yet for ' + this._name + ' !');
 				Static.Data.setLocalVersion(this._name, null);

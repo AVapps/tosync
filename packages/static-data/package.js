@@ -21,8 +21,6 @@ Package.onUse(function (api) {
     'adrienv:grounddb'
   ], ['client', 'server']);
 
-  api.use('mikowals:batch-insert', 'server');
-
   api.export('Static', ['client', 'server']);
 
   // Server code
