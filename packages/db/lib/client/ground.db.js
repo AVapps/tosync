@@ -22,7 +22,7 @@ Ground = {};
 
 import localforage from 'localforage';
 import { ProgressCount } from './pending.jobs';
-import { difference } from 'lodash';
+import { difference, throttle } from 'lodash';
 import './servertime';
 
 // Without the Kernel
@@ -44,21 +44,10 @@ function strId(id) {
   return id;
 }
 
-function throttle(func, timeFrame) {
-  var lastTime = 0;
-  return function () {
-      var now = new Date();
-      if (now - lastTime >= timeFrame) {
-          func();
-          lastTime = now;
-      }
-  };
-}
-
 /*
   This function returns a throttled invalidation function binded on a collection
  */
-const Invalidate = (collection, wait=100) => {
+const Invalidate = (collection, wait = 250) => {
   return throttle(() => {
     Object.keys(collection._collection.queries)
       .forEach(qid => {
@@ -68,7 +57,7 @@ const Invalidate = (collection, wait=100) => {
         }
       });
     collection._collection._observeQueue.drain();
-  }, wait);
+  }, wait, { leading: false, trailing: true });
 };
 
 // Global helper for applying grounddb on a collection
@@ -93,7 +82,7 @@ Ground.Collection = class GroundCollection {
     this._collection = new LocalCollection();
 
     this.throttle = Object.assign({
-      invalidate: 60, // Invalidations are throttled by 60ms
+      invalidate: 200, // Invalidations are throttled by 200ms
     }, throttle);
 
     // Use soft remove events to remove documents from the ground collection
@@ -252,7 +241,7 @@ Ground.Collection = class GroundCollection {
     }
   }
 
-  observeSource(source=this) {
+  observeSource(source = this) {
     // Make sure to remove previous source handle if found
     this.stopObserver();
 
@@ -260,6 +249,7 @@ Ground.Collection = class GroundCollection {
     // Store documents to localforage
     this.sourceHandle = cursor.observe({
       'added': doc => {
+        // console.log('GroundDB.added', doc)
         this.setLastUpdated(this.getLastUpdated(doc));
         if (this !== source) {
           this.setDocument(doc);
@@ -268,6 +258,7 @@ Ground.Collection = class GroundCollection {
       },
       // If removedAt is set this means the document should be removed
       'changed': (doc, oldDoc) => {
+        // console.log('GroundDB.changed', doc, oldDoc)
         this.setLastUpdated(this.getLastUpdated(doc));
 
         if (this.lastUpdatedAt) {
@@ -293,6 +284,7 @@ Ground.Collection = class GroundCollection {
       // If lastUpdated is supported by schema we should not use removed
       // any more - rather catch this in the changed event...
       'removed': doc => {
+        // console.log('GroundDB.removed', doc)
         if (!this.lastUpdatedAt) {
           if (this !== source) {
             this.setDocument(doc, true);
