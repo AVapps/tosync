@@ -14,7 +14,7 @@ Template.toolbar.helpers({
   },
 
   disabledIfNoEvents() {
-    return Controller.currentEvents.get().length ? '' : 'disabled'
+    return Controller.currentEventsCount.get() ? '' : 'disabled'
   },
 
   categories() {

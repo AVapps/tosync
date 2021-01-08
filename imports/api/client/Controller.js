@@ -23,7 +23,7 @@ Controller = {
 	}, _.isEqual),
 
 	selectedDay: new ReactiveVar(null, _.isEqual),
-	currentEvents: new ReactiveVar([], _.isEqual),
+	currentEventsCount: new ReactiveVar(0),
 
 	Calendar: null,
   Planning: null,
@@ -43,40 +43,61 @@ Controller = {
 
 		this.EventsSubs = null
 
-    // console.time('Config.ready')
-		// Tracker.autorun(c => {
-		// 	if (Config.ready()) {
-    //     console.timeEnd('Config.ready')
-		// 		const cmonth = Config.get('currentMonth')
-		// 		if (cmonth) {
-		// 			this.currentMonth.set(cmonth)
-		// 		} else {
-    //       const now = moment()
-    //       this.currentMonth.set({
-    //         year: now.year(),
-    //     		month: now.month()
-    //       })
-    //     }
-    //     this.initAutoruns()
-		// 	}
-		// })
-    this.initAutoruns()
 
-    Tracker.autorun(c => {
-      if (Events.loaded) {
-        const twoYearsAgo = moment().startOf('month').subtract(2, 'years')
-        Events.removeFromCacheBefore(twoYearsAgo.valueOf())
-        c.stop()
-      }
+    // Autoruns
+    this.currentMonthAutorun()
+    this.isPNTAutorun()
+
+    Events.once('loaded', () => {
+      const twoYearsAgo = moment().startOf('month').subtract(2, 'years')
+      Events.removeFromCacheBefore(twoYearsAgo.valueOf())
+      this.onEventsLoadedAutoruns()
     })
+  },
+  
+  currentMonthAutorun() {
+    Tracker.autorun(() => {
+      // Construit le calendrier vide du mois
+      const currentMonth = this.currentMonth.get()
+      this.Calendar.buildCalendarDays(currentMonth)
 
+      Events.stopSync()
+
+      const cmonth = moment(currentMonth)
+      this.eventsStart = cmonth.clone().subtract(1, 'month')
+      this.eventsEnd = cmonth.endOf('month').add(1, 'month')
+
+      console.time('Events.loaded & EventsSubs.ready')
+      this.EventsSubs = Meteor.subscribe('cloud_events', +this.eventsStart, +this.eventsEnd, Meteor.userId())
+    })
+  },
+
+  isPNTAutorun() {
     Tracker.autorun(() => {
       if (Meteor.userId()) {
+        if (window.localStorage) {
+          const key = [Meteor.userId(), 'isPNT'].join('.')
+          const cachedIsPNT = JSON.parse(localStorage.getItem(key))
+          if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
+            if (moment().diff(_.get(cachedIsPNT, 'lastCheckAt'), 'days') < 10) {
+              console.log('Using cached isPNT value !')
+              return isPNT.set(_.get(cachedIsPNT, 'value'))
+            }
+          }
+        }
+
         console.time('Controller.isPNT')
-        Meteor.call('isPNT', (e,r) => {
+        Meteor.call('isPNT', (e, r) => {
           if (!e && _.isBoolean(r)) {
             isPNT.set(r)
             console.log('Controller.isPNT', r)
+            if (window.localStorage) {
+              const key = [Meteor.userId(), 'isPNT'].join('.')
+              localStorage.setItem(key, JSON.stringify({
+                lastCheckAt: + new Date(),
+                value: r
+              }))
+            }
           } else {
             isPNT.set(false)
           }
@@ -86,44 +107,28 @@ Controller = {
         isPNT.set(false)
       }
     })
-	},
+  },
 
-  initAutoruns() {
+  onEventsLoadedAutoruns() {
     Tracker.autorun(() => {
-			const currentMonth = this.currentMonth.get()
-      this.Calendar.buildCalendarDays(currentMonth)
+      // Rempli le calendrier avec les évènements du mois
+      console.time('Controller.updateCalendarEventsObserver')
+      const currentMonth = this.currentMonth.get()
+      const eventsCursor = Events.find({
+        userId: Meteor.userId(),
+        end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
+        start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
+      }, { sort: [['start', 'asc'], ['end', 'desc']] })
 
-      Config.set('currentMonth', currentMonth)
+      this.Calendar.observeEvents(eventsCursor)
+      this.Calendar.addBlancs()
 
-      Events.stopSync()
-
-			const cmonth = moment(currentMonth)
-			this.eventsStart = cmonth.clone().subtract(1, 'month')
-			this.eventsEnd = cmonth.endOf('month').add(1, 'month')
-
-      console.time('Events.loaded & EventsSubs.ready')
-			this.EventsSubs = Meteor.subscribe('cloud_events', +this.eventsStart, +this.eventsEnd, Meteor.userId())
-		})
-
-    Tracker.autorun(() => {
-      if (Events.loaded) {
-        console.time('Controller.updateCalendarEventsObserver')
-        const currentMonth = this.currentMonth.get()
-        const eventsCursor = Events.find({
-          userId: Meteor.userId(),
-          end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
-          start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
-        }, { sort: [['start', 'asc'], ['end', 'desc']] })
-
-        this.Calendar.observeEvents(eventsCursor)
-        this.Calendar.addBlancs()
-
-        console.timeEnd('Controller.updateCalendarEventsObserver')
-      }
+      console.timeEnd('Controller.updateCalendarEventsObserver')
     })
 
     Tracker.autorun(() => {
-      if (this.EventsSubs.ready() && Events.loaded) {
+      if (this.EventsSubs.ready()) {
+        // Synchronise la base de données locale avec les données du serveur
         console.timeEnd('Events.loaded & EventsSubs.ready')
         Events.sync({
           userId: Meteor.userId(),
@@ -136,84 +141,81 @@ Controller = {
     })
 
 		Tracker.autorun(() => {
-      if (Events.loaded) {
-        const currentMonth = this.currentMonth.get()
-        const eventsCursor = Events.find({
-					userId: Meteor.userId(),
-					end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
-					start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
-				}, { sort: [['start', 'asc'], ['end', 'desc']] })
-  			const events = eventsCursor.fetch()
+      const currentMonth = this.currentMonth.get()
+      const eventsCursor = Events.find({
+        userId: Meteor.userId(),
+        end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
+        start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
+      }, { sort: [['start', 'asc'], ['end', 'desc']] })
+      const events = eventsCursor.fetch()
 
-        this.currentEvents.set(events)
+      // Transform events
+      _.forEach(events, doc => {
+        _.extend(doc, {
+          start: moment(doc.start),
+          end: moment(doc.end)
+        })
+        if (doc.real) {
+          if (doc.real.start) doc.real.start = moment(doc.real.start)
+          if (doc.real.end) doc.real.end = moment(doc.real.end)
+        }
+      })
 
-        // Transform events
-        _.forEach(events, doc => {
-      		_.extend(doc, {
-      			start: moment(doc.start),
-      			end: moment(doc.end)
-      		})
-      		if (doc.real) {
-      			if (doc.real.start) doc.real.start = moment(doc.real.start)
-      			if (doc.real.end) doc.real.end = moment(doc.real.end)
-      		}
-      	})
+      this.currentEventsCount.set(events.length)
 
-        console.log('Controller.eventsChanged', events)
+      console.log('Controller.eventsChanged', events)
 
+      Tracker.afterFlush(() => {
         if (!this._stopPlanningCompute) {
           console.time('Controller.calculPlanning')
+          this.Planning = new Planning(events, currentMonth)
+          console.timeEnd('Controller.calculPlanning')
 
-          Meteor.defer(() => {
-            this.Planning = new Planning(events, currentMonth)
-            console.timeEnd('Controller.calculPlanning')
+          Tracker.autorun(() => {
+            const isPNT = this.isPNT()
 
-            Tracker.autorun(() => {
-              const isPNT = this.isPNT()
+            // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
 
-              // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
-
-              if (isPNT) {
-                if (HV100AF.ready() && HV100.ready()) {
-                  console.time('Controller.calculSalaire')
-                  this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
-                  this._statsRemu.set(this.Remu.stats)
-                  Tracker.autorun(() => {
-                    if (Config.ready()) {
-                      const profil = Config.get('profil')
-                      // console.log('Controller.profilChanged', profil)
-                      if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
-                        this.calculSalaire(this.Remu.stats, profil)
-                        console.timeEnd('Controller.calculSalaire')
-                      } else {
-                        Meteor.call('getPayscale', (e,r) => {
-                          if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
-                            this._bareme = r
-                            this.calculSalaire(this.Remu.stats, profil)
-                            console.timeEnd('Controller.calculSalaire')
-                          }
-                        })
-                      }
-                    } else {
-                      this._bareme = null
-                    }
-                  })
-                }
-              } else if (HV100.ready()) {
-                this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+            if (isPNT) {
+              if (HV100AF.ready() && HV100.ready()) {
+                console.time('Controller.calculSalaire')
+                this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
                 this._statsRemu.set(this.Remu.stats)
+                Tracker.autorun(() => {
+                  if (Config.ready()) {
+                    const profil = Config.get('profil')
+                    // console.log('Controller.profilChanged', profil)
+                    if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
+                      this.calculSalaire(this.Remu.stats, profil)
+                      console.timeEnd('Controller.calculSalaire')
+                    } else {
+                      Meteor.call('getPayscale', (e, r) => {
+                        if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
+                          this._bareme = r
+                          this.calculSalaire(this.Remu.stats, profil)
+                          console.timeEnd('Controller.calculSalaire')
+                        }
+                      })
+                    }
+                  } else {
+                    this._bareme = null
+                  }
+                })
               }
+            } else if (HV100.ready()) {
+              this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+              this._statsRemu.set(this.Remu.stats)
+            }
 
-              // Refresh modal content
-              Tracker.nonreactive(() => {
-                if (this.selectedDay.get()) {
-          				this.setSelectedDay(this.selectedDay.get())
-          			}
-              })
+            // Refresh modal content
+            Tracker.nonreactive(() => {
+              if (this.selectedDay.get()) {
+                this.setSelectedDay(this.selectedDay.get())
+              }
             })
           })
         }
-      }
+      })
 		})
   },
 

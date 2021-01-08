@@ -25,6 +25,10 @@ export class CachedCollection extends Mongo.Collection {
     this.orgFind = this.find
     this.orgFindOne = this.findOne
 
+    // Copy state properties
+    this.pendingReads = this._cacheCollection.pendingReads
+    this.pendingWrites = this._cacheCollection.pendingWrites
+
     // Overwrite collection finds using the grounded data
     this.find = (...args) => {
       return this._cacheCollection.find(...args)
@@ -32,6 +36,10 @@ export class CachedCollection extends Mongo.Collection {
 
     this.findOne = (...args) => {
       return this._cacheCollection.findOne(...args)
+    }
+
+    this.once = (...args) => {
+      return this._cacheCollection.once(...args)
     }
   }
 
@@ -57,11 +65,11 @@ export class CachedCollection extends Mongo.Collection {
     // Map MiniMongo find in an array of id's
     const keepIds = this.orgFind(selector, { reactive: false }).map((doc) => strId(doc._id))
     // Remove all other documents from the collection
-    _.each(_.difference(currentIds, keepIds), (id) => {
+    _.each(_.difference(currentIds, keepIds), (_id) => {
       // Remove it from in memory
-      delete this._cacheCollection._collection._docs._map[id]
+      delete this._cacheCollection._collection._docs._map[_id]
       // Remove it from storage
-      this._cacheCollection.saveDocument({ _id: id }, true)
+      this._cacheCollection.saveDocument({ _id }, true)
     })
     if (invalidate) this._cacheCollection.invalidate()
   }

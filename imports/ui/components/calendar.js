@@ -59,7 +59,7 @@ Template.calendar.helpers({
 	},
 
 	hasEvents() {
-		return Controller.currentEvents.get().length;
+		return Controller.currentEventsCount.get();
 	},
 
 	month() {
@@ -98,7 +98,7 @@ Template.calendar.helpers({
 
 Template.planningCalendarDay.helpers({
   dayClasses() {
-    return this.day.classes.join(' ')
+		return 'calendar-dow-' + this.day.dof + ' ' + this.day.classes.join(' ')
   },
 
 	weekday() {
@@ -152,7 +152,7 @@ Template.planningCalendarDayLabel.helpers({
 	},
 
 	spanClass() {
-		// TODO Cas de 2 rotations le même jour (un finissant près minuit puis une autre partant l'après-midi)
+		// TODO Cas de 2 rotations le même jour (une finissant après minuit puis une autre partant l'après-midi)
 		if (this.tag == 'rotation') {
 			const rot = _.find(this.events, evt => evt.tag === 'rotation')
 			if (rot && rot.start && rot.end) {
