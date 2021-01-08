@@ -52,11 +52,35 @@ Meteor.methods({
   },
 
   isPNT() {
-    check(this.userId, Match.OneOf(String, Object))
-    // return false
-		// Meteor._sleepForMs(3000)
-		this.unblock()
-    return isPNT(this.userId)
+		check(this.userId, Match.OneOf(String, Object))
+		const user = Meteor.user()
+		if (_.has(user, 'isPNT.checkedAt')) {
+			if (moment().diff(_.get(user, 'isPNT.checkedAt'), 'days') > 30) {
+				const _isPNT = isPNT(this.userId)
+				Meteor.users.update(this.userId, {
+					$set: {
+						isPNT: {
+							checkedAt: +new Date(),
+							value: _isPNT
+						}
+					}
+				})
+				return _isPNT
+			} else {
+				return _.get(user, 'isPNT.value')
+			}
+		} else {
+			const _isPNT = isPNT(this.userId)
+			Meteor.users.update(this.userId, {
+				$set: {
+					isPNT: {
+						checkedAt: +new Date(),
+						value: _isPNT
+					}
+				}
+			})
+			return _isPNT
+		}
   },
 
 	async getPlanning(type) {
