@@ -80,7 +80,6 @@ Controller = {
           const cachedIsPNT = JSON.parse(localStorage.getItem(key))
           if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
             if (moment().diff(_.get(cachedIsPNT, 'lastCheckAt'), 'days') < 10) {
-              console.log('Using cached isPNT value !')
               return isPNT.set(_.get(cachedIsPNT, 'value'))
             }
           }

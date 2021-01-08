@@ -238,16 +238,6 @@ Meteor.methods({
 		}).fetch();
 	},
 
-	batchEventsRemove(ids) {
-		check(this.userId, Match.OneOf(String, Object));
-		return Events.remove({
-			_id: {
-				'$in': ids
-			},
-			userId: this.userId
-		});
-	},
-
 	batchEventsInsert(events) {
 		check(this.userId, Match.OneOf(String, Object))
 		check(events, Array)

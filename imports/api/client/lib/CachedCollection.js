@@ -47,6 +47,10 @@ export class CachedCollection extends Mongo.Collection {
     return this._cacheCollectionLoaded.get()
   }
 
+  batchInsert(docs) {
+    return _.map(docs, doc => Events.insert(doc))
+  }
+
   sync(selector) { // Same selector as find
     // console.log('SYNC', selector, this.orgFind(selector).count())
     this.removeLocalOnlyFrom(selector, false)

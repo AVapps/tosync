@@ -54,7 +54,6 @@ mdg:validated-method@1.2.0
 meteor@1.9.3
 meteor-base@1.4.0
 meteorhacks:subs-manager@1.6.4
-mikowals:batch-insert@1.2.0
 minifier-css@1.5.3
 minifier-js@2.6.0
 minimongo@1.6.1

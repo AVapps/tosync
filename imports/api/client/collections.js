@@ -1,7 +1,6 @@
 import { Meteor } from 'meteor/meteor'
-import { Mongo } from 'meteor/mongo'
 import { CachedCollection } from './lib/CachedCollection.js'
-
+import { batchEventsRemove } from '/imports/api/methods.js'
 import moment from 'moment'
 import _ from 'lodash'
 
@@ -19,6 +18,10 @@ class EventsCollection extends CachedCollection {
 		})
 		return super.insert(evt, callback)
 	}
+
+	batchRemove(ids, cb) {
+		return batchEventsRemove.call({ ids }, cb)
+	}
 }
 
 Events = new EventsCollection('cloud_events')
@@ -29,17 +32,17 @@ function isAdmin() {
 }
 
 HV100 = new Static.Collection('HV100%')
-HV100.allowStaticImport(function () { return isAdmin() })
+HV100.allowStaticImport(() => isAdmin())
 HV100AF = new Static.Collection('HV100AF')
-HV100AF.allowStaticImport(function () { return isAdmin() })
+HV100AF.allowStaticImport(() => isAdmin())
 PN = new Static.Collection('pn')
-PN.allowStaticImport(function () { return isAdmin() })
+PN.allowStaticImport(() => isAdmin())
 Airports = new Static.Collection('airports')
-Airports.allowStaticImport(function () { return isAdmin() })
+Airports.allowStaticImport(() => isAdmin())
 
 Tracker.autorun(c => {
 	if (Meteor.userId()) {
-		console.log('Logged in : checking static data version...')
+		// console.log('Logged in : checking static data version...')
 		HV100.checkVersion()
     HV100AF.checkVersion()
 		PN.checkVersion()

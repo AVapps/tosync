@@ -40,9 +40,9 @@ Template.modal.events({
             });
         }
 		if (!_.isEmpty(t.removeLog)) {
-			Meteor.call('batchEventsRemove', t.removeLog, (e,r) => {
-				console.log(e,r);
-			});
+			Events.batchRemove(t.removeLog, (e,r) => {
+				console.log(e,r)
+			})
 		}
 		t.reset();
 	},

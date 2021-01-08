@@ -169,20 +169,21 @@ export default {
 
                 // 1. Remove unfounds
                 if (updateLog.remove && updateLog.remove.length) {
-                    Meteor.call('batchEventsRemove', updateLog.remove, function (error, result) {
+                    
+                    Events.batchRemove(updateLog.remove, (error, result) => {
                         if (error) {
-                            Notify.error(error);
+                            Notify.error(error)
                         } else {
                             if (result !== updateLog.remove.length) {
-                                Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)");
+                                Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)")
                             }
                             if (updateLog.addToRotation.length) {
-                                _recomputeRotations(updateLog.addToRotation);
+                                _recomputeRotations(updateLog.addToRotation)
                             }
                         }
-                    });
+                    })
                 } else if (updateLog.addToRotation.length) {
-                    _recomputeRotations(updateLog.addToRotation);
+                    _recomputeRotations(updateLog.addToRotation)
                 }
 
                 // 2. Insert new events
@@ -300,18 +301,18 @@ export default {
 
                 // 1. Remove unfounds
                 if (updateLog.remove && updateLog.remove.length) {
-                    Meteor.call('batchEventsRemove', updateLog.remove, (error, result) => {
+                    Events.batchRemove(updateLog.remove, (error, result) => {
                         if (error) {
-                            Notify.error(error);
+                            Notify.error(error)
                         } else {
                             if (result !== updateLog.remove.length) {
-                                Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)");
+                                Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::importEvents)")
                             }
                             if (updateLog.addToRotation.length) {
-                                _recomputeRotations(updateLog.addToRotation);
+                                _recomputeRotations(updateLog.addToRotation)
                             }
                         }
-                    });
+                    })
                 } else if (updateLog.addToRotation.length) {
                     _recomputeRotations(updateLog.addToRotation);
                 }
@@ -369,7 +370,7 @@ export default {
 
         // Removes duplicates and rotations
         if (toRemove && toRemove.length) {
-            Meteor.call('batchEventsRemove', toRemove, (error, result) => {
+            Events.batchRemove(toRemove, (error, result) => {
                 if (error) {
                     Notify.error(error)
                 } else {
@@ -634,20 +635,5 @@ function _insertEvents(events, created = +moment()) {
         toInsert.push(_completeEvent(evt));
     });
 
-    const inserted = Events.batchInsert(toInsert, function (error, result) {
-      if (error) Notify.error(error)
-    }) // Note: batchInsert method always returns empty result Array but client return is OK
-    return inserted
-}
-
-function _deleteEvents(events) {
-    if (!events.length) return true;
-    const toDelete = events.map(function(evt) {return evt._id});
-    Meteor.call('batchEventsRemove', toDelete, function (error, result) {
-        if (error) {
-            Notify.error(error);
-        } else if (result !== events.length) {
-            // Notify.warn("Attention", "Des évènements n'ont pas été supprimés ! (Sync::_deleteEvents)");
-        }
-    });
+    return Events.batchInsert(toInsert)
 }

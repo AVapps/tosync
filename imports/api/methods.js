@@ -4,6 +4,28 @@ import SimpleSchema from 'simpl-schema'
 import { Accounts } from 'meteor/accounts-base'
 import _ from 'lodash'
 
+export const batchEventsRemove = new ValidatedMethod({
+  name: 'tosync.Events.batchRemove',
+  validate: new SimpleSchema({
+    ids: [ String ]
+  }).validator(),
+  run({ ids }) {
+    if (!this.userId) {
+      throw new Meteor.Error('tosync.notLoggedIn', 'Vous devez être connecté pour accéder à cette fonction.')
+    }
+    if (this.isSimulation) {
+      return _.reduce(ids, (sum, _id) => {
+        return sum + Events.remove(_id)
+      }, 0)
+    } else {
+      return Events.remove({
+        userId: this.userId,
+        _id: { $in: ids }
+      })
+    }
+  }
+})
+
 export const subscribeUser = new ValidatedMethod({
   name: 'tosync.subscribeUser',
   validate: new SimpleSchema({
