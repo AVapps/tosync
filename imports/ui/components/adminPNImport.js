@@ -1,5 +1,7 @@
 import { Template } from 'meteor/templating'
 import './adminPNImport.html'
+import { adminSubscribeUser } from '/imports/api/methods.js'
+import * as Ladda from 'ladda'
 
 Template.adminPNImport.events({
 	'change input[type=file]': function (e,t) {
@@ -24,6 +26,28 @@ Template.adminPNImport.events({
 			}
 
 			fr.readAsText(input.files[0])
+		}
+	},
+
+	'submit form#inscriptionAdmin': (e, t) => {
+		e.preventDefault()
+
+		if (e.currentTarget.checkValidity()) {
+			const trigramme = t.find('input[name=trigramme]').value.toUpperCase()
+			const email = t.find('input[name=email]').value
+			const l = Ladda.create(t.find('button.js-admin-subscribe'))
+			l.start()
+
+			adminSubscribeUser.call({ trigramme, email }, (err, res) => {
+				if (err) {
+					Notify.error(err)
+				} else if (res.success) {
+					Notify.success(`E-mail d'inscription envoyé à ${ email } !`)
+				}
+				t.find('input[name=trigramme]').value = ''
+				t.find('input[name=email]').value = ''
+				l.stop()
+			})
 		}
 	}
 })

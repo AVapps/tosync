@@ -1,6 +1,7 @@
 <template name="adminPNImport">
   <div id="adminPNImport">
-    <h6 class="title mb-3">Administration</h6>
+    <h5 class="title text-uppercase">Administration</h5>
+    <h6 class="subtitle mb-3">Importation</h6>
     <div class="row">
       <div class="col-sm-6 mb-3">
         <div class="custom-file">
@@ -27,5 +28,22 @@
       	</div>
       </div>
     </div>
+    <hr>
+    <h6 class="title mb-3">Inscription</h6>
+    <form id="inscriptionAdmin">
+      <div class="form-row justify-content-start">
+        <div class="col-sm-6">
+          <input name="trigramme" type="text" value="" placeholder="Trigramme" class="form-control mb-2 text-uppercase" maxlength="3" pattern="[A-z]{3}" required />
+        </div>
+        <div class="col-sm-6">
+          <input name="email" type="email" value="" placeholder="Adresse électronique" class="form-control mb-2" required />
+        </div>
+        <div class="col-sm-3">
+          <button type="submit" class="btn btn-block btn-primary js-admin-subscribe ladda-button" data-style="zoom-out">
+            <span class="ladda-label">Envoyer</span>
+          </button>
+        </div>
+      </div>  
+    </form>
   </div>
 </template>

@@ -15,7 +15,7 @@ export const subscribeUser = new ValidatedMethod({
     
     const pn = PN.findOne({ trigramme, email })
     if (pn) {
-      const user = Accounts.findUserByUsername(trigramme, { _id: 1 })
+      const user = Accounts.findUserByUsername(trigramme, { _id: 1, emails: 1 })
       if (user) {
         if (!_.isArray(user.emails) || !_.find(user.emails, email => email.address == pn.email)) {
           Accounts.addEmail(user._id, pn.email, false)
@@ -39,6 +39,62 @@ export const subscribeUser = new ValidatedMethod({
     } else {
       throw new Meteor.Error('pn-inconnu', "Aucun couple « trigramme / adresse électronique » correspondant n'a été trouvé !")
     }
+  }
+})
+
+function isAdmin(userId = Meteor.userId()) {
+  if (userId) {
+    const user = Meteor.users.findOne({ _id: userId }, { fields: { username: 1 } })
+    return user && user.username && user.username === Meteor.settings.public.adminUser
+  }
+  return false
+}
+
+export const adminSubscribeUser = new ValidatedMethod({
+  name: 'tosync.adminSubscribeUser',
+  validate: new SimpleSchema({
+    trigramme: { type: String, regEx: /^[A-z]{3}$/ },
+    email: { type: String, regEx: SimpleSchema.RegEx.Email }
+  }).validator(),
+  run({ trigramme, email }) {
+    if (!this.userId) {
+      throw new Meteor.Error('tosync.adminSubscribeUser.notLoggedIn', 'Vous devez être connecté pour accéder à cette fonction.')
+    }
+
+    if (!isAdmin(this.userId)) {
+      throw new Meteor.Error('tosync.adminSubscribeUser.notAdmin', "Vous n'êtes pas autorisé à accéder à cette fonction.")
+    }
+
+    if (!this.isSimulation) {
+      const user = Accounts.findUserByUsername(trigramme, { _id: 1, emails: 1 })
+      if (user) {
+        if (!_.isArray(user.emails) || !_.find(user.emails, email => email.address == email)) {
+          Accounts.addEmail(user._id, email, false)
+        }
+        Accounts.sendEnrollmentEmail(user._id, email)
+      } else {
+        const newUser = {
+          username: trigramme,
+          email: email,
+          profile: {
+            email: email
+          }
+        }
+        const pn = PN.findOne({ email })
+        if (pn) {
+          _.assign(newUser.profile, {
+            fonction: pn.fonction,
+            nom: pn.nom,
+            prenom: pn.prenom,
+            name: [pn.prenom, pn.nom].join(' ')
+          })
+        }
+        const userId = Accounts.createUser(newUser)
+        Accounts.sendEnrollmentEmail(userId, email)
+      }
+    }
+
+    return { success: true }
   }
 })
 
