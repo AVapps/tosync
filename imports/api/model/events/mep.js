@@ -1,20 +1,16 @@
 import SimpleSchema from 'simpl-schema'
 import { eventSchema } from './event.js'
 
-const volSchema = new SimpleSchema({
+const mepSchema = new SimpleSchema({
   tag: {
     type: String,
-    allowedValues: ['vol']
+    allowedValues: ['mep']
   },
   num: {
     type: String,
     optional: true
   },
   type: {
-    type: String,
-    optional: true
-  },
-  immat: {
     type: String,
     optional: true
   },
@@ -36,19 +32,9 @@ const volSchema = new SimpleSchema({
   remarks: {
     type: String,
     optional: true
-  },
-  real: {
-    type: Object,
-    optional: true
-  },
-  'real.start': {
-    type: SimpleSchema.Integer, // Datetime timestamp
-  },
-  'real.end': {
-    type: SimpleSchema.Integer, // Datetime timestamp
   }
 })
 
-volSchema.extend(eventSchema)
+mepSchema.extend(eventSchema)
 
-export { volSchema }
+export { mepSchema }
