@@ -55,7 +55,7 @@ export const getEventsInterval = new ValidatedMethod({
       end: { $gte: start }
     }, { sort: [['start', 'asc']], fields: { start: 1, end: 1 }})
 
-    const query = query = {
+    const query = {
       userId: this.userId,
       end: { $gte: overlapStart ? overlapStart.start : start }
     }
