@@ -31,11 +31,6 @@ function isPNT(userId) {
 }
 
 Meteor.methods({
-	// xlsx: function (pnt) {
-	// 	this.unblock();
-	// 	if (pnt) return Assets.getBinary('ep4.xlsx');
-	// 	return Assets.getBinary('ep4pnc.xlsx');
-	// },
 
   getPayscale() {
     check(this.userId, Match.OneOf(String, Object))
@@ -119,52 +114,6 @@ Meteor.methods({
 		return Connect.checkSession(this.userId)
 	},
 
-	findBlockHours(numVols) {
-		check(numVols, Array);
-		var map = {};
-
-		this.unblock();
-
-		_.forEach(numVols, function (num) {
-			var found = Events.findOne({num: num}, {sort: [['start', 'desc']]});
-			if (found) {
-				map[num] = _.chain(found)
-					.pick('block', 'tz', 'summary')
-					.extend({
-						'start': {hour: found.start.hour(), minute: found.start.minute()},
-						'end': {hour: found.end.hour(), minute: found.end.minute()}
-					})
-					.value();
-			}
-		});
-
-		return map;
-	},
-
-	clearInterval(start, to) {
-		check(this.userId, Match.OneOf(String, Object));
-		start.startOf('day');
-		to.endOf('day');
-		return Events.remove({
-			userId: this.userId,
-			start: { $lte : to.valueOf() },
-			end: { $gte : start.valueOf() }
-		});
-	},
-
-	getEventsRightBefore(date) {
-		check(this.userId, Match.OneOf(String, Object));
-		return Events.find({
-			userId: this.userId,
-			start: {
-				$gte: date.clone().startOf('day').subtract(7, 'days').valueOf(),
-				$lt: date.valueOf()
-			}
-		}, {
-			sort: [['start', 'asc']]
-		}).fetch();
-	},
-
 	// start, end as timestamps
 	getEvents(start, end) {
 		check(this.userId, Match.OneOf(String, Object))
@@ -194,17 +143,17 @@ Meteor.methods({
 	},
 
 	getRotation(rotationId) {
-		check(this.userId, Match.OneOf(String, Object));
+		check(this.userId, Match.OneOf(String, Object))
 		const rotation = Events.findOne({
 			_id: rotationId,
 			userId: this.userId
-		});
+		})
 
 		if (rotation) {
-			rotation.vols = Events.find({ rotationId }, { sort: [['start', 'asc']]}).fetch();
-			return rotation;
+			rotation.vols = Events.find({ rotationId }, { sort: [['start', 'asc']]}).fetch()
+			return rotation
 		} else {
-			throw new Meteor.Error(403, 'Non autorisé !');
+			throw new Meteor.Error(403, 'Non autorisé !')
 		}
 	},
 
@@ -236,15 +185,5 @@ Meteor.methods({
 		}, {
 			sort: [['start', 'asc'], ['end', 'desc']]
 		}).fetch();
-	},
-
-	batchEventsInsert(events) {
-		check(this.userId, Match.OneOf(String, Object))
-		check(events, Array)
-
-    return _.map(events, evt => {
-      evt.userId = this.userId
-      return Events.insert(_.pick(evt, ['start', 'end', 'summary', 'description', 'uid', 'category', 'tag', 'fonction', 'type', 'pnt', 'pnc', 'remark', 'num', 'from', 'to', 'tz', 'svIndex', 'rotationId', 'created', 'userId', 'slug', 'updated', 'real.start', 'real.end', 'base', ]))
-    })
 	}
-});
+})
