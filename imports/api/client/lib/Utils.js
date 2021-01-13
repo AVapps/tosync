@@ -22,6 +22,7 @@ export default {
 		'instructionSimu',
 		'reserve',
 		'delegation',
+		'npl',
 		'autre'
 	],
 
@@ -33,12 +34,13 @@ export default {
     'jisap',
 		'repos',
 		'maladie',
-		'greve'
+		'greve',
+		'npl'
   ],
 
   categories: {
     'ABSJ': 'autre', // Absence excusée payée
-		'NPL': 'autre', // Non planifiable
+		'NPL': 'npl', // Non planifiable
 
     'ABSNJ': 'absence', // Absence PN non excusée non payée
 
@@ -283,6 +285,8 @@ export default {
 				return 'Syndicat';
 			case 'sol':
 				return 'Activité sol';
+			case 'npl':
+				return 'NPL';
 			case 'autre':
 				return 'Autre';
 			default:
@@ -311,6 +315,7 @@ export default {
 			case 'absence':
 			case 'sanssolde':
 			case 'jisap':
+			case 'npl':
 				return 'badge-warning';
 			case 'reserve':
 			case 'sol':
@@ -352,6 +357,7 @@ export default {
 				case 'sanssolde':
 				case 'blanc':
 				case 'jisap':
+				case 'npl':
 				case 'absence':
 					return [prefix, suffix].join('-')
 				case 'vol':
