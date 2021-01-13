@@ -2,10 +2,12 @@ import { Meteor } from 'meteor/meteor'
 import { ValidatedMethod } from 'meteor/mdg:validated-method'
 import SimpleSchema from 'simpl-schema'
 import { Accounts } from 'meteor/accounts-base'
+import { CallPromiseMixin } from 'meteor/didericis:callpromise-mixin'
 import _ from 'lodash'
 
 export const batchEventsRemove = new ValidatedMethod({
   name: 'tosync.Events.batchRemove',
+  mixins: [CallPromiseMixin],
   validate: new SimpleSchema({
     ids: [ String ]
   }).validator(),
@@ -23,6 +25,55 @@ export const batchEventsRemove = new ValidatedMethod({
         _id: { $in: ids }
       })
     }
+  }
+})
+
+export const getEventsInterval = new ValidatedMethod({
+  name: 'tosync.Events.getInterval',
+  mixins: [CallPromiseMixin],
+  validate: new SimpleSchema({
+    start: { type: SimpleSchema.Integer },
+    end: {
+      type: SimpleSchema.Integer,
+      optional: true,
+      custom: function () {
+        if (this.isSet && this.value < this.field('start').value) {
+          return SimpleSchema.ErrorTypes.VALUE_NOT_ALLOWED
+        }
+      }
+    }
+  }).validator(),
+  run({ start, end }) {
+    if (!this.userId) {
+      throw new Meteor.Error('tosync.getEvents.notLoggedIn', 'Vous devez être connecté pour accéder à cette fonction.')
+    }
+
+    const overlapStart = Events.findOne({
+      tag: 'rotation',
+      userId: this.userId,
+      start: { $lt: start },
+      end: { $gte: start }
+    }, { sort: [['start', 'asc']], fields: { start: 1, end: 1 }})
+
+    const query = query = {
+      userId: this.userId,
+      end: { $gte: overlapStart ? overlapStart.start : start }
+    }
+
+    if (end) {
+      const overlapEnd = Events.findOne({
+        tag: 'rotation',
+        userId: this.userId,
+        start: { $lte: end },
+        end: { $gt: end }
+      }, { sort: [['end', 'desc']], fields: { start: 1, end: 1 }})
+
+      query.start = { $lte: overlapEnd ? overlapEnd.end : end }
+    }
+
+    return Events.find(query, {
+      sort: [['start', 'asc'], ['end', 'desc']]
+    }).fetch()
   }
 })
 

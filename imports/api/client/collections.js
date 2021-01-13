@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor'
 import { CachedCollection } from './lib/CachedCollection.js'
-import { batchEventsRemove } from '/imports/api/methods.js'
+import { batchEventsRemove, getEventsInterval } from '/imports/api/methods.js'
 import moment from 'moment'
 import _ from 'lodash'
 
@@ -21,6 +21,10 @@ class EventsCollection extends CachedCollection {
 
 	batchRemove(ids, cb) {
 		return batchEventsRemove.call({ ids }, cb)
+	}
+
+	getInterval(start, end, cb) {
+		return cb ? getEventsInterval.call({ start, end }, cb) : getEventsInterval.callPromise({ start, end })
 	}
 }
 

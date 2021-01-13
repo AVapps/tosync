@@ -176,8 +176,6 @@ Meteor.methods({
 		const queryStart = overlapStart ? overlapStart.start : monthStart;
 		const queryEnd = overlapEnd ? overlapEnd.end : monthEnd;
 
-		// console.log(overlapStart, overlapEnd, queryStart.format(), queryEnd.format());
-
 		return Events.find({
 			userId: this.userId,
 			start: { $lte: queryEnd.valueOf() },
