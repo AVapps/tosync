@@ -1,5 +1,4 @@
 import { DateTime, Duration, Settings } from 'luxon'
-import moment from 'moment'
 import _ from 'lodash'
 import PifyMeteor from './PifyMeteor'
 import Utils from './Utils.js'
@@ -57,16 +56,16 @@ export default class PdfPlanningImporter {
     const found = this.findSavedEvent(evt)
     if (found) {
       this.foundIds.add(found._id)
-      console.log('FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt, found)
+      console.log('FOUND Event', evt.tag, evt.category, evt.summary, evt.start, evt.end, evt, found)
       if (_.isMatchWith(found, _.pick(evt, 'category', 'summary', 'description', 'start', 'end'), matchMoment)) {
-        console.log('MATCHES: nothing to update');
+        console.log('MATCHES: nothing to update')
       } else {
-        console.log('DOES NOT MATCH: update');
-        updateLog.update.push({ _id: found._id, modifier: { $set: _normalizeEvent(evt) } });
+        console.log('DOES NOT MATCH: update')
+        updateLog.update.push({ _id: found._id, modifier: { $set: _normalizeEvent(evt) } })
       }
     } else {
-      console.log('Not FOUND Event', evt.tag, evt.category, evt.summary, evt.start.format(), evt.end.format(), evt);
-      updateLog.insert.push(evt);
+      console.log('Not FOUND Event', evt.tag, evt.category, evt.summary, evt.start, evt.end, evt)
+      updateLog.insert.push(evt)
     }
   }
 

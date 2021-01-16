@@ -1,7 +1,7 @@
 import Driver from 'driver.js'
 import 'driver.js/dist/driver.min.css'
 
-export default function firstUseDrive(count) {
+export function firstUseDrive(count) {
   $(() => {
     const driver = new Driver({
       doneBtnText: 'Terminé',

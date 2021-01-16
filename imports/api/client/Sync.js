@@ -1,6 +1,5 @@
-import { Meteor } from 'meteor/meteor'
 import _ from 'lodash'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import SyncTools from './lib/syncCalendarEvents.js'
 import PdfPlanningImporter from './lib/PdfPlanningImporter'
 import Utils from './lib/Utils.js'
@@ -26,7 +25,7 @@ Sync = {
 	importPlanning(events) {
 		return SyncTools.syncCalendarEvents(events, {
 			restrictToLastEventEnd: false
-		});
+		})
 	},
 
 	// Importe les évènements en synchronisant les évènements sur le période importée
@@ -37,34 +36,34 @@ Sync = {
 
 	// Importe des évènements
 	importPastEvents(events) {
-		return SyncTools.syncCalendarEvents(events);
+		return SyncTools.syncCalendarEvents(events)
 	},
 
 	// Met à jour ou insère si absent les vols et rotations uniquement
 	importActivitePN(events) {
 		// Filtre les évènements pour ne garder que ceux des 31 jours précédents
-		const oneMonthAgo = moment().subtract(31, 'days').startOf('day');
+		const oneMonthAgo = DateTime.local().minus({ days: 31 }).startOf('day').toMillis()
 		events = _.filter(events, evt => {
-			return evt.end.isAfter(oneMonthAgo) || evt.end.isSame(oneMonthAgo);
-		});
+			return evt.end >= oneMonthAgo
+		})
 
 		// Set defaults
 		events = _.map(events, evt => {
 			return _.defaults(_.omit(evt, 'blk', 'ts', 'tvnuit'), {
 				tag: 'vol',
 				category: 'FLT'
-			});
-		});
+			})
+		})
 
-		return SyncTools.syncPastEvents(events);
+		return SyncTools.syncPastEvents(events)
 	},
 
 	recomputeRotation(rotationId) {
-		return SyncTools.recomputeExistingRotation(rotationId);
+		return SyncTools.recomputeExistingRotation(rotationId)
 	},
 
 	reparseEvents(events) {
-		return SyncTools.reparseEvents(events);
+		return SyncTools.reparseEvents(events)
 	},
 
   updateTags(events) {
@@ -85,4 +84,4 @@ Sync = {
       }
     })
   }
-};
+}

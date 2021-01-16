@@ -1,26 +1,31 @@
 import { Meteor } from 'meteor/meteor'
 import { Tracker } from 'meteor/tracker'
 import { ReactiveVar } from 'meteor/reactive-var'
+import { Session } from 'meteor/session'
 
 import Planning from './lib/Planning.js'
 import RemuPNT from './lib/RemuPNT.js'
 import RemuPNC from './lib/RemuPNC.js'
 
+import { migrateEvents, needsMigration } from './lib/migrateEvents.js'
+
 import _ from 'lodash'
 import Swal from 'sweetalert2'
 import PifyMeteor from './lib/PifyMeteor'
+import { DateTime } from 'luxon'
 
-const NOW = new Date()
+window.DateTime = DateTime
+
+const NOW = DateTime.local()
 const isPNT = new ReactiveVar(false)
 
-Controller = {
-	eventsStart: moment(),
-	eventsEnd: moment(),
+Session.setDefault('currentMonth', { year: NOW.year, month: NOW.month })
 
-	currentMonth: new ReactiveVar({
-		year: NOW.getFullYear(),
-		month: NOW.getMonth()
-	}, _.isEqual),
+Controller = {
+	eventsStart: DateTime.local(),
+  eventsEnd: DateTime.local(),
+
+  currentMonth: new ReactiveVar(Session.get('currentMonth'), _.isEqual),
 
 	selectedDay: new ReactiveVar(null, _.isEqual),
 	currentEventsCount: new ReactiveVar(0),
@@ -41,16 +46,16 @@ Controller = {
     this.Calendar = Calendar
     this.Calendar.init()
 
-		this.EventsSubs = null
-
+    this.EventsSubs = null
 
     // Autoruns
     this.currentMonthAutorun()
     this.isPNTAutorun()
+    this.firstUseAutorun()
 
     Events.once('loaded', () => {
-      const twoYearsAgo = moment().startOf('month').subtract(2, 'years')
-      Events.removeFromCacheBefore(twoYearsAgo.valueOf())
+      const twoYearsAgo = NOW.startOf('month').minus({ years: 2 }).toMillis()
+      Events.removeFromCacheBefore(twoYearsAgo)
       this.onEventsLoadedAutoruns()
     })
   },
@@ -63,12 +68,28 @@ Controller = {
 
       Events.stopSync()
 
-      const cmonth = moment(currentMonth)
-      this.eventsStart = cmonth.clone().subtract(1, 'month')
-      this.eventsEnd = cmonth.endOf('month').add(1, 'month')
+      const cmonth = DateTime.fromObject(currentMonth)
+      this.eventsStart = cmonth.minus({ month: 1 })
+      this.eventsEnd = cmonth.endOf('month').plus({ month: 1 })
 
       console.time('Events.loaded & EventsSubs.ready')
-      this.EventsSubs = Meteor.subscribe('cloud_events', +this.eventsStart, +this.eventsEnd, Meteor.userId())
+      this.EventsSubs = Meteor.subscribe('cloud_events', this.eventsStart.toMillis(), this.eventsEnd.toMillis(), Meteor.userId())
+    })
+  },
+
+  firstUseAutorun() {
+    Tracker.autorun(c => {
+      if (Meteor.userId()) {
+        Config.onReady(async () => {
+          const count = Config.get('firstUse')
+          if (!count || count < 2) {
+            const { firstUseDrive } = await import('/imports/api/client/lib/Driver.js')
+            const newCount = firstUseDrive(count)
+            Config.set('firstUse', newCount)
+          }
+        })
+        c.stop()
+      }
     })
   },
 
@@ -76,10 +97,11 @@ Controller = {
     Tracker.autorun(() => {
       if (Meteor.userId()) {
         if (window.localStorage) {
-          const key = [Meteor.userId(), 'isPNT'].join('.')
+          const key = [ Meteor.userId(), 'isPNT' ].join('.')
           const cachedIsPNT = JSON.parse(localStorage.getItem(key))
           if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
-            if (moment().diff(_.get(cachedIsPNT, 'lastCheckAt'), 'days') < 10) {
+            const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
+            if (NOW.diff(lastCheckAt).as('days') < 10) {
               return isPNT.set(_.get(cachedIsPNT, 'value'))
             }
           }
@@ -93,7 +115,7 @@ Controller = {
             if (window.localStorage) {
               const key = [Meteor.userId(), 'isPNT'].join('.')
               localStorage.setItem(key, JSON.stringify({
-                lastCheckAt: + new Date(),
+                lastCheckAt: +new Date(),
                 value: r
               }))
             }
@@ -115,8 +137,8 @@ Controller = {
       const currentMonth = this.currentMonth.get()
       const eventsCursor = Events.find({
         userId: Meteor.userId(),
-        end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
-        start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
+        end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
+        start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
       }, { sort: [['start', 'asc'], ['end', 'desc']] })
 
       this.Calendar.observeEvents(eventsCursor)
@@ -131,34 +153,32 @@ Controller = {
         console.timeEnd('Events.loaded & EventsSubs.ready')
         Events.sync({
           userId: Meteor.userId(),
-          end: { $gte: +this.eventsStart },
-          start: { $lte: +this.eventsEnd }
+          end: { $gte: this.eventsStart.toMillis() },
+          start: { $lte: this.eventsEnd.toMillis() }
         })
-        // Force l'invalidation pour éviter un bug lorsque IndexedDB est vide lors du chargement de la page
-        Meteor.setTimeout(() => Events._cacheCollection.invalidate(), 300)
       }
     })
 
-		Tracker.autorun(() => {
+		Tracker.autorun(async () => {
       const currentMonth = this.currentMonth.get()
       const eventsCursor = Events.find({
         userId: Meteor.userId(),
-        end: { $gte: +moment(currentMonth).startOf('month').startOf('week') },
-        start: { $lte: +moment(currentMonth).endOf('month').endOf('week') }
+        end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
+        start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
       }, { sort: [['start', 'asc'], ['end', 'desc']] })
       const events = eventsCursor.fetch()
 
       // Transform events
-      _.forEach(events, doc => {
-        _.extend(doc, {
-          start: moment(doc.start),
-          end: moment(doc.end)
-        })
-        if (doc.real) {
-          if (doc.real.start) doc.real.start = moment(doc.real.start)
-          if (doc.real.end) doc.real.end = moment(doc.real.end)
-        }
-      })
+      // _.forEach(events, doc => {
+      //   _.extend(doc, {
+      //     start: moment(doc.start),
+      //     end: moment(doc.end)
+      //   })
+      //   if (doc.real) {
+      //     if (doc.real.start) doc.real.start = moment(doc.real.start)
+      //     if (doc.real.end) doc.real.end = moment(doc.real.end)
+      //   }
+      // })
 
       this.currentEventsCount.set(events.length)
 
@@ -177,7 +197,6 @@ Controller = {
 
             if (isPNT) {
               if (HV100AF.ready() && HV100.ready()) {
-                console.time('Controller.calculSalaire')
                 this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
                 this._statsRemu.set(this.Remu.stats)
                 Tracker.autorun(() => {
@@ -186,13 +205,11 @@ Controller = {
                     // console.log('Controller.profilChanged', profil)
                     if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
                       this.calculSalaire(this.Remu.stats, profil)
-                      console.timeEnd('Controller.calculSalaire')
                     } else {
                       Meteor.call('getPayscale', (e, r) => {
                         if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
                           this._bareme = r
                           this.calculSalaire(this.Remu.stats, profil)
-                          console.timeEnd('Controller.calculSalaire')
                         }
                       })
                     }
@@ -239,6 +256,10 @@ Controller = {
     return isPNT.get()
   },
 
+  setIsPNT(_isPNT) {
+    return isPNT.set(_isPNT)
+  },
+
   loading() {
     return this._isLoading.get()
   },
@@ -250,7 +271,9 @@ Controller = {
         day.etapes = _.filter(day.events, evt => _.has(evt, 'tag') && (evt.tag === 'vol' || evt.tag === 'mep'))
         day.rotation = _.find(day.events, { tag: 'rotation' })
         if (day.rotation) {
-          day.svs = _.filter(day.rotation.sv, sv => sv.tsStart.isSame(day.date, 'day') || sv.tsEnd.isSame(day.date, 'day'))
+          day.svs = _.filter(day.rotation.sv, sv => {
+            return sv.tsStart.hasSame(day.date, 'day') || sv.tsEnd.hasSame(day.date, 'day')
+          })
         } else {
           day.svs = {}
         }
@@ -270,8 +293,8 @@ Controller = {
   forceSync() {
     Events.removeLocalOnlyFrom({
       userId: Meteor.userId(),
-      end: { $gte: +this.eventsStart },
-      start: { $lte: +this.eventsEnd }
+      end: { $gte: this.eventsStart.toMillis() },
+      start: { $lte: this.eventsEnd.toMillis() }
     })
   },
 
@@ -321,17 +344,21 @@ Controller = {
 	},
 
 	prevMonth() {
-		this.currentMonth.set(this._prevMonth(this.currentMonth.get()))
+    const currentMonth = this._prevMonth(this.currentMonth.get())
+    this.currentMonth.set(currentMonth)
+    Session.set('currentMonth', currentMonth)
 	},
 
 	nextMonth() {
-		this.currentMonth.set(this._nextMonth(this.currentMonth.get()))
+    const currentMonth = this._nextMonth(this.currentMonth.get())
+    this.currentMonth.set(currentMonth)
+    Session.set('currentMonth', currentMonth)
 	},
 
 	_prevMonth(date) {
-		if (date.month == 0) {
+		if (date.month === 1) {
 			return {
-				month: 11,
+				month: 12,
 				year: date.year - 1
 			}
 		} else {
@@ -343,9 +370,9 @@ Controller = {
 	},
 
 	_nextMonth(date) {
-		if (date.month == 11) {
+		if (date.month === 12) {
 			return {
-				month: 0,
+				month: 1,
 				year: parseInt(date.year) + 1
 			}
 		} else {

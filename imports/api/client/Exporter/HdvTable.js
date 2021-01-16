@@ -1,7 +1,7 @@
 import './Blob.js'
 import { saveAs } from 'file-saver'
-import Utils from '/imports/api/client/lib/Utils.js'
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 
 export const HdvTable = {
 	generate(events, filename = 'TOSync_HDV.csv', separator = ';') {
@@ -14,8 +14,8 @@ export const HdvTable = {
           evt.num,
           evt.from,
           evt.to,
-          evt.start.utc().format('DD/MM/YYYY HH:mm'),
-          evt.end.utc().format('DD/MM/YYYY HH:mm'),
+          DateTime.fromMillis(evt.start).toUTC().toFormat('yyyy-MM-dd HH:mm'),
+          DateTime.fromMillis(evt.end).toUTC().toFormat('yyyy-MM-dd HH:mm'),
           evt.tv ? format(evt.tv) : '',
           evt.mep ? format(evt.mep) : ''
         ])

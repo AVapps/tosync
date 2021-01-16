@@ -1,8 +1,10 @@
-import moment from 'moment'
 import _ from 'lodash'
 import { Ground } from 'meteor/adrienv:grounddb'
 import Utils from './lib/Utils.js'
 import Export from './lib/Export.js'
+import { DateTime } from 'luxon'
+
+const NOW = DateTime.local()
 
 Config = {
 	_collection: null,
@@ -34,8 +36,8 @@ Config = {
       remuB: true
     },
 		currentMonth: {
-			month: moment().month(),
-			year: moment().year()
+			month: NOW.month,
+			year: NOW.year
 		},
 		Hcsr: 5.20,
     eHS: 'B',

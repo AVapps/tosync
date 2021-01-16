@@ -10,7 +10,7 @@ class EventsCollection extends Mongo.Collection {
 		_.forEach(momentFields, path => {
 			if (_.has(evt, path)) {
 				const date = _.get(evt, path)
-				if (moment.isMoment(evt)) {
+				if (moment.isMoment(date)) {
 					_.set(evt, path, date.valueOf())
 				}
 			}
@@ -19,18 +19,7 @@ class EventsCollection extends Mongo.Collection {
 	}
 }
 
-Events = new EventsCollection('cloud_events', {
-	transform: function (doc) {
-		if (doc.real) {
-			doc.real.start = moment(doc.real.start)
-			doc.real.end = moment(doc.real.end)
-		}
-		return _.extend(doc, {
-			start: moment(doc.start),
-			end: moment(doc.end)
-		})
-	}
-})
+Events = new EventsCollection('cloud_events')
 
 HV100 = new Static.Collection('HV100%')
 HV100AF = new Static.Collection('HV100AF')

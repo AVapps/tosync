@@ -1,10 +1,11 @@
 import _ from 'lodash'
 import { Meteor } from 'meteor/meteor'
+import { DateTime } from 'luxon'
 
 export default class Planning {
 	constructor(events, currentMonth) {
 		this._events = events
-		this.currentMonth = moment(currentMonth)
+		this.currentMonth = currentMonth
     this._groupedEvents = {}
 
 		if (this._checkDuplicates()) {
@@ -69,15 +70,15 @@ export default class Planning {
                 if (index === 0) {
                   const last = _.last(sv.events)
                   dec.push({
-                    start: last.end.clone(),
+                    start: last.end,
                     to: last.to
                   })
                 } else {
                   const first = _.first(sv.events)
                   const prev = _.last(dec)
-                  if (first.start.diff(prev.start, 'hours', true) >= 8) {
-                    prev.end = first.start.clone()
-                    prev.duree = prev.end.diff(prev.start, 'hours', true)
+									if (DateTime.fromMillis(first.start).diff(DateTime.fromMillis(prev.start)).as('hours') >= 8) {
+                    prev.end = first.start
+										prev.duree = DateTime.fromMillis(prev.end).diff(DateTime.fromMillis(prev.start)).as('hours')
                     col[index - 1].stop = prev
                   } else {
                     dec.pop()
@@ -85,7 +86,7 @@ export default class Planning {
                   if (index < (col.length - 1)) { // Skip last sv
                     const last = _.last(sv.events)
                     dec.push({
-                      start: last.end.clone(),
+                      start: last.end,
                       to: last.to
                     })
                   }
@@ -127,7 +128,7 @@ export default class Planning {
 
 	_filterEventsByDates(events, start, end) {
 		return _.filter(events, function(evt) {
-			return (evt.end.isAfter(start) && evt.start.isBefore(end)) || evt.start.isSame(start) || evt.end.isSame(end)
+			return evt.end >= start && evt.start <= end
 		})
 	}
 
@@ -137,30 +138,33 @@ export default class Planning {
 
 	groupedEventsThisMonth(month) {
 		month = month || this.currentMonth
-		const start = moment(month).startOf('month').startOf('week')
-    const end = moment(month).endOf('month').endOf('week')
-		return _.mapValues(this._groupedEvents, (events, key) => {
+		const start = DateTime.fromObject(month).startOf('month').startOf('week').toMillis()
+		const end = DateTime.fromObject(month).endOf('month').endOf('week').toMillis()
+		return _.mapValues(this._groupedEvents, events => {
 			return this._filterEventsByDates(events, start, end)
 		})
 	}
 
 	eventsThisMonth(month) {
-		month = month || this.currentMonth;
-		return this._filterEventsByDates(this._events, moment(month).startOf('month'), moment(month).endOf('month'));
+		month = month || this.currentMonth
+		const start = DateTime.fromObject(month).startOf('month').toMillis()
+		const end = DateTime.fromObject(month).endOf('month').toMillis()
+		return this._filterEventsByDates(this._events, start, end)
 	}
 
 	eventsToSync(month) {
-		month = month || this.currentMonth;
-		const monthStart = moment(month).startOf('month'), nextMonthEnd = moment(month).add(1, 'month').endOf('month');
-		let events = this._filterEventsByDates(this._events, monthStart, nextMonthEnd);
-		const earliest = _.first(events);
-		const latest = _.find(events, evt => evt.end.isAfter(nextMonthEnd));
-		if (earliest.start.isBefore(monthStart) || latest) {
-			const actualStart = earliest.start;
-			let actualEnd = nextMonthEnd;
-			if (latest) actualEnd = latest.end;
-			events = this._filterEventsByDates(this._events, actualStart, actualEnd);
+		month = month || this.currentMonth
+		const monthStart = DateTime.fromObject(month).startOf('month').toMillis()
+		const nextMonthEnd = DateTime.fromObject(month).plus({ month: 1 }).endOf('month').toMillis()
+		let events = this._filterEventsByDates(this._events, monthStart, nextMonthEnd)
+		const earliest = _.first(events)
+		const latest = _.find(events, evt => evt.end > nextMonthEnd)
+		if (earliest.start < monthStart || latest) {
+			const actualStart = earliest.start
+			let actualEnd = nextMonthEnd
+			if (latest) actualEnd = latest.end
+			events = this._filterEventsByDates(this._events, actualStart, actualEnd)
 		}
-		return events;
+		return events
 	}
 }

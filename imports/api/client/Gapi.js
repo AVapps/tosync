@@ -1,6 +1,7 @@
 import { Meteor } from 'meteor/meteor'
 import { ReactiveVar } from 'meteor/reactive-var'
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 
 import Export from './lib/Export.js'
 import GapiBatch from './lib/GapiBatch.js'
@@ -163,7 +164,6 @@ class Gapi {
 	async syncEvents(events, progress = _.noop) {
     this._backoffDelay = 1000
 		progress(0)
-		const startOfMonth = moment().startOf('month')
 
 		if (!events.length) return []
 
@@ -249,8 +249,8 @@ class Gapi {
     const respFind = await gapi.client.request({
 			'path': '/calendar/v3/calendars/'+calendarId+'/events',
 			'params': {
-				timeMin: start.format(),
-				timeMax: end.format(),
+				timeMin: DateTime.fromMillis(start).toISO(),
+        timeMax: DateTime.fromMillis(end).toISO(),
 				maxResults: 999,
         singleEvents: true,
 				fields: 'items(iCalUID,id)'
@@ -347,8 +347,8 @@ class Gapi {
 	async _clearEventsGapiClientBatch(calendarId, start, end, suffix) {
     const respFind = await gapi.client.calendar.events.list({
       calendarId,
-			timeMin: start.format(),
-			timeMax: end.format(),
+      timeMin: DateTime.fromMillis(start).toISO(),
+      timeMax: DateTime.fromMillis(end).toISO(),
 			maxResults: 999,
       singleEvents: true,
 			fields: 'items(iCalUID,id)'
@@ -402,10 +402,10 @@ class Gapi {
 		let body = {
 			iCalUID: baseId + index + '-METEORCREW',
 			start: {
-				dateTime: event.start.format()
+        dateTime: DateTime.fromMillis(event.start).toISO()
 			},
 			end: {
-				dateTime: event.end.format()
+        dateTime: DateTime.fromMillis(event.end).toISO()
 			},
 			reminders: {
 				useDefault: false
@@ -424,10 +424,10 @@ class Gapi {
   		case 'greve':
 				return _.extend(body, {
 					start: {
-						date: event.start.format('YYYY-MM-DD')
+            date: DateTime.fromMillis(event.start).toISODate()
 					},
 					end: {
-						date: event.start.clone().add(1, 'd').format('YYYY-MM-DD')
+            date: DateTime.fromMillis(event.start).plus({ day: 1 }).toISODate()
 					},
 					summary: Export.titre(event, useCREWMobileFormat),
 					description: Export.description(event, exportOptions)
@@ -435,10 +435,10 @@ class Gapi {
       case 'rotation':
 				return _.extend(body, {
 					start: {
-						date: event.start.format('YYYY-MM-DD')
+            date: DateTime.fromMillis(event.start).toISODate()
 					},
 					end: {
-						date: event.end.clone().add(1, 'd').format('YYYY-MM-DD')
+            date: DateTime.fromMillis(event.end).plus({ day: 1 }).toISODate()
 					},
 					summary: Export.titre(event, useCREWMobileFormat),
 					description: Export.description(event, exportOptions)

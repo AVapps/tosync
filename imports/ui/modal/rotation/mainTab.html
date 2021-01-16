@@ -144,15 +144,15 @@
 			<tbody>
 				<tr>
 					<th>TS</th>
-					<td>{{ format sv.tsStart 'HH:mm' }}</td>
-					<td>{{ format sv.tsEnd 'HH:mm' }}</td>
-					<td>{{ diffH sv.tsStart sv.tsEnd }}</td>
+					<td>{{ isoTime sv.tsStart }}</td>
+					<td>{{ isoTime sv.tsEnd }}</td>
+					<td>{{ duree (diffDT sv.tsStart sv.tsEnd) }}</td>
 				</tr>
 				<tr>
 					<th>TSV</th>
-					<td>{{ format sv.tsvStart 'HH:mm' }}</td>
-					<td>{{ format sv.tsvEnd 'HH:mm' }}</td>
-					<td>{{ diffH sv.tsvStart sv.tsvEnd }}</td>
+					<td>{{ isoTime sv.tsvStart }}</td>
+					<td>{{ isoTime sv.tsvEnd }}</td>
+					<td>{{ duree (diffDT sv.tsvStart sv.tsvEnd) }}</td>
 				</tr>
 			</tbody>
 		</table>

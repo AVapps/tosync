@@ -1,5 +1,4 @@
 import { DateTime, Duration, Interval, Settings } from 'luxon'
-import moment from 'moment'
 import _ from 'lodash'
 const CONFIG_AF = require('./configAF')
 const CONFIG_TO = require('./configTO')
@@ -20,8 +19,8 @@ const PROFIL_DEFAULTS = {
   classe: 5
 }
 
-moment.fn.toDateTime = function() {
-  return DateTime.fromMillis(this.valueOf(), { zone: TIMEZONE })
+function toDateTime(millis) {
+  return DateTime.fromMillis(millis, { zone: TIMEZONE })
 }
 
 function sumBy(collection, key) {
@@ -53,7 +52,9 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
       return sum + (_.get(object, key) || 0)
 
     // L'objet a un Moment de début
-    } else if (_.has(object, key) && _.has(object, 'start') && _.get(object, 'start').month() + 1 === month) {
+    } else if (_.has(object, key) && _.has(object, 'start')
+      && _.get(object, 'start')._isAMomentObject
+      &&_.get(object, 'start').month() + 1 === month) {
       // if (isNaN(_.get(object, key))) {
       //   console.log(object, key)
         // throw new Error("NaN")
@@ -66,26 +67,25 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
 }
 
 const findHV100TO = _.memoize(function (vol) {
-	const mois = vol.start.format("YYYY-MM");
+	const mois = toDateTime(vol.start).toFormat('yyyy-MM');
 	const hv = HV100.findOne({src: vol.from, dest: vol.to, mois: { $lte : mois }}, { sort: [["mois", "desc"]]});
 	return hv ? hv.tr : undefined;
 }, function (vol) {
-	return [ vol.from, vol.to, vol.start.format("YYYY-MM") ].join('-');
+	return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
 })
 
 const findHV100AF = _.memoize(function (vol) {
-	const mois = vol.start.format("YYYY-MM");
+	const mois = toDateTime(vol.start).toFormat('yyyy-MM');
 	const hv = HV100AF.findOne({src: vol.from, dest: vol.to, mois: { $lte : mois }}, { sort: [["mois", "desc"]]});
 	return hv ? hv.tr : undefined;
 }, function (vol) {
-	return [ vol.from, vol.to, vol.start.format("YYYY-MM") ].join('-');
+	return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
 })
 
 export default class RemuPNT {
   constructor(eventsByTag, month) {
     this.eventsByTag = eventsByTag
     this.month = _.clone(month)
-    this.month.month += 1 // les mois commencent à 1 avec Luxon
 
     if (_.has(this.eventsByTag, 'rotation')) {
       this.completeRotations()
@@ -151,7 +151,7 @@ export default class RemuPNT {
     const month = this.month.month
 
     _.forEach(_.omit(Utils.tags, 'stage', 'sol', 'simu', 'instructionSol', 'instructionSimu', 'reserve', 'delegation', 'vol', 'mep'), tag => {
-      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => (evt.start.month() + 1 === month) ? 1 : 0) : 0
+      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => (toDateTime(evt.start).month === month) ? 1 : 0) : 0
     })
 
     if (_.has(this.eventsByTag, 'stage') && _.get(this.eventsByTag, 'stage').length) {
@@ -394,11 +394,11 @@ export default class RemuPNT {
       if (_.has(this.eventsByTag, tag) && _.isArray(this.eventsByTag[tag])) {
         _.forEach(this.eventsByTag[tag], evt => {
           if (evt.tag === 'simu' || evt.tag === 'instructionSimu') {
-            evt.debut = evt.start.toDateTime().minus({ hours: 1 })
-            evt.fin = evt.end.toDateTime().plus({ hours: 0.5 })
+            evt.debut = toDateTime(evt.start).minus({ hours: 1 })
+            evt.fin = toDateTime(evt.end).plus({ hours: 0.5 })
           } else {
-            evt.debut = evt.start.toDateTime()
-            evt.fin = evt.end.toDateTime()
+            evt.debut = toDateTime(evt.start)
+            evt.fin = toDateTime(evt.end)
           }
           const day = evt.debut.toFormat('yyyy-MM-dd')
           if (_.has(eventsByDay, day)) {
@@ -427,7 +427,7 @@ export default class RemuPNT {
       }
 
       if (day.tag === 'simu' || day.tag === 'instructionSimu') {
-        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h+s.end.diff(s.start, 'hours', true) : h , 0)
+        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h+s.fin.diff(s.debut).as('hours') : h , 0)
 
         if (day.tag === 'instructionSimu') {
           day.HcsAF = Hsimu > 2 ? CONFIG_AF.HcSimuInstruction : CONFIG_AF.HcDemiSimuInstruction
@@ -520,7 +520,6 @@ export default class RemuPNT {
       rot.H2AF = Math.max(rot.HcaAF, rot.H1AF)
       rot.H2rAF = Math.max(rot.HcaAF, rot.H1rAF)
 
-      const firstEvent = _.first(rot.events), lastEvent = _.last(rot.events)
       const debut = rot.debut = debutAbs
       const fin = rot.fin = lastSV.finTSVrAF
 
@@ -528,7 +527,7 @@ export default class RemuPNT {
         rot.split = {
           [debut.month]: {
             TSVnuit: sumByMonth(rot.sv, 'TSVnuit', debut.month, 'debutTR'),
-            countVol: _.reduce(rot.vols, (count, s) => (s.real.start.month() + 1 === debut.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === debut.month) ? count+1 : count , 0),
             tv: sumByMonth(rot.vols, 'tv', debut.month),
             tvp: sumByMonth(rot.vols, 'tvp', debut.month),
             mep: sumByMonth(rot.events, 'mep', debut.month),
@@ -537,7 +536,7 @@ export default class RemuPNT {
           },
           [fin.month]: {
             TSVnuit: sumByMonth(rot.sv, 'TSVnuit', fin.month),
-            countVol: _.reduce(rot.vols, (count, s) => (s.real.start.month() + 1 === fin.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === fin.month) ? count+1 : count , 0),
             tv: sumByMonth(rot.vols, 'tv', fin.month),
             tvp: sumByMonth(rot.vols, 'tvp', fin.month),
             mep: sumByMonth(rot.events, 'mep', fin.month),
@@ -612,19 +611,19 @@ export default class RemuPNT {
 		}
 
     _.extend(sv, {
-			tsStart: first.start.clone().subtract(preTs, 'hours'),
-			tsvStart: first.start.clone().subtract(preTsv, 'hours'),
-			tsEnd: last.tag === 'vol' ? last.real.end.clone().add(postTs, 'hours') : last.end.clone().add(postTs, 'hours'),
-			tsvEnd: sv.countVol ? lastVol.real.end.clone().add(postTsv, 'hours') : first.start.clone().subtract(preTsv, 'hours')
-		});
+      tsStart: first.debut.minus({ hours: preTs }),
+			tsvStart: first.debut.minus({ hours: preTsv }),
+			tsEnd: last.tag === 'vol' ? last.finR.plus({ hours: postTs }) : last.fin.plus({ hours: postTs }),
+      tsvEnd: sv.countVol ? lastVol.finR.plus({ hours: postTsv }) : first.debut.minus({ hours: preTsv })
+		})
 
     if (sv.type === 'vol') {
-      sv.debut = (first.tag === 'vol' ? first.real : first).start.toDateTime()
-      sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start.valueOf(), { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
-      sv.finTRprog = lastVol.end.toDateTime().plus({ hours: CONFIG_TO.postTR })
-      sv.finTSVrAFprog = last.end.toDateTime().plus({ hours: CONFIG_AF.postTSVr })
-      sv.finTR = lastVol.real.end.toDateTime().plus({ hours: CONFIG_TO.postTR })
-      sv.finTSVrAF = (last.tag === 'vol' ? last.real : last).end.toDateTime().plus({ hours: CONFIG_AF.postTSVr })
+      sv.debut = toDateTime((first.tag === 'vol' ? first.real : first).start)
+      sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
+      sv.finTRprog = toDateTime(lastVol.end).plus({ hours: CONFIG_TO.postTR })
+      sv.finTSVrAFprog = toDateTime(last.end).plus({ hours: CONFIG_AF.postTSVr })
+      sv.finTR = toDateTime(lastVol.real.end).plus({ hours: CONFIG_TO.postTR })
+      sv.finTSVrAF = toDateTime((last.tag === 'vol' ? last.real : last).end).plus({ hours: CONFIG_AF.postTSVr })
       sv.HctTO = Math.max(sv.finTR.diff(sv.debutTR).as('hours'), CONFIG_TO.TRMini) * CONFIG_TO.coefTR
 
       const tsvrAF = sv.finTSVrAF.diff(sv.debutTR).as('hours')
@@ -634,10 +633,10 @@ export default class RemuPNT {
         sv.HctAF = Math.max(tsvrAF, CONFIG_AF.tsvMini) * CONFIG_AF.coefTSV
       }
     } else {
-      sv.debut = first.start.toDateTime()
-      sv.debutTR = first.start.toDateTime().minus({ hours: CONFIG_TO.preTR })
+      sv.debut = toDateTime(first.start)
+      sv.debutTR = toDateTime(first.start).minus({ hours: CONFIG_TO.preTR })
       sv.finTR = sv.debutTR
-      sv.finTSVrAF = last.end.toDateTime().plus({ hours: CONFIG_AF.postTSVr })
+      sv.finTSVrAF = toDateTime(last.end).plus({ hours: CONFIG_AF.postTSVr })
       sv.HctTO = 0
       sv.HctAF = sv.finTSVrAF.diff(sv.debutTR).as('hours') * CONFIG_AF.coefTSV
     }
@@ -654,7 +653,7 @@ export default class RemuPNT {
     } else {
       const MEPnuit = sv.countMEP ? _.reduce(groups.mep, (sum, evt) => {
         if (evt.tag === 'mep') {
-          return sum + this._hdn(evt.debut, evt.end.toDateTime(), CONFIG_AF.hdn)
+          return sum + this._hdn(evt.debut, toDateTime(evt.end), CONFIG_AF.hdn)
         } else {
           return sum
         }
@@ -664,8 +663,8 @@ export default class RemuPNT {
       if (sv.debutTR.month !== sv.finTSVrAF.month) {
         const splitMEPnuit = sv.countMEP ? _.reduce(sv.events, (split, evt) => {
           if (evt.tag === 'mep') {
-            const debut = evt.start.toDateTime(),
-                  fin = evt.end.toDateTime()
+            const debut = toDateTime(evt.start),
+                  fin = toDateTime(evt.end)
             if (debut.month !== fin.month) {
               split[debut.month] += this._hdn(debut, debut.endOf('month'), CONFIG_AF.hdn)
               split[fin.month] += this._hdn(fin.startOf('month'), fin, CONFIG_AF.hdn)
@@ -697,13 +696,21 @@ export default class RemuPNT {
       if (!_.has(s, 'real')) {
         s.real = {}
       }
+      
       _.defaults(s.real, {
-        start: s.start.clone(),
-        end: s.end.clone()
+        start: s.start,
+        end: s.end
       })
 
-      s.tvp = s.end.diff(s.start, 'hours', true)
-      s.tv = s.real.end.diff(s.real.start, 'hours', true)
+      const debut = toDateTime(s.start)
+      const fin = toDateTime(s.end)
+      const debutR = toDateTime(s.real.start)
+      const finR = toDateTime(s.real.end)
+
+      _.assign(s, { debut, fin, debutR, finR })
+
+      s.tvp = s.fin.diff(s.debut).as('hours')
+      s.tv = s.finR.diff(s.debutR).as('hours')
 
       const debutNuit = DateTime.fromMillis(Math.min(s.start, s.real.start), { zone: TIMEZONE })
       const finNuit = debutNuit.plus({ hours: s.tv })
@@ -722,13 +729,6 @@ export default class RemuPNT {
         s.hv100rAF = s.tvrefAF + CONFIG_AF.bonusEtape // TODO: Bonus majoré des étapes de plus de 2100 (aucune à ce jour)
       }
 
-      const debut = s.start.toDateTime()
-      const fin = s.end.toDateTime()
-      const debutR = s.real.start.toDateTime()
-      const finR = s.real.end.toDateTime()
-
-      s.debut = debutR
-
       if (debutR.month !== finR.month) {
         s.split = {
           [debutR.month]: {
@@ -746,9 +746,11 @@ export default class RemuPNT {
     }
 
     if (s.tag === 'mep') {
-      const debut = s.start.toDateTime(),
-            fin = s.end.toDateTime()
-      s.debut = debut
+      const debut = toDateTime(s.start)
+      const fin = toDateTime(s.end)
+
+      _.assign(s, { debut, fin })
+
       s.mep = s.category == "ENGS" ? 0 : fin.diff(debut).as('hours')
       s.tv = 0
       s.tvp = 0

@@ -1,9 +1,4 @@
 import { Meteor } from 'meteor/meteor'
-import { Excel } from './Exporter/Excel.js'
-import { IcsFile } from './Exporter/IcsFile.js'
-import { HdvTable } from './Exporter/HdvTable.js'
-import Pdf from './lib/Pdf.js'
-import PdfPlanningParser from './lib/PdfPlanningParser.js'
 import parseIcsFile from '/imports/api/toconnect/client/parseICSFile.js'
 import Modals from '/imports/api/client/Modals.js'
 import Swal from 'sweetalert2'
@@ -53,17 +48,24 @@ App = {
     })
   },
 
-	exportExcel() {
-		Excel.generate(Controller.Planning)
+	async exportIcs() {
+    const { IcsFile } = await import('./Exporter/IcsFile.js')
+    const currentMonth = Controller.currentMonth.get()
+    const filename = [ 'TO.sync', 'planning', currentMonth.year, currentMonth.month].join('_') + '.ics'
+    
+    const tags = Config.get('iCalendarTags')
+    const content = Config.get('exportOptions')
+    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
+
+    const icsFile = new IcsFile(this.eventsToSync())
+    icsFile.generate({ tags, content, useCREWMobileFormat })
+    icsFile.save(filename)
 	},
 
-	exportIcs() {
-    const filename = [ 'TO.sync', 'planning', moment(Controller.currentMonth.get()).format('YYYY-MM')].join('_') + '.ics'
-		IcsFile.generate(this.eventsToSync(), filename)
-	},
-
-	exportHdvTable() {
-    const filename = [ 'TO.sync', 'HDV', moment(Controller.currentMonth.get()).format('YYYY-MM')].join('_') + '.csv'
+	async exportHdvTable() {
+    const { HdvTable } = await import('./Exporter/HdvTable.js')
+    const currentMonth = Controller.currentMonth.get()
+    const filename = ['TO.sync', 'HDV', currentMonth.year, currentMonth.month].join('_') + '.csv'
 		HdvTable.generate(Controller.Planning.eventsThisMonth(), filename)
 	},
 
@@ -78,8 +80,11 @@ App = {
 	},
 
   async importPdf(arrayBuffer) {
+    const Pdf = (await import('./lib/Pdf.js')).default
     const pdf = await Pdf.extractData(arrayBuffer)
     console.log(pdf)
+
+    const { PdfPlanningParser } = await import('./lib/PdfPlanningParser.js')
     const planning = new PdfPlanningParser(pdf)
     console.log(planning)
     Sync.importPdfPlanning(planning)

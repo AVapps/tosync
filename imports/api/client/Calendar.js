@@ -1,24 +1,35 @@
 import _ from 'lodash'
 import { Mongo } from 'meteor/mongo'
-import { ReactiveVar } from 'meteor/reactive-var'
+import { DateTime } from 'luxon'
+import '/imports/lib/luxon-ejson.js'
 import Utils from './lib/Utils'
 
 function _transformEvent(doc) {
   _.extend(doc, {
-    start: moment(doc.start),
-    end: moment(doc.end)
+    debut: DateTime.fromMillis(doc.start),
+    fin: DateTime.fromMillis(doc.end)
   })
   if (doc.real) {
-    if (doc.real.start) doc.real.start = moment(doc.real.start)
-    if (doc.real.end) doc.real.end = moment(doc.real.end)
+    if (doc.real.start) doc.debutR = DateTime.fromMillis(doc.real.start)
+    if (doc.real.end) doc.finR = DateTime.fromMillis(doc.real.end)
   }
   return doc
 }
 
+const WEEKDAYS = {
+  1: { short: 'Lu', long: 'Lundi' },
+  2: { short: 'Ma', long: 'Mardi' },
+  3: { short: 'Me', long: 'Mercredi' },
+  4: { short: 'Je', long: 'Jeudi' },
+  5: { short: 'Ve', long: 'Vendredi' },
+  6: { short: 'Sa', long: 'Samedi' },
+  7: { short: 'Di', long: 'Dimanche' },
+}
+
 Calendar = {
-	cmonth: moment(),
-	start: moment(),
-	end: moment(),
+	cmonth: DateTime.local(),
+	start: DateTime.local(),
+	end: DateTime.local(),
 
 	days: new Mongo.Collection(null),
 
@@ -27,46 +38,46 @@ Calendar = {
 	},
 
   buildCalendarDays(currentMonth) {
-    this.cmonth = moment(currentMonth)
-		this.start = this.cmonth.clone().startOf('month').startOf('week')
-		this.end = this.cmonth.clone().endOf('month').endOf('week')
+    this.cmonth = DateTime.fromObject(currentMonth)
+		this.start = this.cmonth.startOf('month').startOf('week')
+		this.end = this.cmonth.endOf('month').endOf('week')
 
-    const cursor = this.start.clone()
-    const now = moment()
+    let cursor = this.start
+    const now = DateTime.local()
     let index = 0
 
-		while (cursor.isBefore(this.end, 'day') || cursor.isSame(this.end, 'day')) {
+		while (cursor.startOf('day') <= this.end.startOf('day')) {
       const day = {
         tag: '',
         allday: false,
         label: '',
-  			date: cursor.clone(),
-        slug: cursor.format("YYYY-MM-DD"),
-  			weekday: cursor.format('dd'),
-  			day: cursor.date(),
-  			dof: cursor.weekday(),
+  			date: cursor,
+        slug: cursor.toFormat("yyyy-MM-dd"),
+  			weekday: WEEKDAYS[cursor.weekday].short,
+        day: cursor.day,
+  			dof: cursor.weekday,
   			classes: [],
         events: []
   		}
 
   		// day.classes.push('calendar-dow-' + day.dof)
-  		day.classes.push('calendar-day-' + day.date.format("YYYY-MM-DD"))
+  		day.classes.push('calendar-day-' + day.slug)
 
-  		if (cursor.isBefore(now, 'day')) {
+  		if (cursor.startOf('day') < now.startOf('day')) {
   			day.classes.push('past')
-  		} else if (cursor.isSame(now, 'day')) {
+      } else if (cursor.startOf('day') === now.startOf('day')) {
   			day.classes.push('today')
   		}
 
-  		if (cursor.isBefore(this.cmonth, 'month')) {
+  		if (cursor.startOf('month') < this.cmonth.startOf('month')) {
   			day.classes.push('adjacent-month', 'last-month')
-  		} else if (cursor.isAfter(this.cmonth, 'month')) {
+      } else if (cursor.startOf('month') > this.cmonth.startOf('month')) {
   			day.classes.push('adjacent-month', 'next-month')
   		}
 
       this.days.update({ index }, { $set: day })
 
-      cursor.add(1, 'day')
+      cursor = cursor.plus({ day: 1 })
       index++
     }
     
@@ -76,16 +87,16 @@ Calendar = {
           tag: '',
           allday: false,
           label: '',
-          date: cursor.clone(),
-          slug: cursor.format("YYYY-MM-DD"),
-          weekday: cursor.format('dd'),
-          day: cursor.date(),
-          dof: cursor.weekday(),
+          date: cursor,
+          slug: cursor.toFormat("yyyy-MM-dd"),
+          weekday: WEEKDAYS[cursor.weekday].short,
+          day: cursor.day,
+          dof: cursor.weekday,
           classes: ['hidden'],
           events: []
         }
       })
-      cursor.add(1, 'day')
+      cursor = cursor.plus({ day: 1 })
       index++
     }
   },
@@ -94,11 +105,10 @@ Calendar = {
     // Clear calendar
     this.days.remove({})
 
-    const now = moment()
-    const weekdays = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
+    const now = DateTime.local()
 
     for (let i = 0; i <= 34; i++) {
-      const dow = i % 7
+      const dow = (i % 7) + 1
       this.days.insert({
         index: i,
         tag: '',
@@ -106,7 +116,7 @@ Calendar = {
         label: '',
         date: now,
         slug: i,
-  			weekday: weekdays[dow],
+  			weekday: WEEKDAYS[dow].short,
   			day: '',
   			dof: dow,
   			classes: [],
@@ -115,7 +125,7 @@ Calendar = {
     }
 
     for (let i = 35; i <= 41; i++) {
-      const dow = i % 7
+      const dow = (i % 7) + 1
       this.days.insert({
         index: i,
         tag: '',
@@ -123,7 +133,7 @@ Calendar = {
         label: '',
         date: now,
         slug: i,
-        weekday: weekdays[dow],
+        weekday: WEEKDAYS[dow].short,
         day: '',
         dof: dow,
         classes: ['hidden'],
@@ -137,62 +147,62 @@ Calendar = {
       added: (doc) => {
         doc = _transformEvent(doc)
         // console.log('Calendar.observeEvents ADDED', doc)
-        if (doc.start.isSame(doc.end, 'day')) {
-          this.addEventToDate(doc, doc.start)
+        if (doc.debut.hasSame(doc.fin, 'day')) {
+          this.addEventToDate(doc, doc.debut)
         } else {
-          const cursor = doc.start.clone()
-          while (!cursor.isAfter(doc.end, 'day')) {
+          let cursor = doc.debut
+          while (cursor.startOf('day') <= doc.fin.startOf('day')) {
             this.addEventToDate(doc, cursor)
-            cursor.add(1, 'day')
+            cursor = cursor.plus({ day: 1 })
           }
         }
       },
       removed: (doc) => {
         doc = _transformEvent(doc)
         // console.log('Calendar.observeEvents REMOVED', doc)
-        if (doc.start.isSame(doc.end, 'day')) {
-          this.removeEventFromDate(doc, doc.start)
+        if (doc.debut.hasSame(doc.fin, 'day')) {
+          this.removeEventFromDate(doc, doc.debut)
         } else {
-          const cursor = doc.start.clone()
-          while (!cursor.isAfter(doc.end, 'day')) {
+          let cursor = doc.debut
+          while (cursor.startOf('day') <= doc.fin.startOf('day')) {
             this.removeEventFromDate(doc, cursor)
-            cursor.add(1, 'day')
+            cursor = cursor.plus({ day: 1 })
           }
         }
       },
       changed: (doc, oldDoc) => {
         doc = _transformEvent(doc)
+        oldDoc = _transformEvent(oldDoc)
         // console.log('Calendar.observeEvents UPDATED', doc, oldDoc)
-        if (doc.start.isSame(oldDoc.start, 'day') && doc.end.isSame(oldDoc.end, 'day')) {
-          if (doc.start.isSame(doc.end, 'day')) {
-            this.updateEventFromDate(doc, doc.start)
+        if (doc.debut.hasSame(oldDoc.debut, 'day') && doc.fin.hasSame(oldDoc.fin, 'day')) {
+          if (doc.debut.hasSame(doc.fin, 'day')) {
+            this.updateEventFromDate(doc, doc.debut)
           } else {
-            const cursor = doc.start.clone()
-            while (!cursor.isAfter(doc.end, 'day')) {
+            let cursor = doc.start
+            while (cursor.startOf('day') <= doc.fin.startOf('day')) {
               this.updateEventFromDate(doc, cursor)
-              cursor.add(1, 'day')
+              cursor = cursor.plus({ day: 1 })
             }
           }
         } else {
           // Remove
-          oldDoc = _transformEvent(oldDoc)
-          if (oldDoc.start.isSame(oldDoc.end, 'day')) {
-            this.removeEventFromDate(oldDoc, oldDoc.start)
+          if (oldDoc.debut.hasSame(oldDoc.fin, 'day')) {
+            this.removeEventFromDate(oldDoc, oldDoc.debut)
           } else {
-            const cursor = oldDoc.start.clone()
-            while (!cursor.isAfter(oldDoc.end, 'day')) {
+            let cursor = oldDoc.debut
+            while (cursor.startOf('day') <= doc.fin.startOf('day')) {
               this.removeEventFromDate(oldDoc, cursor)
-              cursor.add(1, 'day')
+              cursor = cursor.plus({ day: 1 })
             }
           }
           // Then add
-          if (doc.start.isSame(doc.end, 'day')) {
-            this.addEventToDate(doc, doc.start)
+          if (doc.debut.hasSame(doc.fin, 'day')) {
+            this.addEventToDate(doc, doc.debut)
           } else {
-            const cursor = doc.start.clone()
-            while (!cursor.isAfter(doc.end, 'day')) {
+            let cursor = doc.debut
+            while (cursor.startOf('day') <= doc.fin.startOf('day')) {
               this.addEventToDate(doc, cursor)
-              cursor.add(1, 'day')
+              cursor = cursor.plus({ day: 1 })
             }
           }
         }
@@ -201,15 +211,15 @@ Calendar = {
   },
 
   addBlancs() {
-    const weekday = moment().weekday()
-    const maxDate = moment().weekday(weekday >= 4 ? 4 : -3).add(31, 'days').format('YYYY-MM-DD')
+    const weekday = DateTime.local().weekday
+    const maxDate = DateTime.local().set({ weekday : weekday >= 4 ? 4 : -3 }).plus({ days: 31 }).toFormat('yyyy-MM-dd')
     this.days.update({ events: [], slug: { $lte: maxDate }}, {
       $set: { tag: 'blanc', allday: true, label: 'Blanc' }
     }, { multi: true })
   },
 
   addEventToDate(doc, date) {
-    const slug = date.format('YYYY-MM-DD')
+    const slug = date.toFormat('yyyy-MM-dd')
     Tracker.nonreactive(() => {
       const day = this.days.findOne({ slug })
       if (!day) return
@@ -218,7 +228,7 @@ Calendar = {
       if (found) {
         this.updateEventFromDate(doc, date)
       } else {
-        const position = _.findIndex(day.events, evt => evt.start.isAfter(doc.start))
+        const position = _.findIndex(day.events, evt => evt.start > doc.start)
         const params = this.getDayParams([doc].concat(day.events))
 
         this.days.update({ slug }, {
@@ -236,7 +246,7 @@ Calendar = {
   },
 
   removeEventFromDate(doc, date) {
-    const slug = date.format('YYYY-MM-DD')
+    const slug = date.toFormat('yyyy-MM-dd')
     const day = this.days.findOne({ slug })
     if (!day) return
     const updatedEvents = _.reject(day.events, { _id: doc._id })
@@ -256,7 +266,7 @@ Calendar = {
   },
 
   updateEventFromDate(doc, date) {
-    const slug = date.format('YYYY-MM-DD')
+    const slug = date.toFormat('yyyy-MM-dd')
     const day = this.days.findOne({ slug })
     if (!day) return
     const updatedEvents = _.reject(day.events, { _id: doc._id })
@@ -303,8 +313,8 @@ Calendar = {
     return this.days.find({ tag: 'blanc', events: [] }).map(day => {
       return {
         tag: 'blanc',
-        start: day.date.clone(),
-        end: day.date.clone().endOf('day'),
+        start: day.date.toMillis(),
+        end: day.date.endOf('day').toMillis(),
         summary: 'Blanc',
         description: ''
       }

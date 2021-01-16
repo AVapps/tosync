@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import moment from 'moment'
+
 
 export default {
 	events: {
@@ -20,7 +22,9 @@ export default {
 	},
 
 	titre: {
-		rotation: _.template("Rotation <%= nbjoursTO %>ON du <%= start.format('D MMMM') %>"),
+		rotation(rot) {
+			return `Rotation ${ rot.nbjoursTO }ON du ${ moment(rot.start).format('D MMMM')}`
+		},
 		vol: _.template("<%= num %> | <%= from %> - <%= to %> | <%= type %>"),
 		mep: _.template("<%= title %> | <%= from %> - <%= to %> | MEP")
 	},

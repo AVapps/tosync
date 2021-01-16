@@ -1,4 +1,4 @@
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import { Meteor } from 'meteor/meteor'
 import { Match, check } from 'meteor/check'
 import '/imports/lib/moment-ejson.js'
@@ -50,7 +50,7 @@ Meteor.methods({
 		check(this.userId, Match.OneOf(String, Object))
 		const user = Meteor.user()
 		if (_.has(user, 'isPNT.checkedAt')) {
-			if (moment().diff(_.get(user, 'isPNT.checkedAt'), 'days') > 30) {
+			if (DateTime.local().diff(DateTime.fromMillis(_.get(user, 'isPNT.checkedAt'))).as('days') > 30) {
 				const _isPNT = isPNT(this.userId)
 				Meteor.users.update(this.userId, {
 					$set: {
@@ -159,29 +159,30 @@ Meteor.methods({
 
 	getAllEventsOfMonth(month) {
 		check(this.userId, Match.OneOf(String, Object));
-		const monthStart = moment(month).startOf('month'), monthEnd = moment(month).endOf('month');
+		const monthStart = DateTime.fromObject(month).startOf('month').toMillis()
+		const monthEnd = DateTime.fromObject(month).endOf('month').toMillis()
 
 		const overlapStart = Events.findOne({
 			userId: this.userId,
-			start: { $lt: monthStart.valueOf() },
-			end: { $gte: monthStart.valueOf() }
-		}, { sort: [['start', 'asc']] });
+			start: { $lt: monthStart },
+			end: { $gte: monthStart }
+		}, { sort: [['start', 'asc']] })
 
 		const overlapEnd = Events.findOne({
 			userId: this.userId,
-			start: { $lte: monthEnd.valueOf() },
-			end: { $gt: monthEnd.valueOf() }
-		}, { sort: [['end', 'desc']] });
+			start: { $lte: monthEnd },
+			end: { $gt: monthEnd }
+		}, { sort: [['end', 'desc']] })
 
-		const queryStart = overlapStart ? overlapStart.start : monthStart;
-		const queryEnd = overlapEnd ? overlapEnd.end : monthEnd;
+		const queryStart = overlapStart ? overlapStart.start : monthStart
+		const queryEnd = overlapEnd ? overlapEnd.end : monthEnd
 
 		return Events.find({
 			userId: this.userId,
-			start: { $lte: queryEnd.valueOf() },
-			end: { $gte: queryStart.valueOf() }
+			start: { $lte: queryEnd },
+			end: { $gte: queryStart }
 		}, {
 			sort: [['start', 'asc'], ['end', 'desc']]
-		}).fetch();
+		}).fetch()
 	}
 })

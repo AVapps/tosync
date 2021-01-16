@@ -15,8 +15,8 @@ export default function (table) {
 	return _.chain(table)
 		.map(function (line, index) {
 			if (!line || line.length < 10) return null;
-			const start = moment.utc(line[5], 'DD/MM/YYYY HH:mm:ss').local(),
-				end = moment.utc(line[6], 'DD/MM/YYYY HH:mm:ss').local();
+			const start = moment.utc(line[5], 'DD/MM/YYYY HH:mm:ss').valueOf(),
+				end = moment.utc(line[6], 'DD/MM/YYYY HH:mm:ss').valueOf();
 			
 			return {
 				num: 'TO' + line[1],

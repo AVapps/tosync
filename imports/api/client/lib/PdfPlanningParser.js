@@ -11,7 +11,7 @@ const MEP_REG = /([A-Z]{3})\-([A-Z]{3})/
 const DATE_REG = /^\s[a-z]{3}\.\s(\d\d)\/(\d\d)\/(\d\d\d\d)/
 const TIME_REG = /^\d\d:\d\d$/
 
-export default class PdfPlanningParser {
+export class PdfPlanningParser {
   constructor(pdf, options) {
     this.options = _.defaults(options, {
       bases: BASES

@@ -2,159 +2,118 @@ import './Blob.js'
 import { saveAs } from 'file-saver'
 import Utils from '/imports/api/client/lib/Utils.js'
 import Export from '/imports/api/client/lib/Export.js'
-import TemplatesIndex from '/imports/api/client/lib/TemplatesIndex.js'
+import { DateTime } from 'luxon'
+import _ from 'lodash'
 
-export const IcsFile = {
-	generate(events, filename = 'TOSync_plannning.ics') {
-		const calArray = [
+const ISO_DATETIME_FORMAT = { format: 'basic', suppressMilliseconds: true }
+const ISO_DATE_FORMAT = { format: 'basic' }
+
+export class IcsFile {
+	constructor(events) {
+		this.events = events
+		this.vcalendar = ''
+	}
+
+	generate({ tags, content, useCREWMobileFormat }) {
+		this.calArray = [
 			"BEGIN:VCALENDAR",
 			"VERSION:2.0",
 			"METHOD:PUBLISH",
 			"PRODID:-//TO.Sync//meteorjs//EN"
-			// "X-WR-TIMEZONE:Europe/Paris",
-			// "BEGIN:VTIMEZONE",
-			// "TZID:Europe/Paris",
-			// "TZURL:http://tzurl.org/zoneinfo/Europe/Paris",
-			// "X-LIC-LOCATION:Europe/Paris",
-			// "BEGIN:DAYLIGHT",
-			// "TZOFFSETFROM:+0100",
-			// "TZOFFSETTO:+0200",
-			// "TZNAME:CEST",
-			// "DTSTART:19810329T020000",
-			// "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
-			// "END:DAYLIGHT",
-			// "BEGIN:STANDARD",
-			// "TZOFFSETFROM:+0200",
-			// "TZOFFSETTO:+0100",
-			// "TZNAME:CET",
-			// "DTSTART:19961027T030000",
-			// "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
-			// "END:STANDARD",
-			// "END:VTIMEZONE"
 		]
 
-		const daysMap = []
-		const dateFormat = "YYYYMMDD"
-		const dateTimeFormat = "YYYYMMDD[T]HHmmss[Z]"
+		this.daysMap = []
+		this.DTSTAMP = DateTime.utc().toISO(ISO_DATETIME_FORMAT)
+		const filteredEvents = Export.filterEventsByTags(this.events, tags)
 
-		const DTSTAMP = moment.utc().format(dateTimeFormat)
-
-		function skip(evt) {
-			const date  = evt.start.format('YYYY-MM-DD')
-			const _skip = _.contains(daysMap, date)
-			if (!_skip) daysMap.push(date)
-			return _skip
-		}
-
-		function startVEvent(evt) {
-			return ["BEGIN:VEVENT","UID:" + (evt.slug || Utils.slug(evt)), "DTSTAMP:" + DTSTAMP]
-		}
-
-		function addDates(evt, vevt) {
-			const date = evt.start.clone().startOf('day')
-			vevt.push("DTSTART;VALUE=DATE:" + date.format(dateFormat))
-			vevt.push("DTEND;VALUE=DATE:" + date.add(1,'d').format(dateFormat))
-			return vevt
-		}
-
-		function addDateTimes(evt, vevt) {
-			vevt.push("DTSTART;VALUE=DATE-TIME:" + evt.start.utc().format(dateTimeFormat))
-			vevt.push("DTEND;VALUE=DATE-TIME:" + evt.end.utc().format(dateTimeFormat))
-			evt.start.local()
-			evt.end.local()
-			return vevt
-		}
-
-		function endVEvent(vevt) {
-			vevt.push("END:VEVENT")
-			calArray.push(vevt.join("\r\n"))
-		}
-
-    const tags = Config.get('iCalendarTags')
-    const useCREWMobileFormat = Config.get('useCREWMobileFormat')
-    const filteredEvents = Export.filterEventsByTags(events, tags)
-    const exportOptions = Config.get('exportOptions')
-
-		_.forEach(filteredEvents, (event, index) => {
+		_.forEach(filteredEvents, (event) => {
 			switch (event.tag) {
-        case 'absence':
-    		case 'conges':
-    		case 'sanssolde':
-        case 'blanc':
-    		case 'repos':
-    		case 'maladie':
-    		case 'greve':
-					if (skip(event)) return
-					const vevent = startVEvent(event)
-					addDates(event, vevent)
-					vevent.push(
-            "CATEGORIES:" + event.tag.toUpperCase(),
-            "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
-            "DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
-          )
-					endVEvent(vevent)
-					break
-        case 'rotation':
-					const veventR = startVEvent(event)
+				case 'rotation':
+					const veventR = this.startVEvent(event)
 					veventR.push(
-            "DTSTART;VALUE=DATE:" + event.start.clone().startOf('day').format(dateFormat),
-            "DTEND;VALUE=DATE:" + event.end.clone().startOf('day').add(1,'d').format(dateFormat),
-            "CATEGORIES:" + event.tag.toUpperCase(),
-            "SUMMARY:" + Export.titre(event, useCREWMobileFormat),
-            "DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
-          )
-					endVEvent(veventR)
+						"DTSTART;VALUE=DATE:" + DateTime.fromMillis(event.start).startOf('day').toISODate(ISO_DATE_FORMAT),
+						"DTEND;VALUE=DATE:" + DateTime.fromMillis(event.end).startOf('day').plus({ day: 1 }).toISODate(ISO_DATE_FORMAT),
+						"CATEGORIES:" + event.tag.toUpperCase(),
+						"SUMMARY:" + Export.titre(event, useCREWMobileFormat),
+						"DESCRIPTION:" + Export.description(event, content).replace(/\n/g, "\\n")
+					)
+					this.endVEvent(veventR)
 					break
 				case 'vol':
-        case 'mep':
-					const _vevent = startVEvent(event)
-					addDateTimes(event, _vevent)
+				case 'mep':
+					const _vevent = this.startVEvent(event)
+					this.addDateTimes(event, _vevent)
 					_vevent.push(
 						"CATEGORIES:" + event.tag.toUpperCase(),
-						"SUMMARY:" + Export.titre(_.defaults(event, {from: '', to: '', type: '', num: ''}), useCREWMobileFormat),
-						"DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
+						"SUMMARY:" + Export.titre(_.defaults(event, { from: '', to: '', type: '', num: '' }), useCREWMobileFormat),
+						"DESCRIPTION:" + Export.description(event, content).replace(/\n/g, "\\n")
 					)
-					endVEvent(_vevent)
+					this.endVEvent(_vevent)
 					break
 				default:
-					const __vevent = startVEvent(event)
-					addDateTimes(event, __vevent)
-					__vevent.push(
-						"CATEGORIES:" + event.tag.toUpperCase(),
-						"SUMMARY:" + event.summary,
-						"DESCRIPTION:" + Export.description(event, exportOptions).replace(/\n/g, "\\n")
-					)
-					endVEvent(__vevent)
+					if (_.includes(Utils.alldayTags, event.tag)) {
+						if (this.skip(event)) return
+						const vevent = this.startVEvent(event)
+						this.addDates(event, vevent)
+						vevent.push(
+							"CATEGORIES:" + event.tag.toUpperCase(),
+							"SUMMARY:" + Export.titre(event, useCREWMobileFormat),
+							"DESCRIPTION:" + Export.description(event, content).replace(/\n/g, "\\n")
+						)
+						this.endVEvent(vevent)
+					} else {
+						const __vevent = this.startVEvent(event)
+						this.addDateTimes(event, __vevent)
+						__vevent.push(
+							"CATEGORIES:" + event.tag.toUpperCase(),
+							"SUMMARY:" + event.summary,
+							"DESCRIPTION:" + Export.description(event, content).replace(/\n/g, "\\n")
+						)
+						this.endVEvent(__vevent)
+					}
 					break
 			}
 		})
 
-		calArray.push("END:VCALENDAR")
+		this.calArray.push("END:VCALENDAR")
+		this.vcalendar = this.calArray.join("\r\n")
+		return this.vcalendar
+	}
 
-    filename = filename || 'TOSync_plannning.ics'
+	save(filename = 'TOSync_plannning.ics') {
+		const blob = new Blob([this.vcalendar], { type: "text/calendar" })
+		saveAs(blob, filename)
+	}
 
-    let shared = false
-    try {
-      const filesArray = [ new File([calArray.join("\r\n")], filename, { type: "text/calendar" }) ]
-      if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-        // const blob = new Blob(, { type: "text/calendar" })
-        navigator.share({
-          files: filesArray,
-          title: 'Planning',
-          text: 'Planning'
-        })
-        .then(() => console.log('[Share was successful.]'))
-        .catch((error) => console.log('[Sharing failed]', error))
-        shared = true
-      }
-    } catch (error) {
-      console.log(error)
-    }
+	skip(evt) {
+		const date = DateTime.fromMillis(evt.start).toISODate()
+		const _skip = _.includes(this.daysMap, date)
+		if (!_skip) this.daysMap.push(date)
+		return _skip
+	}
 
-    if (!shared) {
-      console.log(`[Your system doesn't support sharing files.]`)
-      const blob = new Blob([calArray.join("\r\n")], { type: "text/calendar" })
-      saveAs(blob, filename)
-    }
+	startVEvent(evt) {
+		return ["BEGIN:VEVENT", "UID:" + (evt.slug || Utils.slug(evt)), "DTSTAMP:" + this.DTSTAMP]
+	}
+
+	addDates(evt, vevt) {
+		const date = DateTime.fromMillis(evt.start).startOf('day')
+		vevt.push("DTSTART;VALUE=DATE:" + date.toISODate(ISO_DATE_FORMAT))
+		vevt.push("DTEND;VALUE=DATE:" + date.plus({ day: 1 }).toISODate(ISO_DATE_FORMAT))
+		return vevt
+	}
+
+	addDateTimes(evt, vevt) {
+		vevt.push("DTSTART;VALUE=DATE-TIME:" + DateTime.fromMillis(evt.start).toUTC().toISO(ISO_DATETIME_FORMAT))
+		vevt.push("DTEND;VALUE=DATE-TIME:" + DateTime.fromMillis(evt.end).toUTC().toISO(ISO_DATETIME_FORMAT))
+		return vevt
+	}
+
+	endVEvent(vevt) {
+		vevt.push("END:VEVENT")
+		this.calArray.push(vevt.join("\r\n"))
+		return vevt
 	}
 }
+
+

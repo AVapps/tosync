@@ -11,7 +11,7 @@ class EventsCollection extends CachedCollection {
 		_.forEach(momentFields, path => {
 			if (_.has(evt, path)) {
 				const date = _.get(evt, path)
-				if (moment.isMoment(evt)) {
+				if (moment.isMoment(date)) {
 					_.set(evt, path, date.valueOf())
 				}
 			}

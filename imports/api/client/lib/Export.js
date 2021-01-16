@@ -11,7 +11,7 @@ const SYNC_CATEGORIES = {
   'instruction': ['instructionSol', 'instructionSimu'],
   'sanssolde': ['absence', 'sanssolde', 'greve'],
   'maladie': ['maladie'],
-  'blanc': ['blanc', 'jisap']
+  'blanc': ['blanc', 'jisap', 'npl']
 }
 
 const SYNC_CATEGORIES_LABEL = {
@@ -35,6 +35,7 @@ const SYNC_TAG_CATEGORIES = {
   'sanssolde': 'sanssolde',
   'blanc': 'blanc',
   'jisap': 'blanc',
+  'npl': 'blanc',
   'repos': 'repos',
   'maladie': 'maladie',
   'greve': 'sanssolde',

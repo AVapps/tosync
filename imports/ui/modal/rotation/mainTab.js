@@ -2,6 +2,7 @@ import { Template } from 'meteor/templating'
 import './mainTab.html'
 import AirportsData from '/imports/api/client/lib/AirportsData.js'
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 
 function mapCrew(list) {
   return _.map(list, trigramme => {
@@ -13,6 +14,8 @@ function mapCrew(list) {
     }
   })
 }
+
+const ISO_TIME_FORMAT = { suppressSeconds: true, includeOffset: false }
 
 Template.rotationModalMainTab.helpers({
 	equipage() {
@@ -83,8 +86,8 @@ Template.volsTableRow.events({
 			// console.log(field, isReal, time, hour, minute)
 
 			if (field == 'start') {
-				const start = _.get(t.data.vol, field).clone().set({ hour, minute })
-				const end = start.clone().add(t.data.vol.tv, 'hours')
+				const start = DateTime.fromMillis(_.get(t.data.vol, field)).set({ hour, minute })
+				const end = start.plus({ hours: t.data.vol.tv })
 				const set = {
 					event: t.data.vol,
 					set: {
@@ -101,13 +104,13 @@ Template.volsTableRow.events({
 				}
 
 				t.$(e.currentTarget).trigger('set.tosync', set)
-				t.$('input[name=end]').val(end.format('HH:mm'))
+				t.$('input[name=end]').val(end.toISOTime(ISO_TIME_FORMAT))
 			} else if (field == 'end') {
 				const start = _.get(t.data.vol, 'start')
-				const end = _.get(t.data.vol, field).clone().set({ hour, minute })
+				let end = DateTime.fromMillis(_.get(t.data.vol, field)).set({ hour, minute })
 
-				if (end.isBefore(start)) {
-					end.add(1, 'day')
+				if (end < start) {
+					end = end.plus({ day: 1 })
 				}
 
 				const set = {
@@ -120,24 +123,24 @@ Template.volsTableRow.events({
 				if (!t.data.vol.real) {
 					_.extend(set.set, {
 						end: end.valueOf(),
-						'real.start': start.valueOf(),
+						'real.start': start,
 						'real.end': end.valueOf()
 					})
 				}
 
 				t.$(e.currentTarget).trigger('set.tosync', set)
 			} else if (field == 'real.start') {
-				const realStart = t.data.vol.start.clone().set({ hour, minute })
+				let realStart = DateTime.fromMillis(t.data.vol.start).set({ hour, minute })
 
 				if (!t.data.vol.real) {
 					t.data.vol.real = _.pick(t.data.vol, 'start', 'end')
 				}
 
-				if (t.data.vol.start.diff(realStart, 'hours', true) > 1) {
-					realStart.add(1, 'day')
+				if (DateTime.fromMillis(t.data.vol.start).diff(realStart).as('hours') > 1) {
+					realStart = realStart.plus({ day: 1 })
 				}
 
-				const realEnd = realStart.clone().add(t.data.vol.tv, 'hours')
+				const realEnd = realStart.plus({ hours: t.data.vol.tv })
 
 				t.$(e.currentTarget).trigger('set.tosync', {
 					event: t.data.vol,
@@ -146,13 +149,13 @@ Template.volsTableRow.events({
 						"real.end": realEnd.valueOf()
 					}
 				})
-				t.$('input[name=real\\.end]').val(realEnd.format('HH:mm'))
+				t.$('input[name=real\\.end]').val(realEnd.toISOTime(ISO_TIME_FORMAT))
 			} else if (field == 'real.end') {
 				if (t.data.vol.real && t.data.vol.real.start) {
 					const realStart = _.get(t.data.vol, 'real.start')
-					const realEnd = _.get(t.data.vol, 'real.end').clone().set({ hour, minute })
-					if (realEnd.isBefore(realStart)) {
-						realEnd.add(1, 'day')
+					let realEnd = DateTime.fromMillis(_.get(t.data.vol, 'real.end')).set({ hour, minute })
+					if (+realEnd < realStart) {
+						realEnd = realEnd.plus({ day: 1 })
 					}
 					t.$(e.currentTarget).trigger('set.tosync', { event: t.data.vol, set: { [field]: realEnd.valueOf() }})
 				}
@@ -162,8 +165,7 @@ Template.volsTableRow.events({
 	},
 
     'click .remove-button': function (e,t) {
-		    t.$('tr').trigger('removeEvent.tosync', this.vol._id)
-          .fadeOut()
+		    t.$('tr').trigger('removeEvent.tosync', this.vol._id).fadeOut()
     }
 })
 
@@ -173,12 +175,20 @@ Template.volTimeField.helpers({
 		if (!m && this.field.indexOf('real') != -1) {
 			m = _.get(this.vol, this.field.replace("real.", ""))
 		}
-		return m ? m.format('HH:mm') : ""
+		return m ? DateTime.fromMillis(m).toISOTime(ISO_TIME_FORMAT) : ""
 	}
 })
 
 Template.serviceVolTable.helpers({
   showSv() {
 		return !_.isEmpty(this.sv)
+	},
+
+	isoTime(dt) {
+		return dt.toISOTime(ISO_TIME_FORMAT)
+	},
+
+	diffDT(startDT, endDT) {
+		return endDT.diff(startDT).as('hours')
 	}
 })

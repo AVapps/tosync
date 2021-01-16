@@ -1,5 +1,5 @@
 import { _ } from 'meteor/underscore'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 
 const BASES = [ 'ORY', 'CDG', 'LYS', 'MPL', 'NTE' ]
 
@@ -25,7 +25,7 @@ export default class PlanningParser {
 
 		this._init()
 		this._groupEvents()
-		// this.eventsByTag = _.sortBy(this.parsedEvents, 'tag');
+		// this.eventsByTag = _.sortBy(this.parsedEvents, 'tag')
 		this.parsedEvents = _.sortBy(this.parsedEvents, 'start')
 	}
 
@@ -48,7 +48,7 @@ export default class PlanningParser {
 	}
 
 	_groupEvents() {
-		_.forEach(this.events, (evt, index) => {
+		_.forEach(this.events, (evt) => {
 			switch (evt.tag) {
 				case 'vol':
 				case 'mep':
@@ -90,7 +90,7 @@ export default class PlanningParser {
 
   _shouldCompleteRotation(evt) {
     if (!this._prev) return false
-    const restGTEMin = evt.start.diff(this._prev.end, 'hours', true) >= this.options.rotationBreakTime
+		const restGTEMin = DateTime.fromMillis(evt.start).diff(DateTime.fromMillis(this._prev.end)).as('hours') >= this.options.rotationBreakTime
     return restGTEMin && (
       this.options.bases.indexOf(evt.from) !== -1
       || this._prev.to != evt.from
@@ -99,20 +99,20 @@ export default class PlanningParser {
   }
 
 	_addAllDayEvent(evt) {
-		if (!(this.sols.length && _.last(this.sols).start.isSame(evt.start, 'day'))) {
-			evt.start.startOf('day');
-			evt.end.endOf('day');
-			this.sols.push(evt);
-			this.parsedEvents.push(evt);
+		if (!(this.sols.length && DateTime.fromMillis(_.last(this.sols).start).hasSame(evt.start, 'day'))) {
+			evt.start = DateTime.fromMillis(evt.start).startOf('day').toMillis()
+			evt.end = DateTime.fromMillis(evt.end).endOf('day').toMillis()
+			this.sols.push(evt)
+			this.parsedEvents.push(evt)
 		};
-		return this;
+		return this
 	}
 
 	_beginRotation(vol) {
 		this._rotation = {
 			tag: 'rotation',
 			// base: vol.from,
-			start: vol.start.clone(),
+			start: vol.start,
 			vols: [],
 			services: []
 		}
@@ -125,69 +125,68 @@ export default class PlanningParser {
 	}
 
 	_addVolToRotation(vol) {
-		this._rotation.vols.push(vol);
-		this.parsedEvents.push(vol);
-		return this;
+		this._rotation.vols.push(vol)
+		this.parsedEvents.push(vol)
+		return this
 	}
 
 	_completeRotation() {
-		if (!this._prev || !this._rotation) return;
-		this._rotation.end = this._prev.end.clone();
+		if (!this._prev || !this._rotation) return
+		this._rotation.end = this._prev.end
     if (!this._rotation.base) {
       this._rotation.base = this._prev.to
     }
-		this.rotations.push(this._rotation);
-		this.parsedEvents.push(this._rotation);
-		this._resetRotation();
-		return this;
+		this.rotations.push(this._rotation)
+		this.parsedEvents.push(this._rotation)
+		this._resetRotation()
+		return this
 	}
 
 	_resetRotation() {
-		this._rotation = null;
-		this._prev = null;
-		return this;
+		this._rotation = null
+		this._prev = null
+		return this
 	}
 
 	parseSV(rotation) {
-		this._resetSV();
+		this._resetSV()
 		_.forEach(rotation.vols, evt => {
 			if (!this._sv) {
-				this._beginSV(evt);
-			} else if (this._prev && evt.start.diff(this._prev.end, 'hours', true) >= this.options.stopoverBreakTime) {
-				this._completeSV(rotation)
-					._beginSV(evt);
+				this._beginSV(evt)
+			} else if (this._prev && DateTime.fromMillis(evt.start).diff(DateTime.fromMillis(this._prev.end)).as('hours') >= this.options.stopoverBreakTime) {
+				this._completeSV(rotation)._beginSV(evt)
 			}
-			this._addVolToSV(evt);
-			this._prev = evt;
+			this._addVolToSV(evt)
+			this._prev = evt
 		});
-		return this._completeSV(rotation);
+		return this._completeSV(rotation)
 	}
 
 	_beginSV(evt) {
 		this._sv = {
-			start: evt.start.clone(),
+			start: evt.start,
 			vols: []
 		}
-		return this;
+		return this
 	}
 
 	_addVolToSV(vol) {
-		this._sv.vols.push(vol);
-		return this;
+		this._sv.vols.push(vol)
+		return this
 	}
 
 	_completeSV(rotation) {
-		const index = rotation.services.length;
+		const index = rotation.services.length
 		_.forEach(this._sv.vols, function (vol) {
-			vol.svIndex = index;
-		});
-		rotation.services.push(this._sv);
-		return this._resetSV();
+			vol.svIndex = index
+		})
+		rotation.services.push(this._sv)
+		return this._resetSV()
 	}
 
 	_resetSV() {
-		this._sv = null;
-		this._prev = null;
-		return this;
+		this._sv = null
+		this._prev = null
+		return this
 	}
 }

@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import { DateTime } from 'luxon';
+
 /**
 * Helper functions
 **/
@@ -334,7 +336,7 @@ export default {
 	},
 
 	slug(event, username, index) {
-		const prefix = (username || Meteor.user().username) + moment(event.start).format('YYYYMMDD')
+		const prefix = (username || Meteor.user().username) + DateTime.fromMillis(event.start).toISODate({ format: 'basic' })
 		const suffix = event.tag + (index || "")
 
 		if (_.has(event, 'events') && !_.isEmpty(event.events)) {
@@ -345,7 +347,7 @@ export default {
 				case 'mep':
 					return [prefix, _.first(event.events).title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
 				default:
-					return [prefix, _.first(event.events).summary.replace(/\W+/g, '_'), moment(event.start).format('HHmm'), suffix].join('-')
+					return [prefix, _.first(event.events).summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
 			}
 		} else {
 			switch (event.tag) {
@@ -365,7 +367,7 @@ export default {
 				case 'mep':
 					return [prefix, event.title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
 				default:
-					return [prefix, event.summary.replace(/\W+/g, '_'), moment(event.start).format('HHmm'), suffix].join('-')
+					return [prefix, event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
 			}
 		}
 	},

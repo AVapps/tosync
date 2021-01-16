@@ -2,6 +2,7 @@ import { Template } from 'meteor/templating'
 import './calendar.html'
 
 import _ from 'lodash'
+import { DateTime } from 'luxon'
 import Hammer from 'hammerjs'
 import Utils from '/imports/api/client/lib/Utils.js'
 import Modals from '/imports/api/client/Modals.js'
@@ -66,6 +67,10 @@ Template.calendar.helpers({
 		return Controller.currentMonth.get();
 	},
 
+	monthTitle() {
+		return DateTime.fromObject(Controller.currentMonth.get()).toLocaleString({ year: 'numeric', month: 'long' })
+	},
+
 	remu() {
     const stats = Controller.statsRemu()
     const eHSconfig = Config.get('eHS')
@@ -105,23 +110,21 @@ Template.planningCalendarDay.helpers({
 		return classes.join(' ')
   },
 
-	weekday() {
-		return this.day.date.format('ddd').substr(0, 3);
-	},
-
 	eventsList() {
 		if (this.day.events && this.day.events.length) {
-			const events = _.reject(this.day.events, evt => evt.tag === 'rotation');
-			return _.map(events, (evt, index) => {
-				const event = _.extend({'classes': []}, evt);
-				// if (index === 0) event['classes'].push('first');
-				// if (index === events.length - 1) event['classes'].push('last');
-				if (evt.start.isBefore(this.day.date, 'day')) event['classes'].push('start-before-day');
-				if (evt.end.isAfter(this.day.date, 'day')) event['classes'].push('end-after-day');
-				return event;
-			});
+			const events = _.reject(this.day.events, evt => evt.tag === 'rotation')
+			return _.map(events, (evt) => {
+				const event = _.extend({'classes': []}, evt)
+				if (evt.debut.startOf('day') < this.day.date.startOf('day')) {
+					event['classes'].push('start-before-day')
+				}
+				if (evt.fin.startOf('day') > this.day.date.startOf('day')) {
+					event['classes'].push('end-after-day')
+				}
+				return event
+			})
 		}
-		return [];
+		return []
 	},
 
 	calendarEventTemplate(evt) {
@@ -161,12 +164,12 @@ Template.planningCalendarDayLabel.helpers({
 			const rot = _.find(this.events, evt => evt.tag === 'rotation')
 			if (rot && rot.start && rot.end) {
 				const classes = []
-				if (rot.start.isSame(this.date, 'day')) {
+				if (rot.debut.hasSame(this.date, 'day')) {
 					classes.push('span-start')
 				} else {
 					classes.push('span-left')
 				}
-				if (rot.end.isSame(this.date, 'day')) {
+				if (rot.fin.hasSame(this.date, 'day')) {
 					classes.push('span-end')
 				} else {
 					classes.push('span-right')
