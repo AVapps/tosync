@@ -1,29 +1,16 @@
 import SimpleSchema from 'simpl-schema'
 import { solSchema } from './sol.js'
 import { dutySubEventSchema } from './dutySubEvent.js'
+import { mepSchema } from './mep.js'
+import { groundCrewSchema } from './peq.js'
+import { instructionSchema } from './instruction.js'
 
 const dutySchema = new SimpleSchema({
-  tag: {
-    type: String,
-    allowedValues: [ 'duty' ]
-  },
   events: {
     type: Array
   },
   'events.$': {
-    type: dutySubEventSchema
-  },
-  crew: {
-    type: Array,
-    optional: true
-  },
-  'crew.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
-  },
-  instruction: {
-    type: Array,
-    optional: true
+    type: SimpleSchema.oneOf(mepSchema, dutySubEventSchema)
   },
   remarks: {
     type: String,
@@ -36,5 +23,7 @@ const dutySchema = new SimpleSchema({
 })
 
 dutySchema.extend(solSchema)
+dutySchema.extend(groundCrewSchema)
+dutySchema.extend(instructionSchema)
 
 export { dutySchema }

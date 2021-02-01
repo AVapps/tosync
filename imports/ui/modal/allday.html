@@ -1,0 +1,31 @@
+<template name="alldayModalContent">
+	<div class="allday-content">
+		<h4 class="title">
+			<span class="badge {{ tagLabelClass day.tag }}">{{ tagLabel day.tag }}</span>
+			{{ daySummary }}
+		</h4>
+		<p class="lead"> {{ eventInterval }}</p>
+	</div>
+	
+	{{#if hasSeveralEvents }}
+	<div class="table-responsive">
+		<table class="events table table-bordered table-sm table-striped">
+			<thead>
+				<tr>
+					<th>Activité</th>
+					<th>Début</th>
+					<th>Fin</th>
+					<th>Informations</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each evt in this.day.events}}
+					{{#if showEvent evt }}
+						{{> defaultModalEvent event=evt state=this.state }}
+					{{/if}}
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
+	{{/if}}
+</template>

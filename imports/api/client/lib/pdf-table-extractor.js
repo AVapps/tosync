@@ -60,7 +60,7 @@ async function loadPage(doc, pageNum) {
   // 2- positionner le contenu texte dans les cellules du tableau
   const content = await page.getTextContent()
   const filledTable = []
-  let item, currentRow
+  let currentRow
   const items = _.chain(content.items)
     .map(item => ({
       x: item.transform[4],

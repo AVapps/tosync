@@ -1,5 +1,6 @@
-import { _ } from 'meteor/underscore'
+import _ from 'lodash'
 import { DateTime } from 'luxon'
+import Utils from './Utils.js'
 
 const BASES = [ 'ORY', 'CDG', 'LYS', 'MPL', 'NTE' ]
 
@@ -25,8 +26,8 @@ export default class PlanningParser {
 
 		this._init()
 		this._groupEvents()
-		// this.eventsByTag = _.sortBy(this.parsedEvents, 'tag')
-		this.parsedEvents = _.sortBy(this.parsedEvents, 'start')
+		this.factorSolDays()
+		this.parsedEvents = _.sortBy(this.parsedEvents.concat(this.sols), 'start')
 	}
 
 	firstEvent() {
@@ -60,21 +61,13 @@ export default class PlanningParser {
 					this._addVolToRotation(evt)
 					this._prev = evt
 					break
-        case 'absence':
-        case 'conges':
-        case 'sanssolde':
-        case 'blanc':
-        case 'jisap':
-        case 'repos':
-        case 'maladie':
-        case 'greve':
-					this._completeRotation()
-					this._addAllDayEvent(evt)
-					break
 				default:
 					this._completeRotation()
-					this.sols.push(evt)
-          this.parsedEvents.push(evt)
+					if (_.includes(Utils.alldayTags, evt.tag)) {
+						this._addAllDayEvent(evt)
+					} else {
+						this.sols.push(evt)
+					}
 					break
 			}
 		});
@@ -103,8 +96,7 @@ export default class PlanningParser {
 			evt.start = DateTime.fromMillis(evt.start).startOf('day').toMillis()
 			evt.end = DateTime.fromMillis(evt.end).endOf('day').toMillis()
 			this.sols.push(evt)
-			this.parsedEvents.push(evt)
-		};
+		}
 		return this
 	}
 
@@ -188,5 +180,33 @@ export default class PlanningParser {
 		this._sv = null
 		this._prev = null
 		return this
+	}
+
+	factorSolDays() {
+		const result = []
+		let memo
+		_.forEach(this.sols, sol => {
+			if (_.includes(Utils.alldayTags, sol.tag)) {
+				if (memo) {
+					if (memo.activity === sol.activity
+						&& memo.summary === sol.summary
+						&& DateTime.fromMillis(memo.end).plus({ days: 1 }).hasSame(sol.start, 'day')) {
+						memo.end = sol.end
+					} else {
+						result.push(memo)
+						memo = sol
+					}
+				} else {
+					memo = sol
+				}
+			} else {
+				if (memo) {
+					result.push(memo)
+					memo = null
+				}
+				result.push(sol)
+			}
+		})
+		this.sols = result
 	}
 }

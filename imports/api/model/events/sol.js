@@ -1,19 +1,9 @@
 import SimpleSchema from 'simpl-schema'
 import { eventSchema } from './event.js'
+import { groundCrewSchema } from './peq.js'
+import { instructionSchema } from './instruction.js'
 
 const solSchema = new SimpleSchema({
-  crew: {
-    type: Array,
-    optional: true
-  },
-  'crew.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
-  },
-  instruction: {
-    type: Array,
-    optional: true
-  },
   remarks: {
     type: String,
     optional: true
@@ -21,5 +11,7 @@ const solSchema = new SimpleSchema({
 })
 
 solSchema.extend(eventSchema)
+solSchema.extend(groundCrewSchema)
+solSchema.extend(instructionSchema)
 
 export { solSchema }

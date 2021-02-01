@@ -18,6 +18,7 @@ export default {
 		conge: 'defaultModalContent',
 		repos: 'defaultModalContent',
 		default: 'defaultModalContent',
+		allday: 'alldayModalContent',
 		mois: 'monthModalContent'
 	},
 
@@ -25,8 +26,12 @@ export default {
 		rotation(rot) {
 			return `Rotation ${ rot.nbjoursTO }ON du ${ moment(rot.start).format('D MMMM')}`
 		},
-		vol: _.template("<%= num %> | <%= from %> - <%= to %> | <%= type %>"),
-		mep: _.template("<%= title %> | <%= from %> - <%= to %> | MEP")
+		vol(vol) {
+			return `${ vol.num } | ${vol.from} - ${vol.to} | ${vol.type}`
+		},
+		mep(mep) {
+			return `${ mep.num || mep.title } | ${mep.from} - ${mep.to} | MEP`
+		}
 	},
 
   titreCM: {
@@ -36,8 +41,13 @@ export default {
         str += ' - ' + _.chain(rot.decouchers).map('to').uniq().value().join(' - ')
       }
       return str
-    },
+		},
+		vol(vol) {
+			return `${ vol.num } (${vol.from}-${vol.to}) ${vol.type}`
+		},
 		vol: _.template("<%= num %> (<%= from %>-<%= to %>) <%= type %>"),
-		mep: _.template("MEP : <%= title %> (<%= from %>-<%= to %>)")
+		mep(mep) {
+			return `MEP : ${ mep.num || mep.title } (${mep.from}-${mep.to})`
+		}
   }
 }

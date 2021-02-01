@@ -19,6 +19,10 @@ class EventsCollection extends CachedCollection {
 		return super.insert(evt, callback)
 	}
 
+	batchInsert(docs) {
+		return _.map(docs, doc => this.insert(doc))
+	}
+
 	batchRemove(ids, cb) {
 		return batchEventsRemove.call({ ids }, cb)
 	}

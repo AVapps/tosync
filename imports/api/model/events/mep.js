@@ -1,10 +1,13 @@
 import SimpleSchema from 'simpl-schema'
-import { eventSchema } from './event.js'
 
 const mepSchema = new SimpleSchema({
   tag: {
     type: String,
     allowedValues: ['mep']
+  },
+  category: {
+    type: String,
+    optional: true
   },
   num: {
     type: String,
@@ -23,18 +26,24 @@ const mepSchema = new SimpleSchema({
     regEx: /^[A-Z]{3}$/
   },
   tz: {
-    type: String
+    type: String,
+    optional: true
   },
   fonction: {
     type: String,
-    regEx: /^[A-Z]{3}$/
+    regEx: /^[A-Z]{3}$/,
+    optional: true
   },
   remarks: {
     type: String,
     optional: true
+  },
+  start: {
+    type: SimpleSchema.Integer, // Datetime timestamp
+  },
+  end: {
+    type: SimpleSchema.Integer, // Datetime timestamp
   }
 })
-
-mepSchema.extend(eventSchema)
 
 export { mepSchema }

@@ -19,8 +19,14 @@
   		</thead>
   		<tbody>
   			{{#each evt in this.day.events}}
-  				{{#if showEvent evt }}
-  					{{> defaultModalEvent event=evt state=this.state }}
+          {{#if showEvent evt }}
+            {{#if hasEvents evt }}
+              {{#each sub in evt.events}}
+                {{> defaultModalEvent event=sub state=this.state }}
+              {{/each}}
+            {{ else }}
+              {{> defaultModalEvent event=evt state=this.state }}
+            {{/if}}
   				{{/if}}
   			{{/each}}
   		</tbody>

@@ -82,12 +82,9 @@ App = {
   async importPdf(arrayBuffer) {
     const Pdf = (await import('./lib/Pdf.js')).default
     const pdf = await Pdf.extractData(arrayBuffer)
-    console.log(pdf)
-
     const { PdfPlanningParser } = await import('./lib/PdfPlanningParser.js')
     const planning = new PdfPlanningParser(pdf)
-    console.log(planning)
-    Sync.importPdfPlanning(planning)
+    return Sync.importPdfPlanning(planning)
   },
 
 	updateTags(cb) {
@@ -100,6 +97,17 @@ App = {
   			if (_.isFunction(cb)) cb(error)
   		}
   	})
+  },
+
+  async migrateCurrentEvents() {
+    const { migrateInterval, needsMigration } = await import('./lib/migrateEvents.js')
+    const events = Controller.currentEvents.get()
+    if (needsMigration(events)) {
+      console.time('migrateEvents')
+      const result = await migrateInterval(_.first(events).start, _.last(events).end)
+      console.timeEnd('migrateEvents')
+      console.log(result)
+    }
   },
 
 	eventsToSync() {

@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 
 import Export from './lib/Export.js'
 import GapiBatch from './lib/GapiBatch.js'
+import Utils from './lib/Utils.js'
 
 const CLIENT_ID = Meteor.settings.public.gapi.clientId
 const SCOPES = [
@@ -415,24 +416,7 @@ class Gapi {
     if (colorId) body.colorId = colorId
 
 		switch (event.tag) {
-			case 'absence':
-  		case 'conges':
-  		case 'sanssolde':
-      case 'blanc':
-  		case 'repos':
-  		case 'maladie':
-  		case 'greve':
-				return _.extend(body, {
-					start: {
-            date: DateTime.fromMillis(event.start).toISODate()
-					},
-					end: {
-            date: DateTime.fromMillis(event.start).plus({ day: 1 }).toISODate()
-					},
-					summary: Export.titre(event, useCREWMobileFormat),
-					description: Export.description(event, exportOptions)
-				})
-      case 'rotation':
+			case 'rotation':
 				return _.extend(body, {
 					start: {
             date: DateTime.fromMillis(event.start).toISODate()
@@ -454,10 +438,23 @@ class Gapi {
 					description: Export.description(event, exportOptions),
 				})
 			default:
-				return _.extend(body, {
-          summary: event.summary,
-          description: Export.description(event, exportOptions)
-        })
+        if (_.includes(Utils.alldayTags, event.tag)) {
+          return _.extend(body, {
+            start: {
+              date: DateTime.fromMillis(event.start).toISODate()
+            },
+            end: {
+              date: DateTime.fromMillis(event.end).plus({ day: 1 }).toISODate()
+            },
+            summary: Export.titre(event, useCREWMobileFormat),
+            description: Export.description(event, exportOptions)
+          })
+        } else {
+          return _.extend(body, {
+            summary: event.summary,
+            description: Export.description(event, exportOptions)
+          })
+        }
 		}
 	}
 }

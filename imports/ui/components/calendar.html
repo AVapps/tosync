@@ -89,7 +89,13 @@
 			{{#with eventsList }}
 			<div class="fc-content fc-length-{{ this.length }}">
 				{{#each evt in this }}
-					{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
+					{{#if evt.events }}
+						{{#each subEvt in evt.events }}
+							{{> Template.dynamic template=(calendarEventTemplate subEvt) data=subEvt }}
+						{{/each}}
+					{{ else }}
+						{{> Template.dynamic template=(calendarEventTemplate evt) data=evt }}
+					{{/if}}
 				{{/each}}
 			</div>
 			{{/with}}
@@ -120,6 +126,14 @@
 				</div>
 			</div>
 		</span>
+		<span class="fc-end">{{ heure end }}</span>
+	</div>
+</template>
+
+<template name="planningCalendarMep">
+	<div class="fc-event fc-mep {{ classes }}">
+		<span class="fc-start">{{ heure start }}</span>
+		<span class="fc-summary">{{ mepTitle }}</span>
 		<span class="fc-end">{{ heure end }}</span>
 	</div>
 </template>

@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import SyncTools from './lib/syncCalendarEvents.js'
 import PdfPlanningImporter from './lib/PdfPlanningImporter'
 import Utils from './lib/Utils.js'
+import Pdf from './lib/Pdf.js'
 
 Sync = {
 
@@ -29,9 +30,11 @@ Sync = {
 	},
 
 	// Importe les évènements en synchronisant les évènements sur le période importée
-	importPdfPlanning(planning) {
+	async importPdfPlanning(planning) {
 		const PdfImport = new PdfPlanningImporter(planning)
+		await PdfImport.importPlanning()
 		console.log(PdfImport)
+		return PdfImport.save()
 	},
 
 	// Importe des évènements
@@ -73,7 +76,6 @@ Sync = {
         const tag = Utils.findTag(evt.category)
         if (tag !== 'autre' && tag !== evt.tag) {
           evt.tag = tag
-          console.log('NEW TAG', evt.summary, evt.category, evt.tag, tag)
           Events.update(evt._id, {
             $set: {
               tag: tag,

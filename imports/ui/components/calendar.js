@@ -115,11 +115,24 @@ Template.planningCalendarDay.helpers({
 			const events = _.reject(this.day.events, evt => evt.tag === 'rotation')
 			return _.map(events, (evt) => {
 				const event = _.extend({'classes': []}, evt)
-				if (evt.debut.startOf('day') < this.day.date.startOf('day')) {
+				if (evt.debut < this.day.date.startOf('day')) {
 					event['classes'].push('start-before-day')
 				}
-				if (evt.fin.startOf('day') > this.day.date.startOf('day')) {
+				if (evt.fin > this.day.date.endOf('day')) {
 					event['classes'].push('end-after-day')
+				}
+				if (_.isArray(event.events) && event.events.length) {
+					_.forEach(event.events, sub => {
+						sub.classes = []
+						const debut = sub.debut || DateTime.fromMillis(sub.start)
+						if (debut < this.day.date.startOf('day')) {
+              sub["classes"].push("start-before-day")
+						}
+						const fin = sub.fin || DateTime.fromMillis(sub.end)
+            if (fin > this.day.date.endOf('day')) {
+              sub["classes"].push("end-after-day")
+            }
+					})
 				}
 				return event
 			})
@@ -131,6 +144,8 @@ Template.planningCalendarDay.helpers({
 		switch (evt.tag) {
 			case 'rotation':
 			case 'vol':
+			case 'sv':
+			case 'mep':
 				return 'planningCalendar' + Utils.ucfirst(evt.tag);
 			default:
 				return 'planningCalendarEvent';
@@ -140,15 +155,28 @@ Template.planningCalendarDay.helpers({
 
 Template.planningCalendarEvent.helpers({
 	classes() {
-		return this['classes'].join(' ');
+		return this['classes'].join(' ')
 	}
-});
+})
 
 Template.planningCalendarVol.helpers({
 	classes() {
-		return this['classes'].join(' ');
+		return this['classes'].join(' ')
 	}
-});
+})
+
+Template.planningCalendarMep.helpers({
+	classes() {
+		return this['classes'].join(' ')
+	},
+	mepTitle() {
+		if (this.from && this.to) {
+			return `MEP ${ this.num || this.title } (${this.from}-${this.to})`
+		} else {
+			return this.summary
+		}
+	}
+})
 
 Template.planningCalendarDayLabel.helpers({
 	dayLabelClass(tag) {
@@ -160,16 +188,16 @@ Template.planningCalendarDayLabel.helpers({
 
 	spanClass() {
 		// TODO Cas de 2 rotations le même jour (une finissant après minuit puis une autre partant l'après-midi)
-		if (this.tag == 'rotation') {
-			const rot = _.find(this.events, evt => evt.tag === 'rotation')
-			if (rot && rot.start && rot.end) {
+		if (this.tag === 'rotation' || this.allday) {
+			const evt = _.find(this.events, { tag: this.tag})
+			if (evt && evt.debut && evt.fin) {
 				const classes = []
-				if (rot.debut.hasSame(this.date, 'day')) {
+				if (evt.debut.hasSame(this.date,'day')) {
 					classes.push('span-start')
 				} else {
 					classes.push('span-left')
 				}
-				if (rot.fin.hasSame(this.date, 'day')) {
+				if (evt.fin.hasSame(this.date,'day')) {
 					classes.push('span-end')
 				} else {
 					classes.push('span-right')

@@ -67,11 +67,6 @@
           }
         }
 
-        > .fc-title.badge-conges {
-          background-color: darken($success, 30%);
-          color: white;
-        }
-
         &.today {
           > span.fc-date, > span.fc-weekday {
             color: $dark;
@@ -79,7 +74,7 @@
           }
         }
 
-        &.calendar-dow-5, &.calendar-dow-6 {
+        &.calendar-dow-6, &.calendar-dow-7 {
           background-color: #f9f9f9;
 
           .badge.badge-light {
@@ -103,6 +98,12 @@
           .fc-summary {
             color: var(--gray);
             text-align: center;
+          }
+
+          .fc-event.start-before-day {
+            .fc-summary {
+              display: none;
+            }
           }
         }
 
@@ -162,6 +163,8 @@
 
     /* Calendar Table view */
     &.fc-table {
+      overflow-x: hidden;
+
       > .fc-head, > .fc-body {
         width: 100%;
 
@@ -206,9 +209,6 @@
         > .fc-cell {
           height: 9rem;
           border-top: 1px solid #ecf0f1;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          overflow: hidden;
 
           @include media-breakpoint-down(md) {
             height: 12rem;
@@ -226,6 +226,34 @@
             .fc-title {
               display: none;
             }
+          }
+
+          &.calendar-dow-1 {
+            z-index: 7;
+          }
+
+          &.calendar-dow-2 {
+            z-index: 6;
+          }
+
+          &.calendar-dow-3 {
+            z-index: 5;
+          }
+
+          &.calendar-dow-4 {
+            z-index: 4;
+          }
+
+          &.calendar-dow-5 {
+            z-index: 3;
+          }
+
+          &.calendar-dow-6 {
+            z-index: 2;
+          }
+
+          &.calendar-dow-7 {
+            z-index: 1;
           }
 
           > .fc-date {
@@ -248,20 +276,19 @@
             white-space: nowrap;
             overflow: hidden;
 
-            > span {
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              overflow: hidden;
-            }
-
             &.span-left {
               margin-left: 0;
               border-top-left-radius: 0;
               border-bottom-left-radius: 0;
               padding-left: calc(.4em + .7rem);
+              text-overflow: clip;
 
               > span {
                 visibility: hidden;
+              }
+
+              @include media-breakpoint-down(xs) {
+                padding-left: 0.9rem;
               }
             }
 
@@ -270,6 +297,10 @@
               border-top-right-radius: 0;
               border-bottom-right-radius: 0;
               padding-right: calc(.4em + .7rem);
+
+              @include media-breakpoint-down(xs) {
+                padding-right: 0.9rem;
+              }
             }
 
             @include media-breakpoint-down(xs) {
@@ -282,6 +313,11 @@
                 text-transform: uppercase;
               }
             }
+          }
+
+          &:not(.calendar-dow-7) > .fc-title.span-right {
+            text-overflow: initial;
+            overflow: visible;
           }
 
           > .fc-content {
@@ -470,7 +506,7 @@
           justify-content: flex-start;
           align-items: center;
 
-          &.calendar-dow-6 {
+          &.calendar-dow-7 {
             border-bottom: 2px solid #c4c4c4;
           }
 

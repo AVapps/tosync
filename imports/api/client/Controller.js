@@ -7,8 +7,6 @@ import Planning from './lib/Planning.js'
 import RemuPNT from './lib/RemuPNT.js'
 import RemuPNC from './lib/RemuPNC.js'
 
-import { migrateEvents, needsMigration } from './lib/migrateEvents.js'
-
 import _ from 'lodash'
 import Swal from 'sweetalert2'
 import PifyMeteor from './lib/PifyMeteor'
@@ -28,7 +26,8 @@ Controller = {
   currentMonth: new ReactiveVar(Session.get('currentMonth'), _.isEqual),
 
 	selectedDay: new ReactiveVar(null, _.isEqual),
-	currentEventsCount: new ReactiveVar(0),
+  currentEventsCount: new ReactiveVar(0),
+  currentEvents: new ReactiveVar([]),
 
 	Calendar: null,
   Planning: null,
@@ -45,6 +44,14 @@ Controller = {
 
     this.Calendar = Calendar
     this.Calendar.init()
+    this.Calendar.onDayUpdated = (isoDate) => {
+      const day = Tracker.nonreactive(() => this.selectedDay.get())
+      if (day && day.slug === isoDate) {
+        // Refresh day modal content
+        console.log('REFRESH', isoDate)
+        this.setSelectedDay(this.Calendar.days.findOne({ slug: isoDate }, { reactive: false }))
+      }
+    }
 
     this.EventsSubs = null
 
@@ -115,7 +122,7 @@ Controller = {
             if (window.localStorage) {
               const key = [Meteor.userId(), 'isPNT'].join('.')
               localStorage.setItem(key, JSON.stringify({
-                lastCheckAt: +new Date(),
+                lastCheckAt: Date.now(),
                 value: r
               }))
             }
@@ -135,16 +142,19 @@ Controller = {
       // Rempli le calendrier avec les évènements du mois
       console.time('Controller.updateCalendarEventsObserver')
       const currentMonth = this.currentMonth.get()
-      const eventsCursor = Events.find({
-        userId: Meteor.userId(),
-        end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
-        start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
-      }, { sort: [['start', 'asc'], ['end', 'desc']] })
+      const userId = Meteor.userId()
+      console.log(currentMonth, userId)
+      Tracker.nonreactive(() => {
+        const eventsCursor = Events.find({
+          userId,
+          end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
+          start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
+        }, { sort: [['start', 'asc'], ['end', 'desc']] })
 
-      this.Calendar.observeEvents(eventsCursor)
-      this.Calendar.addBlancs()
+        this.Calendar.observeEvents(eventsCursor)
 
-      console.timeEnd('Controller.updateCalendarEventsObserver')
+        console.timeEnd('Controller.updateCalendarEventsObserver')
+      })
     })
 
     Tracker.autorun(() => {
@@ -180,58 +190,51 @@ Controller = {
       //   }
       // })
 
+      
       this.currentEventsCount.set(events.length)
+      this.currentEvents.set(events)
 
       console.log('Controller.eventsChanged', events)
 
-      Tracker.afterFlush(() => {
-        if (!this._stopPlanningCompute) {
-          console.time('Controller.calculPlanning')
-          this.Planning = new Planning(events, currentMonth)
-          console.timeEnd('Controller.calculPlanning')
+      if (!this._stopPlanningCompute) {
+        console.time('Controller.calculPlanning')
+        this.Planning = new Planning(events, currentMonth)
+        console.timeEnd('Controller.calculPlanning')
 
-          Tracker.autorun(() => {
-            const isPNT = this.isPNT()
+        Tracker.autorun(() => {
+          const isPNT = this.isPNT()
 
-            // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
+          // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
 
-            if (isPNT) {
-              if (HV100AF.ready() && HV100.ready()) {
-                this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
-                this._statsRemu.set(this.Remu.stats)
-                Tracker.autorun(() => {
-                  if (Config.ready()) {
-                    const profil = Config.get('profil')
-                    // console.log('Controller.profilChanged', profil)
-                    if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
-                      this.calculSalaire(this.Remu.stats, profil)
-                    } else {
-                      Meteor.call('getPayscale', (e, r) => {
-                        if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
-                          this._bareme = r
-                          this.calculSalaire(this.Remu.stats, profil)
-                        }
-                      })
-                    }
-                  } else {
-                    this._bareme = null
-                  }
-                })
-              }
-            } else if (HV100.ready()) {
-              this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+          if (isPNT) {
+            if (HV100AF.ready() && HV100.ready()) {
+              this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
               this._statsRemu.set(this.Remu.stats)
+              Tracker.autorun(() => {
+                if (Config.ready()) {
+                  const profil = Config.get('profil')
+                  // console.log('Controller.profilChanged', profil)
+                  if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
+                    this.calculSalaire(this.Remu.stats, profil)
+                  } else {
+                    Meteor.call('getPayscale', (e, r) => {
+                      if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
+                        this._bareme = r
+                        this.calculSalaire(this.Remu.stats, profil)
+                      }
+                    })
+                  }
+                } else {
+                  this._bareme = null
+                }
+              })
             }
-
-            // Refresh modal content
-            Tracker.nonreactive(() => {
-              if (this.selectedDay.get()) {
-                this.setSelectedDay(this.selectedDay.get())
-              }
-            })
-          })
-        }
-      })
+          } else if (HV100.ready()) {
+            this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+            this._statsRemu.set(this.Remu.stats)
+          }
+        })
+      }
 		})
   },
 
@@ -268,12 +271,17 @@ Controller = {
     if (day.tag && !day.allday) {
       if (day.tag === 'rotation') {
         day.events = _.map(day.events, evt => evt ? this.Remu.findEvent(evt): null)
-        day.etapes = _.filter(day.events, evt => _.has(evt, 'tag') && (evt.tag === 'vol' || evt.tag === 'mep'))
+        day.etapes = _.reduce(day.events, (etapes, evt) => {
+          if (evt.tag !== 'rotation' && _.isArray(evt.events) && evt.events.length) {
+            etapes.push(..._.filter(evt.events, sub => sub.tag === 'vol' || sub.tag === 'mep'))
+          } else if (evt.tag === 'vol' || evt.tag === 'mep') {
+            etapes.push(evt)
+          }
+          return etapes
+        }, [])
         day.rotation = _.find(day.events, { tag: 'rotation' })
         if (day.rotation) {
-          day.svs = _.filter(day.rotation.sv, sv => {
-            return sv.tsStart.hasSame(day.date, 'day') || sv.tsEnd.hasSame(day.date, 'day')
-          })
+          day.svs = _.filter(day.rotation.sv, sv => sv.tsStart.day === day.date.day || sv.tsEnd.day === day.date.day)
         } else {
           day.svs = {}
         }

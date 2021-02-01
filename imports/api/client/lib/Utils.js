@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { DateTime } from 'luxon';
+import { DateTime } from 'luxon'
 
 /**
 * Helper functions
@@ -254,84 +254,98 @@ export default {
 	tagLabel(tag) {
 		switch (tag) {
 			case 'rotation':
-				return 'Rotation';
+				return 'Rotation'
 			case 'vol':
-				return 'Vol';
+				return 'Vol'
+			case 'sv':
+				return 'SV'
 			case 'mep':
-				return 'MEP';
+				return 'MEP'
 			case 'conges':
-				return 'Congés';
+				return 'Congés'
 			case 'sanssolde':
-				return 'Sans solde';
+				return 'Sans solde'
 			case 'repos':
-				return 'Repos';
+				return 'Repos'
 			case 'jisap':
-				return 'JISAP';
+				return 'JISAP'
 			case 'maladie':
-				return 'Maladie';
+				return 'Maladie'
 			case 'greve':
-				return 'Grève';
+				return 'Grève'
 			case 'stage':
-				return 'Stage';
+				return 'Stage'
 			case 'instruction':
-				return 'Instruction';
+				return 'Instruction'
 			case 'instructionSol':
-				return 'Instruction Sol';
+				return 'Instruction Sol'
 			case 'simu':
-				return 'Simu';
+				return 'Simu'
 			case 'instructionSimu':
-				return 'Instruction Simu';
+				return 'Instruction Simu'
 			case 'reserve':
-				return 'Réserve';
+				return 'Réserve'
 			case 'delegation':
-				return 'Syndicat';
+				return 'Syndicat'
 			case 'sol':
-				return 'Activité sol';
+				return 'Activité sol'
 			case 'npl':
-				return 'NPL';
+				return 'NPL'
 			case 'autre':
-				return 'Autre';
+				return 'Autre'
 			default:
-				return ucfirst(tag);
+				return ucfirst(tag)
 		}
 	},
 
 	eventLabelClass(evt) {
-		return this.tagLabelClass(evt.tag);
+		return this.tagLabelClass(evt.tag)
 	},
 
 	tagLabelClass(tag) {
 		switch (tag) {
 			case 'conges':
-				return 'badge-conges';
+				return 'badge-conges'
 			case 'repos':
-				return 'badge-success';
+				return 'badge-success'
 			case 'rotation':
 			case 'vol':
 			case 'mep':
-				return 'badge-primary';
+			case 'sv':
+				return 'badge-primary'
 			case 'stage':
-				return 'badge-info';
+				return 'badge-stage'
 			case 'greve':
 			case 'maladie':
 			case 'absence':
 			case 'sanssolde':
 			case 'jisap':
+				return 'badge-warning'
 			case 'npl':
-				return 'badge-warning';
+				return 'badge-npl'
 			case 'reserve':
 			case 'sol':
 			case 'instructionSimu':
 			case 'instructionSol':
 			case 'simu':
 			case 'delegation':
-				return 'badge-danger';
+			case 'duty':
+				return 'badge-danger'
 			case 'autre':
-				return 'badge-secondary';
+				return 'badge-secondary'
 			case 'blanc':
-				return 'badge-light';
+				return 'badge-light'
 			default:
-				return 'badge-dark';
+				return 'badge-dark'
+		}
+	},
+
+	translate(summary) {
+		switch (summary) {
+			case 'Standard Duty':
+				return 'TS standard'
+			case 'Extended Duty':
+				return 'TS prolongé'
 		}
 	},
 
@@ -343,9 +357,10 @@ export default {
 			// Duty sol ou vol
 			switch (event.tag) {
 				case 'sv':
-					return [prefix, _.first(event.events).num, event.from, event.to, suffix].join('-')
 				case 'mep':
-					return [prefix, _.first(event.events).title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+					const first = _.first(event.events)
+					const title = (first.num || first.title).replace(/\W+/g, '-')
+					return [prefix, title, first.from, first.to, suffix].join('-')
 				default:
 					return [prefix, _.first(event.events).summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
 			}
@@ -361,11 +376,18 @@ export default {
 				case 'jisap':
 				case 'npl':
 				case 'absence':
-					return [prefix, suffix].join('-')
+					const endDate = DateTime.fromMillis(event.end)
+					if (endDate.hasSame(event.start, 'day')) {
+						return [prefix, suffix].join('-')
+					} else {
+						return [prefix, endDate.toISODate({ format: 'basic' }), suffix].join('-')
+					}
+					
 				case 'vol':
 					return [prefix, event.num, event.from, event.to, suffix].join('-')
 				case 'mep':
-					return [prefix, event.title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
+					const title = event.title || event.num
+					return [prefix, title.replace(/\W+/g, '_'), event.from, event.to, suffix].join('-')
 				default:
 					return [prefix, event.summary.replace(/\W+/g, '_'), DateTime.fromMillis(event.start).toFormat('HHmm'), suffix].join('-')
 			}
@@ -373,12 +395,12 @@ export default {
 	},
 
 	diffH(d, f) {
-		var min = f.diff(d, 'minutes') % 60;
-		return f.diff(d, 'hours') + 'h' + (min < 10 ? '0'+min : min);
+		var min = f.diff(d, 'minutes') % 60
+		return f.diff(d, 'hours') + 'h' + (min < 10 ? '0'+min : min)
 	},
 
 	ucfirst(str) {
-		return ucfirst(str);
+		return ucfirst(str)
 	},
 
   findTag(code) {

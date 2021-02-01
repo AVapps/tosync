@@ -51,7 +51,7 @@ Template.toolbar.events({
 
 	'click button.js-icalendar-import': function (e, t) {
 		e.preventDefault()
-		if (!Meteor.userId()) return App.warn("Non connecté !", "Vous devez vous connecter pour pouvoir importer un fichier ics.")
+		if (!Meteor.userId()) return App.warn("Non connecté !", "Vous devez être connecté pour pouvoir importer un fichier")
 		t.$('#filereader').trigger('click')
 	},
 

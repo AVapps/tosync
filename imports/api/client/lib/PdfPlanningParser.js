@@ -1,5 +1,5 @@
 import { DateTime, Duration, Settings } from 'luxon'
-import _ from 'lodash'
+import _, { first } from 'lodash'
 import Utils from './Utils.js'
 
 Settings.defaultLocale = 'fr'
@@ -372,7 +372,7 @@ export class PdfPlanningParser {
       console.log(vol.fin.toString())
     }
 
-    vol.realise = vol.fin < this.printedAt
+    vol.isRealise = vol.fin < this.printedAt
 
     this._duty.events.push(vol)
   }
@@ -688,6 +688,10 @@ export class PdfPlanningParser {
     rotation.debut = firstSV.debut
     rotation.fin = lastSV.fin
 
+    if (firstSV.fromHotel) {
+      rotation.isIncomplete = true
+    }
+
     if (_.isUndefined(rotation.base)) {
       if (_.includes(this.options.bases, firstSV.from)) {
         rotation.base = firstSV.from
@@ -731,6 +735,8 @@ export class PdfPlanningParser {
             && memo.fin.plus({ days: 1 }).hasSame(sol.debut, 'day')) {
             memo.fin = sol.fin
           } else {
+            memo.debut = memo.debut.startOf('day')
+            memo.fin = memo.fin.endOf('day')
             result.push(memo)
             memo = sol
           }
@@ -739,12 +745,19 @@ export class PdfPlanningParser {
         }
       } else {
         if (memo) {
+          memo.debut = memo.debut.startOf('day')
+          memo.fin = memo.fin.endOf('day')
           result.push(memo)
           memo = null
         }
         result.push(sol)
       }
     })
+    if (memo) {
+      memo.debut = memo.debut.startOf('day')
+      memo.fin = memo.fin.endOf('day')
+      result.push(memo)
+    }
     this.sols = result
   }
 

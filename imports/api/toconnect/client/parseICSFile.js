@@ -7,27 +7,22 @@ export default function (str) {
 
 	if (start === -1) return []
 
-	start += 13
-
-	str = str.substr(start).replace(/\r\n/g, '\n')
+	str = str.substring(start).replace(/\r\n/g, '\n')
 
 	const events = str.split(/END:VEVENT\s+BEGIN:VEVENT/).map((event) => {
 		const raw = {}
 		_.chain(event.split('\n'))
-			.filter(data => !!data)
-			.value()
-			.forEach(function (data) {
-				let i = data.indexOf(':')
-				let j = data.indexOf('')
-
-				if (i === -1) return
-
-				if (j === -1) {
-					j = i
+			.compact()
+			.forEach((data) => {
+				if (data.indexOf(':') !== -1) {
+					let [key, value] = data.split(':')
+					if (key.indexOf(';') !== -1) {
+						key = key.split(';').shift()
+					}
+					raw[key.trim()] = value.trim()
 				}
-
-				raw[data.substring(0, j)] = data.substr(i+1).trim()
 			})
+			.value()
 
     if (raw.STATUS == 'CANCELLED' || raw.SUMMARY.indexOf('UNKNOWN') !== -1) return
 

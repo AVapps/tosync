@@ -41,6 +41,7 @@ import '/imports/ui/events/vol.js'
 
 // Modal Templates
 import '/imports/ui/modal/default.js'
+import '/imports/ui/modal/allday.js'
 import '/imports/ui/modal/rotation.js'
 import '/imports/ui/modal/rotation/mainTab.js'
 import '/imports/ui/modal/rotation/remuA.js'

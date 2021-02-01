@@ -2,6 +2,8 @@ import SimpleSchema from 'simpl-schema'
 import { eventSchema } from './event.js'
 import { mepSchema } from './mep.js'
 import { volSchema } from './vol.js'
+import { peqSchema } from './peq.js'
+import { instructionSchema } from './instruction.js'
 
 const svSchema = new SimpleSchema({
   rotationId: {
@@ -17,26 +19,6 @@ const svSchema = new SimpleSchema({
   'events.$': {
     type: SimpleSchema.oneOf(mepSchema, volSchema),
   },
-  pnt: {
-    type: Array,
-    optional: true
-  },
-  'pnt.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
-  },
-  pnc: {
-    type: Array,
-    optional: true
-  },
-  'pnc.$': {
-    type: String,
-    regEx: /^[A-Z]{3}$/
-  },
-  instruction: {
-    type: Array,
-    optional: true
-  },
   hotel: {
     type: String,
     optional: true
@@ -44,5 +26,7 @@ const svSchema = new SimpleSchema({
 })
 
 svSchema.extend(eventSchema)
+svSchema.extend(peqSchema)
+svSchema.extend(instructionSchema)
 
 export { svSchema }

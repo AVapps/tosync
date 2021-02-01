@@ -1,6 +1,8 @@
 import _ from 'lodash'
 import { Meteor } from 'meteor/meteor'
+import { Tracker } from 'meteor/tracker'
 import { DateTime } from 'luxon'
+import Utils from './Utils'
 
 export default class Planning {
 	constructor(events, currentMonth) {
@@ -20,7 +22,7 @@ export default class Planning {
 					return true
 				} else {
 					console.log("Rotation vide !", rot)
-					Events.remove(rot._id)
+					// Events.remove(rot._id)
 				}
 			})
 			.forEach(rot => {
@@ -36,12 +38,102 @@ export default class Planning {
 	}
 
 	_groupEvents() {
-		const groups = this._groupedEvents = _.groupBy(this._events, 'tag');
+		const groups = this._groupedEvents = _.groupBy(this._events, 'tag')
+		console.log('Planning.groupEvents', groups)
+		if (_.has(groups, 'sv') && !_.isEmpty(groups.sv)) {
+			_.chain(this._events)
+				.filter(evt => {
+					return (evt.tag === 'sv' || evt.tag === 'mep') && _.has(evt, 'events') && _.has(evt, 'rotationId')
+				})
+				.sortBy('start')
+				.groupBy('rotationId')
+				.forEach((svs, rotationId) => {
+					let rotation = _.find(groups.rotation, { _id: rotationId })
+					if (!rotation) {
+						console.log('Rotation introuvable !', rotationId, svs)
+						const start = _.first(svs).start
+						const end = _.last(svs).end
+						rotation = {
+							_id: rotationId,
+							tag: 'rotation',
+							userId: Meteor.userId(),
+							start,
+							end,
+							slug: Utils.slug({ tag: 'rotation', start, end }),
+							base: _.first(_.first(svs).events).from,
+							created: Date.now()
+						}
+
+						Tracker.nonreactive(() => {
+							rotation._id = Events.insert(rotation)
+							if (rotation._id != rotationId) {
+								console.log('ID changed', newRotationId)
+								_.forEach(svs, sv => Events.update(sv._id, { $set: { rotationId: newRotationId } }))
+							}
+						})
+						
+						groups['rotation'].push(rotation)
+					}
+
+					rotation.events = _.flatMap(svs, sv => sv.events)
+					rotation.sv = _.map(svs, sv => {
+						const etapes = sv.events
+						const counts = _.defaults(_.countBy(etapes, 'tag'), { vol: 0, mep: 0 })
+
+						if (counts.vol === 0 && counts.mep === 0) {
+							console.log('!!! SV sans aucune etape !!!')
+						}
+
+						return _.assign(sv, {
+							type: sv.tag,
+							countVol: counts.vol,
+							countMEP: counts.mep
+						})
+					})
+
+					if (rotation.sv.length >= 2) {
+						rotation.decouchers = _.reduce(rotation.sv, (dec, sv, index, col) => {
+							if (index === 0) {
+								const last = _.last(sv.events)
+								dec.push({
+									start: last.end,
+									to: last.to
+								})
+							} else {
+								const first = _.first(sv.events)
+								const prev = _.last(dec)
+								if (DateTime.fromMillis(first.start).diff(DateTime.fromMillis(prev.start)).as('hours') >= 8) {
+									prev.end = first.start
+									prev.duree = DateTime.fromMillis(prev.end).diff(DateTime.fromMillis(prev.start)).as('hours')
+									col[index - 1].stop = prev
+								} else {
+									dec.pop()
+								}
+								if (index < (col.length - 1)) { // Skip last sv
+									const last = _.last(sv.events)
+									dec.push({
+										start: last.end,
+										to: last.to
+									})
+								}
+							}
+							return dec
+						}, [])
+					} else {
+						rotation.decouchers = []
+					}
+				})
+				.value()
+		}
+
     if (_.has(groups, 'vol') || _.has(groups, 'mep')) {
-      _.chain((groups.vol || []).concat(groups.mep || []))
+			_.chain(this._events)
+				.filter(evt => {
+					return (evt.tag === 'vol' || evt.tag === 'mep') && _.has(evt, 'svIndex')
+				})
         .sortBy('start')
   			.groupBy('rotationId')
-  			.forEach(function (evts, rotationId) {
+  			.forEach((evts, rotationId) => {
           const rotation = _.find(groups.rotation, { _id: rotationId })
   				if (rotation) {
             rotation.events = evts
@@ -98,25 +190,13 @@ export default class Planning {
             }
   				} else {
   					console.log('Rotation introuvable !', rotationId, evts)
-  					Meteor.defer(() => {
-  						Controller.reparseEventsOfCurrentMonth()
-  					})
+  					// Meteor.defer(() => {
+  					// 	Controller.reparseEventsOfCurrentMonth()
+  					// })
   				}
-  			})
-  			.value();
+				})
+				.value()
     }
-	}
-
-	_checkEvents() {
-		return _.every(this._events, function (evt) {
-			switch (evt.tag) {
-				case 'vol':
-				case 'mep':
-					return _.has(evt, 'rotationId');
-				default:
-					return true;
-			}
-		});
 	}
 
 	_checkDuplicates() {
@@ -165,6 +245,9 @@ export default class Planning {
 			if (latest) actualEnd = latest.end
 			events = this._filterEventsByDates(this._events, actualStart, actualEnd)
 		}
+		// Extraire les SV/duty et ajouter les vols / mep / activités sol
+		const duties = _.remove(events, evt => _.has(evt, 'events'))
+		events.push(...(_.flatMap(duties, duty => duty.events)))
 		return events
 	}
 }

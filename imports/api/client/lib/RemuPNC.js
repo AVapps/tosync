@@ -110,8 +110,8 @@ export default class RemuPNC {
 
   filterDaysByMonth(days) {
     const monthObject = _.extend({ zone: TIMEZONE }, this.month)
-    const dateDebut = DateTime.fromObject(monthObject).startOf('month').toFormat('yyyy-MM-dd')
-    const dateFin = DateTime.fromObject(monthObject).endOf('month').toFormat('yyyy-MM-dd')
+    const dateDebut = DateTime.fromObject(monthObject).startOf('month').toISODate()
+    const dateFin = DateTime.fromObject(monthObject).endOf('month').toISODate()
     return _.filter(days, day => (day.date >= dateDebut && day.date <= dateFin))
   }
 
@@ -131,9 +131,20 @@ export default class RemuPNC {
 
     const data = this.eventsByTag
     const month = this.month.month
+    const monthObject = _.extend({ zone: TIMEZONE }, this.month)
+    const debutMois = DateTime.fromObject(monthObject).startOf('month')
+    const finMois = DateTime.fromObject(monthObject).endOf('month')
 
     _.forEach(_.omit(Utils.tags, 'stage', 'sol', 'simu', 'instructionSol', 'instructionSimu', 'reserve', 'delegation', 'vol', 'mep'), tag => {
-      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => (toDateTime(evt.start).month === month) ? 1 : 0) : 0
+      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => {
+        if (evt.end >= debutMois && evt.start <= finMois) {
+          const debut = DateTime.max(evt.debut || toDateTime(evt.start), debutMois)
+          const fin = DateTime.min(evt.fin || toDateTime(evt.end), finMois)
+          return fin.startOf('day').diff(debut.startOf('day')).as('days') + 1
+        } else {
+           return 0
+        }
+      }) : 0
     })
 
     if (_.has(this.eventsByTag, 'stage') && _.get(this.eventsByTag, 'stage').length) {
@@ -231,7 +242,7 @@ export default class RemuPNC {
             evt.fin = toDateTime(evt.end)
           }
 
-          const day = evt.debut.toFormat('yyyy-MM-dd')
+          const day = evt.debut.toISODate()
           if (_.has(eventsByDay, day)) {
             eventsByDay[day].push(evt)
           } else {
@@ -418,7 +429,7 @@ export default class RemuPNC {
       tsvEnd: sv.countVol ? lastVol.finR.plus({ hours: postTsv }) : first.debut.minus({ hours: preTsv })
 		})
 
-    if (sv.type === 'vol') {
+    if (sv.type === 'vol' || sv.tag === 'sv') {
       sv.debut = toDateTime((first.tag === 'vol' ? first.real : first).start)
       sv.debutTR = DateTime.fromMillis(first.tag === 'vol' ? Math.min(first.start, first.real.start) : first.start, { zone: TIMEZONE }).minus({ hours: CONFIG_TO.preTR })
       sv.finTRprog = toDateTime(lastVol.end).plus({ hours: CONFIG_TO.postTR })
@@ -517,7 +528,7 @@ export default class RemuPNC {
 
       while (date <= evt.fin) {
         if (date.month === month) {
-          dates.push(date.toFormat('yyyy-MM-dd'))
+          dates.push(date.toISODate())
         }
         date = date.plus({ days: 1 })
       }

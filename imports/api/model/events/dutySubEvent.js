@@ -1,5 +1,5 @@
 import SimpleSchema from 'simpl-schema'
-import Utils from '/Users/adrienv/Dev/tosync/tosync-meteor/imports/api/client/lib/Utils.js'
+import Utils from '/imports/api/client/lib/Utils.js'
 
 export const dutySubEventSchema = new SimpleSchema({
   tag: {

@@ -1,8 +1,8 @@
 import { Template } from 'meteor/templating'
 import './mainTab.html'
-import AirportsData from '/imports/api/client/lib/AirportsData.js'
 import _ from 'lodash'
 import { DateTime } from 'luxon'
+import AirportsData from '/imports/api/client/lib/AirportsData.js'
 
 function mapCrew(list) {
   return _.map(list, trigramme => {
@@ -80,10 +80,7 @@ Template.volsTableRow.events({
 		const time = e.currentTarget.value
 		if (time) {
 			const field = e.currentTarget.name
-			const isReal = field.indexOf('real') != -1
 			const [hour, minute] = time.split(':')
-
-			// console.log(field, isReal, time, hour, minute)
 
 			if (field == 'start') {
 				const start = DateTime.fromMillis(_.get(t.data.vol, field)).set({ hour, minute })
@@ -94,13 +91,6 @@ Template.volsTableRow.events({
 						start: start.valueOf(),
 						end: end.valueOf()
 					}
-				}
-
-				if (!t.data.vol.real) {
-					_.extend(set.set, {
-						'real.start': start.valueOf(),
-						'real.end': end.valueOf()
-					})
 				}
 
 				t.$(e.currentTarget).trigger('set.tosync', set)
@@ -118,14 +108,6 @@ Template.volsTableRow.events({
 					set: {
 						end: end.valueOf()
 					}
-				}
-
-				if (!t.data.vol.real) {
-					_.extend(set.set, {
-						end: end.valueOf(),
-						'real.start': start,
-						'real.end': end.valueOf()
-					})
 				}
 
 				t.$(e.currentTarget).trigger('set.tosync', set)
@@ -154,7 +136,7 @@ Template.volsTableRow.events({
 				if (t.data.vol.real && t.data.vol.real.start) {
 					const realStart = _.get(t.data.vol, 'real.start')
 					let realEnd = DateTime.fromMillis(_.get(t.data.vol, 'real.end')).set({ hour, minute })
-					if (+realEnd < realStart) {
+					if (realEnd < realStart) {
 						realEnd = realEnd.plus({ day: 1 })
 					}
 					t.$(e.currentTarget).trigger('set.tosync', { event: t.data.vol, set: { [field]: realEnd.valueOf() }})
@@ -165,7 +147,8 @@ Template.volsTableRow.events({
 	},
 
     'click .remove-button': function (e,t) {
-		    t.$('tr').trigger('removeEvent.tosync', this.vol._id).fadeOut()
+				t.$(e.currentTarget).trigger('removeEvent.tosync', this.vol)
+				t.$('tr').fadeOut()
     }
 })
 

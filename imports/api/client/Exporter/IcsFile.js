@@ -23,7 +23,7 @@ export class IcsFile {
 		]
 
 		this.daysMap = []
-		this.DTSTAMP = DateTime.utc().toISO(ISO_DATETIME_FORMAT)
+		this.DTSTAMP = DateTime.utc().startOf('minute').toISO(ISO_DATETIME_FORMAT)
 		const filteredEvents = Export.filterEventsByTags(this.events, tags)
 
 		_.forEach(filteredEvents, (event) => {
@@ -97,9 +97,11 @@ export class IcsFile {
 	}
 
 	addDates(evt, vevt) {
-		const date = DateTime.fromMillis(evt.start).startOf('day')
-		vevt.push("DTSTART;VALUE=DATE:" + date.toISODate(ISO_DATE_FORMAT))
-		vevt.push("DTEND;VALUE=DATE:" + date.plus({ day: 1 }).toISODate(ISO_DATE_FORMAT))
+		const debut = DateTime.fromMillis(evt.start).startOf('day')
+		const fin = DateTime.fromMillis(evt.end).startOf('day').plus({ day: 1 })
+
+		vevt.push("DTSTART;VALUE=DATE:" + debut.toISODate(ISO_DATE_FORMAT))
+		vevt.push("DTEND;VALUE=DATE:" + fin.toISODate(ISO_DATE_FORMAT))
 		return vevt
 	}
 
