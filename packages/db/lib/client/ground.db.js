@@ -144,8 +144,8 @@ Ground.Collection = class GroundCollection {
                   Kernel.defer(() => {
 
                     // Add the document to minimongo
-                    if (!this._collection._docs._map[id]) {
-                      this._collection._docs._map[id] = EJSON.fromJSONValue(doc);
+                    if (!this._collection._docs.has(id)) {
+                      this._collection._docs._map.set(id,EJSON.fromJSONValue(doc));
 
                       // Invalidate the observers pr. document
                       // this call is throttled
@@ -211,9 +211,9 @@ Ground.Collection = class GroundCollection {
   setDocument(doc, remove) {
     doc._id = strId(doc._id);
     if (remove) {
-      delete this._collection._docs._map[doc._id];
+      this._collection._docs._map.delete(doc._id);
     } else {
-      this._collection._docs._map[doc._id] = EJSON.clone(doc);
+      this._collection._docs._map.set(doc._id,EJSON.clone(doc));
     }
     this.invalidate();
   }
@@ -321,7 +321,7 @@ Ground.Collection = class GroundCollection {
 
   clear() {
     this.storage.clear();
-    this._collection._docs._map = {};
+    this._collection._docs._map = new Map();
     this.invalidate();
   }
 
@@ -332,13 +332,13 @@ Ground.Collection = class GroundCollection {
   keep(cursors) {
     const arrayOfCursors = (Array.isArray(cursors)) ? cursors : [cursors];
     // Map the ground db storage into an array of id's
-    const currentIds = Object.keys(this._collection._docs._map);
+    const currentIds = [...this._collection._docs._map.keys()];
     // Map each cursor id's into one flat array
     const keepIds = arrayOfCursors.map((cursor) => cursor.map((doc) => strId(doc._id))).flat();
     // Remove all other documents from the collection
     difference(currentIds, keepIds).forEach((id) => {
       // Remove it from in memory
-      delete this._collection._docs._map[id];
+      this._collection._docs._map.delete(id);
       // Remove it from storage
       this.saveDocument({ _id: id }, true);
     });
@@ -346,8 +346,13 @@ Ground.Collection = class GroundCollection {
     this.invalidate();
   }
 
+  // convert _docs map to JSON 
   toJSON() {
-    return JSON.stringify(this._collection._docs._map);
+    const obj = {}
+    for (let [clef, valeur] of this._collection._docs._map) {
+      obj[clef] = valeur;
+    }
+    return JSON.stringify(obj);
   }
 
   // Simulate the Event Emitter Api "once"

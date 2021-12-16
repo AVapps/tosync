@@ -118,7 +118,7 @@ Calendar = {
   			weekday: WEEKDAYS[dow].short,
   			day: '',
   			dof: dow,
-        classes: i <= 34 ? [] : ['hidden'],,
+        classes: i <= 34 ? [] : ['hidden'],
         events: []
       })
     }
