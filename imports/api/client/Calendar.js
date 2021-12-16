@@ -105,10 +105,8 @@ Calendar = {
   buildEmptyCalendar() {
     // Clear calendar
     this.days.remove({})
-
     const now = DateTime.local()
-
-    for (let i = 0; i <= 34; i++) {
+    for (let i = 0; i <= 41; i++) {
       const dow = (i % 7) + 1
       this.days.insert({
         index: i,
@@ -120,24 +118,7 @@ Calendar = {
   			weekday: WEEKDAYS[dow].short,
   			day: '',
   			dof: dow,
-  			classes: [],
-        events: []
-      })
-    }
-
-    for (let i = 35; i <= 41; i++) {
-      const dow = (i % 7) + 1
-      this.days.insert({
-        index: i,
-        tag: '',
-        allday: false,
-        label: '',
-        date: now,
-        slug: i,
-        weekday: WEEKDAYS[dow].short,
-        day: '',
-        dof: dow,
-        classes: ['hidden'],
+        classes: i <= 34 ? [] : ['hidden'],,
         events: []
       })
     }
