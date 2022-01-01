@@ -11,9 +11,9 @@
         </h4>
         <h5 class="card-subtitle mb-2 text-muted">
           {{#if recuperationMode }}
-            Suite à la fermeture de TO.connect il est recommandé de créer des identifiants spécifiques TO.sync. Ceux-ci vous permettront de vous connecter à votre compte TO.sync si vos identifiants TO.connect ne fonctionnent plus.
+            Suite à la fermeture de TO.connect il est nécessaire de créer des identifiants spécifiques TO.sync.
           {{/if}}
-          Entrez votre trigramme et votre adresse électronique professionnelle ci-dessous puis cliquez sur « Envoyer ».
+          Entrez votre adresse électronique professionnelle ci-dessous puis cliquez sur « Envoyer ».
         </h5>
         <p class="card-text"></p>
         <div class="row justify-content-center">
@@ -24,11 +24,7 @@
               </div>
             {{ else }}
               <form id="inscription">
-                <input name="trigramme" type="text" value="" placeholder="Trigramme" class="form-control mb-2 text-uppercase" maxlength="3" pattern="[A-z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }} required />
-
                 <input name="email" type="email" autocomplete="email" value="" placeholder="prenom.nom@fr.transavia.com" class="form-control mb-2" pattern="^[a-z._\-]+@fr.transavia.com$" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }} required />
-                
-
                 <button type="submit" class="btn btn-primary btn-block js-user-subscribe ladda-button"
                   data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
                   <span class="ladda-label">Envoyer</span>

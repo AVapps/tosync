@@ -80,40 +80,71 @@ export const getEventsInterval = new ValidatedMethod({
 export const subscribeUser = new ValidatedMethod({
   name: 'tosync.subscribeUser',
   validate: new SimpleSchema({
-    trigramme: { type: String, regEx: /^[A-z]{3}$/ },
     email: { type: String, regEx: /^[a-z._\-]+@fr.transavia.com$/ }
   }).validator(),
-  run({ trigramme, email }) {
+  run({ email }) {
     if (this.isSimulation) return
     
-    const pn = PN.findOne({ trigramme, email })
+    const pn = PN.findOne({ email })
     if (pn) {
-      const user = Accounts.findUserByUsername(trigramme, { _id: 1, emails: 1 })
+      const user = Accounts.findUserByUsername(pn.trigramme, { _id: 1, emails: 1 })
       if (user) {
+        console.log('tosync.subscribeUser', `Récupération du compte : ${email} - ${pn.trigramme} [${user._id}]`)
         if (!_.isArray(user.emails) || !_.find(user.emails, email => email.address == pn.email)) {
           Accounts.addEmail(user._id, pn.email, false)
         }
         Accounts.sendEnrollmentEmail(user._id, pn.email)
       } else {
-        const userId = Accounts.createUser({
-          username: pn.trigramme,
-          email: pn.email,
-          profile: {
+        const userByEmail = Accounts.findUserByEmail(email, { _id: 1, emails: 1 })
+        if (userByEmail) {
+          console.log('tosync.subscribeUser', `Récupération du compte avec changement du username : ${email} - ${pn.trigramme} [${userByEmail._id}]`)
+          Accounts.setUsername(userByEmail._id, pn.trigramme)
+          Accounts.sendEnrollmentEmail(userByEmail._id, pn.email)
+        } else {
+          console.log('tosync.subscribeUser', `Création d'un nouveau compte pour : ${email} - ${pn.trigramme}`)
+          const userId = Accounts.createUser({
+            username: pn.trigramme,
             email: pn.email,
-            fonction: pn.fonction,
-            nom: pn.nom,
-            prenom: pn.prenom,
-            name: [ pn.prenom, pn.nom ].join(' ')
-          }
-        })
-        Accounts.sendEnrollmentEmail(userId, pn.email)
+            profile: {
+              email: pn.email,
+              fonction: pn.fonction,
+              nom: pn.nom,
+              prenom: pn.prenom,
+              name: [ pn.prenom, pn.nom ].join(' ')
+            }
+          })
+          Accounts.sendEnrollmentEmail(userId, pn.email)
+        }
       }
       return { success: true }
     } else {
-      throw new Meteor.Error('pn-inconnu', "Aucun couple « trigramme / adresse électronique » correspondant n'a été trouvé !")
+      const user = Accounts.findUserByEmail(email, { _id: 1, emails: 1 })
+      if (user) {
+        console.log('tosync.subscribeUser', `Un compte existe déjà pour l'adresse ${email}`)
+        throw new Meteor.Error('tosync.subscribeUser.alreadySubscribed', 'Un compte existe déjà pour cette adresse email.')
+      } else {
+        console.log('tosync.subscribeUser', `Création d'un nouveau compte pour : ${email}`)
+        const [ prenom, nom ] = email.split('@')[0].split('.')
+        Accounts.createUserVerifyingEmail({
+          username: email,
+          email,
+          profile: {
+            email,
+            name: [ capitalizeName(prenom), capitalizeName(nom) ].join(' '),
+            nom: capitalizeName(nom),
+            prenom: capitalizeName(prenom)
+          }
+        })
+        return { success: true }
+      }
     }
   }
 })
+
+function capitalizeName(name) {
+  return name
+    .split('-').map(_.capitalize).join('-')
+}
 
 function isAdmin(userId = Meteor.userId()) {
   if (userId) {

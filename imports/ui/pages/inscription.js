@@ -19,16 +19,15 @@ Template.inscription.events({
     t.state.set('errorMessage', '')
 
     if (e.currentTarget.checkValidity()) {
-      const trigramme = t.find('input[name=trigramme]').value.toUpperCase()
       const email = t.find('input[name=email]').value
       const l = Ladda.create(t.find('button.js-user-subscribe'))
       l.start()
 
-      subscribeUser.call({ trigramme, email }, (err, res) => {
+      subscribeUser.call({ email }, (err, res) => {
         if (err) {
           switch (err.error) {
-            case 'pn-inconnu':
-              t.state.set('errorMessage', `Le couple ( ${ trigramme } / ${ email } ) ne correspond à aucun PN connu. S'il s'agit d'une erreur, veuillez envoyer un e-mail à <a href="mailto:contact@avapps.fr" target="blank">contact@avapps.fr</a> en précisant vos nom, prénom, trigramme et fonction.`)
+            case 'tosync.subscribeUser.alreadySubscribed':
+              t.state.set('errorMessage', `Un compte existe déjà pour cette adresse email.`)
               break
             default:
               Notify.error(err)
@@ -36,7 +35,6 @@ Template.inscription.events({
         } else if (res.success) {
           t.state.set('emailSent', true)
         }
-        t.find('input[name=trigramme]').value = ''
         t.find('input[name=email]').value = ''
         l.stop()
       })
