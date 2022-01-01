@@ -21,6 +21,26 @@ const isPNT = new ReactiveVar(false)
 
 Session.setDefault('currentMonth', { year: NOW.year, month: NOW.month })
 
+function checkIsPnt() {
+  console.time('Controller.isPNT')
+  Meteor.call('isPNT', (e, r) => {
+    if (!e && _.isBoolean(r)) {
+      isPNT.set(r)
+      console.log('Controller.isPNT', r)
+      if (window.localStorage) {
+        const key = [Meteor.userId(), 'isPNT'].join('.')
+        localStorage.setItem(key, JSON.stringify({
+          lastCheckAt: +new Date(),
+          value: r
+        }))
+      }
+    } else {
+      isPNT.set(false)
+    }
+    console.timeEnd('Controller.isPNT')
+  })
+}
+
 Controller = {
 	eventsStart: DateTime.local(),
   eventsEnd: DateTime.local(),
@@ -110,29 +130,12 @@ Controller = {
           const cachedIsPNT = JSON.parse(localStorage.getItem(key))
           if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
             const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
-            if (NOW.diff(lastCheckAt).as('days') < 10) {
+            if (NOW.diff(lastCheckAt).as('days') < 7) {
               return isPNT.set(_.get(cachedIsPNT, 'value'))
             }
           }
         }
-
-        console.time('Controller.isPNT')
-        Meteor.call('isPNT', (e, r) => {
-          if (!e && _.isBoolean(r)) {
-            isPNT.set(r)
-            console.log('Controller.isPNT', r)
-            if (window.localStorage) {
-              const key = [Meteor.userId(), 'isPNT'].join('.')
-              localStorage.setItem(key, JSON.stringify({
-                lastCheckAt: +new Date(),
-                value: r
-              }))
-            }
-          } else {
-            isPNT.set(false)
-          }
-          console.timeEnd('Controller.isPNT')
-        })
+        checkIsPnt()
       } else {
         isPNT.set(false)
       }
@@ -300,6 +303,7 @@ Controller = {
     } catch (error) {
       console.log(error)
     } finally {
+      checkIsPnt()
       this._stopPlanningCompute = false
     }
   },

@@ -5,28 +5,24 @@ import '/imports/lib/moment-ejson.js'
 import _ from 'lodash'
 
 function isPNT(userId) {
-  const events = Events.find({
-    userId,
-    tag: 'vol'
-  }, {
-    limit: 30,
-    sort: [['updated', 'desc']],
-    fields: { userId: 1, updated: 1, pnt: 1 }
-  }).fetch()
-
-  const username = Meteor.user().username
-  const score = _.reduce(events, (result, evt) => {
-    if (!_.isEmpty(evt.pnt)) {
-      if (_.includes(evt.pnt, username)) {
-        result.isPNT += 1
-      } else {
-        result.isNotPNT += 1
-      }
-    }
-    return result
-  }, { isPNT: 0, isNotPNT: 0 })
-
-  return score.isPNT > score.isNotPNT
+  const events = Events
+		.find({
+			userId,
+			tag: 'vol'
+		}, {
+			limit: 30,
+			sort: [['updated', 'desc']],
+			fields: { userId: 1, updated: 1, pnt: 1 }
+		})
+		.fetch()
+		.filter(evt => evt.pnt?.length)
+		.map(evt => evt.pnt)
+	
+	if (events.length < 3) return false
+	
+	const counts = _.values(_.countBy(_.flatten(events)))
+	
+  return _.find(counts, c => c > events.length / 2) ? true : false
 }
 
 Meteor.methods({
@@ -49,7 +45,7 @@ Meteor.methods({
 		check(this.userId, Match.OneOf(String, Object))
 		const user = Meteor.user()
 		if (_.has(user, 'isPNT.checkedAt')) {
-			if (DateTime.local().diff(DateTime.fromMillis(_.get(user, 'isPNT.checkedAt'))).as('days') > 30) {
+			if (DateTime.local().diff(DateTime.fromMillis(_.get(user, 'isPNT.checkedAt'))).as('days') > 3) {
 				const _isPNT = isPNT(this.userId)
 				Meteor.users.update(this.userId, {
 					$set: {
