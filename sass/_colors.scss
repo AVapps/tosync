@@ -1,9 +1,16 @@
-.event.label {
-    &.label-repos {
-        background-color: #4ddec1;
+.badge{
+    &.badge-conges {
+        background-color: darken($success, 30%);
+        color: #ffffff;
     }
 
-    &.label-success {
-        background-color: darken(#4ddec1, 30%);
+    &.badge-npl {
+        background-color: #ff8d00;
+        color: #ffffff;
+    }
+
+    &.badge-stage {
+        background-color: darken($danger, 30%);
+        color: #ffffff;
     }
 }

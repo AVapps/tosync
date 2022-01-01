@@ -71,6 +71,11 @@ Template.modal.events({
 });
 
 Template.modal.helpers({
+	fullDate() {
+		const selectedDay = Controller.selectedDay.get()
+		return selectedDay ? selectedDay.date.toLocaleString(DateTime.DATE_HUGE).replace(/ 1 /g, ' 1er ') : ''
+	},
+	
 	selectedDay() {
     return Controller.selectedDay.get();
 	},

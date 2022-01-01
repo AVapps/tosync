@@ -110,8 +110,8 @@ export default class RemuPNC {
 
   filterDaysByMonth(days) {
     const monthObject = _.extend({ zone: TIMEZONE }, this.month)
-    const dateDebut = DateTime.fromObject(monthObject).startOf('month').toFormat('yyyy-MM-dd')
-    const dateFin = DateTime.fromObject(monthObject).endOf('month').toFormat('yyyy-MM-dd')
+    const dateDebut = DateTime.fromObject(monthObject).startOf('month').toISODate()
+    const dateFin = DateTime.fromObject(monthObject).endOf('month').toISODate()
     return _.filter(days, day => (day.date >= dateDebut && day.date <= dateFin))
   }
 
@@ -231,7 +231,7 @@ export default class RemuPNC {
             evt.fin = toDateTime(evt.end)
           }
 
-          const day = evt.debut.toFormat('yyyy-MM-dd')
+          const day = evt.debut.toISODate()
           if (_.has(eventsByDay, day)) {
             eventsByDay[day].push(evt)
           } else {
@@ -517,7 +517,7 @@ export default class RemuPNC {
 
       while (date <= evt.fin) {
         if (date.month === month) {
-          dates.push(date.toFormat('yyyy-MM-dd'))
+          dates.push(date.toISODate())
         }
         date = date.plus({ days: 1 })
       }

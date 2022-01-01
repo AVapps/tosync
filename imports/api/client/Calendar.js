@@ -32,6 +32,7 @@ Calendar = {
 	end: DateTime.local(),
 
 	days: new Mongo.Collection(null),
+  onDayUpdated: () => {},
 
 	init: function () {
 		this.buildEmptyCalendar()
@@ -159,7 +160,7 @@ Calendar = {
           if (doc.debut.hasSame(doc.fin, 'day')) {
             this.updateEventFromDate(doc, doc.debut)
           } else {
-            let cursor = doc.start
+            let cursor = doc.debut
             while (cursor.startOf('day') <= doc.fin.startOf('day')) {
               this.updateEventFromDate(doc, cursor)
               cursor = cursor.plus({ day: 1 })
@@ -193,41 +194,40 @@ Calendar = {
 
   addBlancs() {
     const weekday = DateTime.local().weekday
-    const maxDate = DateTime.local().set({ weekday : weekday >= 4 ? 4 : -3 }).plus({ days: 31 }).toFormat('yyyy-MM-dd')
+    const maxDate = DateTime.local().set({ weekday : weekday >= 4 ? 4 : -3 }).plus({ days: 31 }).toISODate()
     this.days.update({ events: [], slug: { $lte: maxDate }}, {
       $set: { tag: 'blanc', allday: true, label: 'Blanc' }
     }, { multi: true })
   },
 
   addEventToDate(doc, date) {
-    const slug = date.toFormat('yyyy-MM-dd')
-    Tracker.nonreactive(() => {
-      const day = this.days.findOne({ slug })
-      if (!day) return
+    const slug = date.toISODate()
+    const day = this.days.findOne({ slug })
+    if (!day) return
 
-      const found = _.find(day.events, { _id: doc._id })
-      if (found) {
-        this.updateEventFromDate(doc, date)
-      } else {
-        const position = _.findIndex(day.events, evt => evt.start > doc.start)
-        const params = this.getDayParams([doc].concat(day.events))
+    const found = _.find(day.events, { _id: doc._id })
+    if (found) {
+      this.updateEventFromDate(doc, date)
+    } else {
+      const position = _.findIndex(day.events, evt => evt.start > doc.start)
+      const params = this.getDayParams([doc].concat(day.events))
 
-        this.days.update({ slug }, {
-          $push: {
-            events: {
-              $each: [ doc ],
-              $position: position !== -1 ? position : day.events.length
-            }
-          },
-          $addToSet: { classes: 'event' },
-          $set: params
-        })
-      }
-    })
+      this.days.update({ slug }, {
+        $push: {
+          events: {
+            $each: [ doc ],
+            $position: position !== -1 ? position : day.events.length
+          }
+        },
+        $addToSet: { classes: 'event' },
+        $set: params
+      })
+    }
+    this.onDayUpdated(slug)
   },
 
   removeEventFromDate(doc, date) {
-    const slug = date.toFormat('yyyy-MM-dd')
+    const slug = date.toISODate()
     const day = this.days.findOne({ slug })
     if (!day) return
     const updatedEvents = _.reject(day.events, { _id: doc._id })
@@ -244,10 +244,11 @@ Calendar = {
         $set: params
       })
     }
+    this.onDayUpdated(slug)
   },
 
   updateEventFromDate(doc, date) {
-    const slug = date.toFormat('yyyy-MM-dd')
+    const slug = date.toISODate()
     const day = this.days.findOne({ slug })
     if (!day) return
     const updatedEvents = _.reject(day.events, { _id: doc._id })
@@ -259,6 +260,7 @@ Calendar = {
         'events.$': doc
       })
     })
+    this.onDayUpdated(slug)
   },
 
   getDayParams(events) {

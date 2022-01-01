@@ -23,7 +23,7 @@ export class IcsFile {
 		]
 
 		this.daysMap = []
-		this.DTSTAMP = DateTime.utc().toISO(ISO_DATETIME_FORMAT)
+		this.DTSTAMP = DateTime.utc().startOf('minute').toISO(ISO_DATETIME_FORMAT)
 		const filteredEvents = Export.filterEventsByTags(this.events, tags)
 
 		_.forEach(filteredEvents, (event) => {

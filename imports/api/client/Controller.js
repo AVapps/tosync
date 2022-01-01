@@ -46,6 +46,15 @@ Controller = {
     this.Calendar = Calendar
     this.Calendar.init()
 
+    this.Calendar.onDayUpdated = (isoDate) => {
+      const day = Tracker.nonreactive(() => this.selectedDay.get())
+      if (day && day.slug === isoDate) {
+        // Refresh day modal content
+        console.log('REFRESH', isoDate)
+        this.setSelectedDay(this.Calendar.days.findOne({ slug: isoDate }, { reactive: false }))
+      }
+    }
+
     this.EventsSubs = null
 
     // Autoruns
@@ -135,14 +144,18 @@ Controller = {
       // Rempli le calendrier avec les évènements du mois
       console.time('Controller.updateCalendarEventsObserver')
       const currentMonth = this.currentMonth.get()
-      const eventsCursor = Events.find({
-        userId: Meteor.userId(),
-        end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
-        start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
-      }, { sort: [['start', 'asc'], ['end', 'desc']] })
+      const userId = Meteor.userId()
+      console.log(currentMonth, userId)
+      Tracker.nonreactive(() => {
+        const eventsCursor = Events.find({
+          userId,
+          end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
+          start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
+        }, { sort: [['start', 'asc'], ['end', 'desc']] })
 
-      this.Calendar.observeEvents(eventsCursor)
-      this.Calendar.addBlancs()
+        this.Calendar.observeEvents(eventsCursor)
+        this.Calendar.addBlancs()
+      })
 
       console.timeEnd('Controller.updateCalendarEventsObserver')
     })
@@ -168,70 +181,49 @@ Controller = {
       }, { sort: [['start', 'asc'], ['end', 'desc']] })
       const events = eventsCursor.fetch()
 
-      // Transform events
-      // _.forEach(events, doc => {
-      //   _.extend(doc, {
-      //     start: moment(doc.start),
-      //     end: moment(doc.end)
-      //   })
-      //   if (doc.real) {
-      //     if (doc.real.start) doc.real.start = moment(doc.real.start)
-      //     if (doc.real.end) doc.real.end = moment(doc.real.end)
-      //   }
-      // })
-
       this.currentEventsCount.set(events.length)
 
       console.log('Controller.eventsChanged', events)
 
-      Tracker.afterFlush(() => {
-        if (!this._stopPlanningCompute) {
-          console.time('Controller.calculPlanning')
-          this.Planning = new Planning(events, currentMonth)
-          console.timeEnd('Controller.calculPlanning')
+      if (!this._stopPlanningCompute) {
+        console.time('Controller.calculPlanning')
+        this.Planning = new Planning(events, currentMonth)
+        console.timeEnd('Controller.calculPlanning')
 
-          Tracker.autorun(() => {
-            const isPNT = this.isPNT()
+        Tracker.autorun(() => {
+          const isPNT = this.isPNT()
 
-            // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
+          // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
 
-            if (isPNT) {
-              if (HV100AF.ready() && HV100.ready()) {
-                this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
-                this._statsRemu.set(this.Remu.stats)
-                Tracker.autorun(() => {
-                  if (Config.ready()) {
-                    const profil = Config.get('profil')
-                    // console.log('Controller.profilChanged', profil)
-                    if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
-                      this.calculSalaire(this.Remu.stats, profil)
-                    } else {
-                      Meteor.call('getPayscale', (e, r) => {
-                        if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
-                          this._bareme = r
-                          this.calculSalaire(this.Remu.stats, profil)
-                        }
-                      })
-                    }
-                  } else {
-                    this._bareme = null
-                  }
-                })
-              }
-            } else if (HV100.ready()) {
-              this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+          if (isPNT) {
+            if (HV100AF.ready() && HV100.ready()) {
+              this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
               this._statsRemu.set(this.Remu.stats)
+              Tracker.autorun(() => {
+                if (Config.ready()) {
+                  const profil = Config.get('profil')
+                  // console.log('Controller.profilChanged', profil)
+                  if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
+                    this.calculSalaire(this.Remu.stats, profil)
+                  } else {
+                    Meteor.call('getPayscale', (e, r) => {
+                      if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
+                        this._bareme = r
+                        this.calculSalaire(this.Remu.stats, profil)
+                      }
+                    })
+                  }
+                } else {
+                  this._bareme = null
+                }
+              })
             }
-
-            // Refresh modal content
-            Tracker.nonreactive(() => {
-              if (this.selectedDay.get()) {
-                this.setSelectedDay(this.selectedDay.get())
-              }
-            })
-          })
-        }
-      })
+          } else if (HV100.ready()) {
+            this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
+            this._statsRemu.set(this.Remu.stats)
+          }
+        })
+      }
 		})
   },
 
