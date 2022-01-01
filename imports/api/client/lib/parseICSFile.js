@@ -9,17 +9,21 @@ export default function (str) {
 
 	str = str.substring(start).replace(/\r\n/g, '\n')
 
+	console.log(str)
+
 	const events = str.split(/END:VEVENT\s+BEGIN:VEVENT/).map((event) => {
 		const raw = {}
-		_.chain(event.split('\n'))
+		_.chain(event.split(/\n/g))
 			.compact()
 			.forEach((data) => {
 				if (data.indexOf(':') !== -1) {
-					let [key, value] = data.split(':')
+					let [key, ...value] = data.split(':')
+					value = value.join(':')
 					if (key.indexOf(';') !== -1) {
 						key = key.split(';').shift()
 					}
-					raw[key.trim()] = value.trim()
+					key = key.trim()
+					raw[key] = value.trim()
 				}
 			})
 			.value()
@@ -35,6 +39,8 @@ export default function (str) {
 			description: raw.DESCRIPTION,
 			uid: raw.UID
 		}
+
+		console.log(raw)
 
 		if (raw.CATEGORIES) {
 			const category = raw.CATEGORIES.toUpperCase()
@@ -57,6 +63,7 @@ export default function (str) {
 					}
 
 					// Equipage
+					console.log(raw.DESCRIPTION)
 					m = raw.DESCRIPTION.match(/Crew Member : T:(\S+)\\nC:(\S+)\\n/)
 					if (m && m.length === 3) {
 						evt.pnt = m[1].split('-')
