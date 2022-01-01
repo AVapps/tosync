@@ -22,12 +22,12 @@ random@1.2.0
 ejson@1.1.1
 spacebars
 check@1.3.1
-ecmascript@0.16.0
+ecmascript@0.16.1
 es5-shim@4.8.0
 meteorhacks:subs-manager
 adrienv:static-data
 standard-minifier-css@1.7.4
-standard-minifier-js@2.7.2
+standard-minifier-js@2.8.0
 shell-server@0.5.0
 dynamic-import@0.7.2
 fourseven:scss
