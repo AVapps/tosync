@@ -2,7 +2,6 @@ import { DateTime } from 'luxon'
 import { Meteor } from 'meteor/meteor'
 import { Match, check } from 'meteor/check'
 import '/imports/lib/moment-ejson.js'
-import { TOConnect as Connect } from '/imports/api/toconnect/server/TOConnect'
 import _ from 'lodash'
 
 function isPNT(userId) {
@@ -77,42 +76,6 @@ Meteor.methods({
 			return _isPNT
 		}
   },
-
-	async getPlanning(type) {
-		check(this.userId, Match.OneOf(String, Object))
-		this.unblock()
-		return Connect.getPlanning(this.userId, type)
-	},
-
-  async validateChanges() {
-		check(this.userId, Match.OneOf(String, Object))
-		this.unblock()
-		return Connect.validateChanges(this.userId)
-	},
-
-  async signPlanning() {
-		check(this.userId, Match.OneOf(String, Object))
-		this.unblock()
-		return Connect.signPlanning(this.userId)
-	},
-
-	async getActivitePN() {
-		check(this.userId, Match.OneOf(String, Object))
-		this.unblock()
-		return Connect.getActivitePN(this.userId)
-	},
-
-	async getSyncData() {
-		check(this.userId, Match.OneOf(String, Object))
-		this.unblock()
-		return Connect.getSyncData(this.userId)
-	},
-
-	async checkSession() {
-		if (!this.userId) return false
-		this.unblock()
-		return Connect.checkSession(this.userId)
-	},
 
 	// start, end as timestamps
 	getEvents(start, end) {

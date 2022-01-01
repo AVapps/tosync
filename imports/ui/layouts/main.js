@@ -17,9 +17,5 @@ Template.main.onRendered(function () {
 Template.main.helpers({
   isLoggedIn() {
     return !!Meteor.userId()
-  },
-
-  connectAuthentificated() {
-    return Connect.authentificated()
   }
 })

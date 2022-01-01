@@ -1,79 +1,40 @@
 <template name="loginStatusBar">
   {{#if isLoggedIn }}
-    <div class="row">
-      <div class="col-md mb-4 mb-md-0">
-        <div class="d-flex justify-content-center align-items-center">
-          <p class="text-center">
-            <i class="fas fa-user"></i>&nbsp;
-            {{#with userProfile }}
-            <span class="text-capitalize">{{ prenom }}</span>
-            <span class="text-uppercase">{{ nom }}</span>
-            {{/with}}
-          </p>
-          <div class="input-group input-group-sm mb-3 w-auto ml-3">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Base</span>
-            </div>
-            <select id="baseSelect" class="custom-select custom-select-sm">
-              {{#each base in bases }}
-                <option value="{{ base }}" {{ selectedBase base }}>{{ base }}</option>
-              {{/each}}
-            </select>
-          </div>
+  <div id="statusBar">
+    <div class="d-flex justify-content-center align-items-center">
+      <p class="text-center">
+        <i class="fas fa-user"></i>&nbsp;
+        {{#with userProfile }}
+        <span class="text-capitalize">{{ prenom }}</span>
+        <span class="text-uppercase">{{ nom }}</span>
+        {{/with}}
+      </p>
+      <div class="input-group input-group-sm mb-3 w-auto ml-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Base</span>
         </div>
-
-        <button type="button" class="logout btn btn-sm btn-danger mx-auto d-block" {{ disabledOnConnectRunning }}>
-      		<i class="fas fa-times"></i>&nbsp;Déconnexion
-      	</button>
-      </div>
-      <div class="col-md">
-        {{#if connectAuthentificated }}
-          <p class="text-success text-center">
-            <i class="fas fa-check-circle"></i>&nbsp;Connecté à TO.connect
-          </p>
-          {{#if syncAvailable }}
-            {{> connectButton }}
-          {{/if}}
-          {{#if changesPending }}
-            <button class="btn btn-warning btn-sm d-block mx-auto js-validateChanges">
-              <i class="fas fa-check"></i>&nbsp;Valider les modifications
-            </button>
-          {{/if}}
-          {{#if signNeeded }}
-            {{#LaddaButton class="btn-warning btn-sm d-block mx-auto" onClick=onSignClick }}
-              <i class="fas fa-signature"></i>&nbsp;Signer mon planning
-            {{/LaddaButton}}
-          {{/if}}
-
-        {{ else }}
-          <p class="text-warning text-center">
-            <i class="fas fa-exclamation-circle"></i>&nbsp;Déconnecté de TO.connect
-          </p>
-          <form id="login">
-            <div class="form-row">
-              <div class="col">
-        		    <input name="login" type="text" value="" placeholder="Trigramme" class="form-control form-control-sm text-uppercase" maxlength="3" pattern="[A-z]{3}" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
-              </div>
-              <div class="col">
-          		  <input name="password" type="password" value="" placeholder="Mot de passe" class="form-control form-control-sm" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}/>
-              </div>
-              <div class="col">
-          		  <button type="submit" class="btn btn-sm btn-warning btn-block login ladda-button" data-style="zoom-out" {{ disabledOnLoggingIn }} {{ disabledOnConnectRunning }}>
-                  <span class="ladda-label">Connexion</span>
-                </button>
-              </div>
-            </div>
-        	</form>
-        {{/if}}
+        <select id="baseSelect" class="custom-select custom-select-sm">
+          {{#each base in bases }}
+            <option value="{{ base }}" {{ selectedBase base }}>{{ base }}</option>
+          {{/each}}
+        </select>
       </div>
     </div>
-  {{/if}}
-</template>
 
-<template name="connectButton">
-	<button type="button" class="connect-sync btn btn-sm btn-success ladda-button d-block mx-auto" data-style="zoom-out" title="Synchroniser avec TO.Connect" data-toggle="tooltip" data-placement="bottom" {{ disabledOnConnectRunning }}>
-		<span class="ladda-label">
-			<i class="fas fa-sync-alt"></i>&nbsp;Synchroniser
-		</span>
-	</button>
+    <button type="button" class="logout btn btn-sm btn-danger mx-auto d-block" {{ disabledOnConnectRunning }}>
+      <i class="fas fa-times"></i>&nbsp;Déconnexion
+    </button>
+
+    <div class="card bg-danger mt-4">
+      <div class="card-body">
+        <strong>Suite à la fermeture définitive de TO.connect, l'importation automatique de votre planning n'est plus possible.</strong><br>
+        Seule l'importation manuelle reste disponible :
+        <ol>
+          <li>téléchargez votre planning au format iCalendar sur <a href="https://planning.to.aero/FlightProgram/GetICS" target="blank">CrewWeb Plus</a> (lien « Mail Calendar » de la page roster),</li>
+          <li>cliquez sur le bouton « Importer un fichier ics » ci-dessous et sélectionnez le fichier téléchargé.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  {{/if}}
 </template>

@@ -1,20 +1,6 @@
 <template name="loginPage">
 	<div id="loginPage">
 		<div class="container">
-			<div class="card text-white bg-danger mb-4">
-				<div class="card-body">
-					<div class="card-title">
-						<h4><i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;Fermeture de TO.connect</h4>
-					</div>
-					<p class="lead">Suite à la fermeture de TO.connect, il est nécessaire de créer de nouveaux identifiants spécifiques TO.sync à l'aide votre adresse e-mail Transavia :</p>
-					<div class="row justify-content-center">
-						<div class="col-md-6">
-							<a href="{{pathFor '/recuperation' }}" class="btn btn-block btn-light">Récupérer mon compte</a>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<div class="card text-white bg-success mb-4">
 				<div class="card-body">
 					<div class="card-title">
@@ -59,18 +45,17 @@
 				</div>
 			</div>
 
-			<div class="card text-white bg-dark mb-4">
+			<div class="card text-white bg-danger mb-4">
 				<div class="card-body">
-					<h4 class="card-title">
-						<i class="fas fa-sign-in-alt"></i>
-						&nbsp;&nbsp;Connexion avec TO.connect
-					</h4>
-					<h5 class="card-subtitle mb-2">
-						<span class="badge badge-secondary text-uppercase">Obsolète</span>
-					</h5>
-					<p class="lead">Utilisez vos identifiants TO.connect pour vous connecter et importer votre planning. Si vos identifiants TO.connect ne fonctionnent plus, vous devez faire une demande de <a href="{{pathFor '/inscription' }}">récupération de compte</a>.</p>
-					{{> loginForm }}
-					<p class="card-text mt-3">Une fois votre planning importé vous pourrez le synchroniser avec Google Agenda et accéder au décompte d'heures créditées.</p>
+					<div class="card-title">
+						<h4><i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;Fermeture de TO.connect</h4>
+					</div>
+					<p class="lead">Suite à la fermeture de TO.connect, il est nécessaire de créer de nouveaux identifiants spécifiques TO.sync à l'aide votre adresse e-mail Transavia :</p>
+					<div class="row justify-content-center">
+						<div class="col-md-6">
+							<a href="{{pathFor '/recuperation' }}" class="btn btn-block btn-light">Récupérer mon compte</a>
+						</div>
+					</div>
 				</div>
 			</div>
 

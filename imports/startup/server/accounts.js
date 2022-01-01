@@ -1,9 +1,6 @@
 import { Meteor } from 'meteor/meteor'
 import { OAuthEncryption } from 'meteor/oauth-encryption'
 import { Accounts } from 'meteor/accounts-base'
-import TOConnectLoginHandler from '/imports/api/toconnect/server/TOConnectLoginHandler.js'
-
-Accounts.registerLoginHandler('TOConnect', TOConnectLoginHandler)
 
 Accounts.config({
   restrictCreationByEmailDomain: 'fr.transavia.com',

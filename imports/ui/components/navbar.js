@@ -10,24 +10,21 @@ Template.navbar.onCreated(function () {
 
 Template.navbar.onRendered(function () {
   Tracker.autorun(() => {
-    const isConnected = Connect.authentificated()
-    const isWorking = Connect.isWorking()
+    const isConnected = Connect.isOnline()
+    const isWorking = Connect.running()
     if (isWorking) {
       this.classes.set('btn-light')
-      this.$('#navbar button.status-button [data-fa-i2svg]')
-        .removeClass('fa-user-check fa-user-times')
+      this.$('#statusIcon')
+        .removeClass('fa-user-cog')
         .addClass('fa-sync')
     } else {
+      this.$('#statusIcon')
+        .removeClass('fa-sync')
+        .addClass('fa-user-cog')
       if (isConnected) {
         this.classes.set('btn-success')
-        this.$('#navbar button.status-button [data-fa-i2svg]')
-          .removeClass('fa-sync fa-user-times')
-          .addClass('fa-user-check')
       } else {
         this.classes.set('btn-warning')
-        this.$('#navbar button.status-button [data-fa-i2svg]')
-          .removeClass('fa-user-check fa-sync')
-          .addClass('fa-user-times')
       }
     }
   })

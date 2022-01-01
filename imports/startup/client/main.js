@@ -16,7 +16,6 @@ import '/imports/api/client/Sync.js'
 import '/imports/api/client/Config.js'
 
 import '/imports/api/client/collections.js'
-import '/imports/api/toconnect/client/login.js'
 
 import '/imports/api/client/Calendar.js'
 import '/imports/api/client/Connect.js'

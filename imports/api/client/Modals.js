@@ -42,14 +42,5 @@ export default {
 		close() {
 			$('#changelog').modal('hide')
 		}
-	},
-
-  Changes: {
-		open() {
-			return $('#changesModal').modal('show')
-		},
-		close() {
-			return $('#changesModal').modal('hide')
-		}
 	}
 }
