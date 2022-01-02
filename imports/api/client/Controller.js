@@ -7,7 +7,7 @@ import Planning from './lib/Planning.js'
 import RemuPNT from './lib/RemuPNT.js'
 import RemuPNC from './lib/RemuPNC.js'
 
-import { migrateEvents, needsMigration } from './lib/migrateEvents.js'
+import { isUserPNT, forceCheckUserIsPNT, getPayscale } from '../methods.js'
 
 import _ from 'lodash'
 import Swal from 'sweetalert2'
@@ -23,22 +23,48 @@ Session.setDefault('currentMonth', { year: NOW.year, month: NOW.month })
 
 function checkIsPnt() {
   console.time('Controller.isPNT')
-  Meteor.call('isPNT', (e, r) => {
+  isUserPNT.call((e, r) => {
     if (!e && _.isBoolean(r)) {
       isPNT.set(r)
       console.log('Controller.isPNT', r)
-      if (window.localStorage) {
-        const key = [Meteor.userId(), 'isPNT'].join('.')
-        localStorage.setItem(key, JSON.stringify({
-          lastCheckAt: +new Date(),
-          value: r
-        }))
-      }
+      saveIsPNTState(r)
     } else {
       isPNT.set(false)
     }
     console.timeEnd('Controller.isPNT')
   })
+}
+
+function forceCheckIsPNT() {
+  console.time('Controller.forceCheckIsPNT')
+  forceCheckUserIsPNT.call((e, r) => {
+    if (!e && _.isBoolean(r)) {
+      isPNT.set(r)
+      console.log('Controller.forceCheckIsPNT', r)
+      saveIsPNTState(r)
+    } else {
+      isPNT.set(false)
+    }
+    console.timeEnd('Controller.forceCheckIsPNT')
+  })
+}
+
+function saveIsPNTState(state) {
+  if (window.localStorage) {
+    const key = [Meteor.userId(), 'isPNT'].join('.')
+    localStorage.setItem(key, JSON.stringify({
+      lastCheckAt: Date.now(),
+      value: state
+    }))
+  }
+}
+
+function getIsPNTState() {
+  if (window.localStorage) {
+    const key = [ Meteor.userId(), 'isPNT' ].join('.')
+    const cachedIsPNT = JSON.parse(localStorage.getItem(key))
+    return JSON.parse(localStorage.getItem(key))
+  }
 }
 
 Controller = {
@@ -125,14 +151,11 @@ Controller = {
   isPNTAutorun() {
     Tracker.autorun(() => {
       if (Meteor.userId()) {
-        if (window.localStorage) {
-          const key = [ Meteor.userId(), 'isPNT' ].join('.')
-          const cachedIsPNT = JSON.parse(localStorage.getItem(key))
-          if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
-            const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
-            if (NOW.diff(lastCheckAt).as('days') < 7) {
-              return isPNT.set(_.get(cachedIsPNT, 'value'))
-            }
+        const cachedIsPNT = getIsPNTState()
+        if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
+          const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
+          if (NOW.diff(lastCheckAt).as('days') < 7) {
+            return isPNT.set(_.get(cachedIsPNT, 'value'))
           }
         }
         checkIsPnt()
@@ -209,7 +232,7 @@ Controller = {
                   if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
                     this.calculSalaire(this.Remu.stats, profil)
                   } else {
-                    Meteor.call('getPayscale', (e, r) => {
+                    getPayscale.call((e, r) => {
                       if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
                         this._bareme = r
                         this.calculSalaire(this.Remu.stats, profil)
@@ -303,7 +326,7 @@ Controller = {
     } catch (error) {
       console.log(error)
     } finally {
-      checkIsPnt()
+      forceCheckIsPNT()
       this._stopPlanningCompute = false
     }
   },

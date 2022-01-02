@@ -3,7 +3,114 @@ import { ValidatedMethod } from 'meteor/mdg:validated-method'
 import SimpleSchema from 'simpl-schema'
 import { Accounts } from 'meteor/accounts-base'
 import { CallPromiseMixin } from 'meteor/didericis:callpromise-mixin'
+import { DateTime } from 'luxon'
 import _ from 'lodash'
+
+function isPNT(userId) {
+  const events = Events
+		.find({
+			userId,
+			tag: 'vol'
+		}, {
+			limit: 30,
+			sort: [['updated', 'desc']],
+			fields: { userId: 1, updated: 1, pnt: 1, pnc: 1 }
+		})
+		.fetch()
+  
+  const pnts = events.filter(evt => evt.pnt?.length).map(evt => evt.pnt)
+  const pncs = events.filter(evt => evt.pnc?.length).map(evt => evt.pnc)
+	
+	if (pnts.length < 3) return false
+	
+	const max = {
+    pnt: _.chain(pnts).flatten().countBy().values().sort().last().value(),
+    pnc: _.chain(pncs).flatten().countBy().values().sort().last().value(),
+  }
+	
+  return max.pnt > pnts.length / 2 && max.pnt > max.pnc ? true : false
+}
+
+function checkUserIsPNTWithCache() {
+  const user = Meteor.user()
+  if (_.has(user, 'isPNT.checkedAt') && DateTime.local().diff(DateTime.fromMillis(_.get(user, 'isPNT.checkedAt'))).as('days') <= 3) {
+    return _.get(user, 'isPNT.value')
+  }
+
+  const _isPNT = isPNT(this.userId)
+  Meteor.users.update(this.userId, {
+    $set: {
+      isPNT: {
+        checkedAt: +new Date(),
+        value: _isPNT
+      }
+    }
+  })
+  return _isPNT
+}
+
+export const isUserPNT = new ValidatedMethod({
+  name: 'tosync.isUserPNT',
+  mixins: [CallPromiseMixin],
+  validate: null,
+  run() {
+    check(this.userId, Match.OneOf(String, Object))
+
+    if (this.isSimulation) {
+      return isPNT(this.userId)
+    }
+
+    return checkUserIsPNTWithCache()
+  }
+})
+
+export const forceCheckUserIsPNT = new ValidatedMethod({
+  name: 'tosync.forceCheckUserIsPNT',
+  mixins: [CallPromiseMixin],
+  validate: null,
+  run() {
+    check(this.userId, Match.OneOf(String, Object))
+
+    if (this.isSimulation) {
+      return isPNT(this.userId)
+    }
+
+    const _isPNT = isPNT(this.userId)
+    Meteor.users.update(this.userId, {
+      $set: {
+        isPNT: {
+          checkedAt: +new Date(),
+          value: _isPNT
+        }
+      }
+    })
+    return _isPNT
+  }
+})
+
+export const getPayscale = new ValidatedMethod({
+  name: 'tosync.getPayscale',
+  mixins: [CallPromiseMixin],
+  validate: null,
+  run() {
+    check(this.userId, Match.OneOf(String, Object))
+
+    if (this.isSimulation) {
+      return null
+    }
+
+    this.unblock()
+
+    if (checkUserIsPNTWithCache()) {
+      return {
+        AF: Meteor.settings.remuAF,
+        TO: Meteor.settings.remuTO
+      }
+    } else {
+      return null
+    }
+  }
+})
 
 export const batchEventsRemove = new ValidatedMethod({
   name: 'tosync.Events.batchRemove',

@@ -4,74 +4,7 @@ import { Match, check } from 'meteor/check'
 import '/imports/lib/moment-ejson.js'
 import _ from 'lodash'
 
-function isPNT(userId) {
-  const events = Events
-		.find({
-			userId,
-			tag: 'vol'
-		}, {
-			limit: 30,
-			sort: [['updated', 'desc']],
-			fields: { userId: 1, updated: 1, pnt: 1 }
-		})
-		.fetch()
-		.filter(evt => evt.pnt?.length)
-		.map(evt => evt.pnt)
-	
-	if (events.length < 3) return false
-	
-	const counts = _.values(_.countBy(_.flatten(events)))
-	
-  return _.find(counts, c => c > events.length / 2) ? true : false
-}
-
 Meteor.methods({
-
-  getPayscale() {
-    check(this.userId, Match.OneOf(String, Object))
-    this.unblock()
-
-    if (isPNT(this.userId)) {
-      return {
-        AF: Meteor.settings.remuAF,
-        TO: Meteor.settings.remuTO
-      }
-    } else {
-      return null
-    }
-  },
-
-  isPNT() {
-		check(this.userId, Match.OneOf(String, Object))
-		const user = Meteor.user()
-		if (_.has(user, 'isPNT.checkedAt')) {
-			if (DateTime.local().diff(DateTime.fromMillis(_.get(user, 'isPNT.checkedAt'))).as('days') > 3) {
-				const _isPNT = isPNT(this.userId)
-				Meteor.users.update(this.userId, {
-					$set: {
-						isPNT: {
-							checkedAt: +new Date(),
-							value: _isPNT
-						}
-					}
-				})
-				return _isPNT
-			} else {
-				return _.get(user, 'isPNT.value')
-			}
-		} else {
-			const _isPNT = isPNT(this.userId)
-			Meteor.users.update(this.userId, {
-				$set: {
-					isPNT: {
-						checkedAt: +new Date(),
-						value: _isPNT
-					}
-				}
-			})
-			return _isPNT
-		}
-  },
 
 	// start, end as timestamps
 	getEvents(start, end) {
