@@ -20,13 +20,17 @@ function isPNT(userId) {
   
   const pnts = events.filter(evt => evt.pnt?.length).map(evt => evt.pnt)
   const pncs = events.filter(evt => evt.pnc?.length).map(evt => evt.pnc)
+
+  // console.log('[isPNT]', userId, pnts, pnts.length, pncs, pncs.length)
 	
 	if (pnts.length < 3) return false
 	
 	const max = {
-    pnt: _.chain(pnts).flatten().countBy().values().sort().last().value(),
-    pnc: _.chain(pncs).flatten().countBy().values().sort().last().value(),
+    pnt: _.chain(pnts).flatten().countBy().values().sortBy().last().value(),
+    pnc: _.chain(pncs).flatten().countBy().values().sortBy().last().value(),
   }
+
+  // console.log('[isPNT]', userId, max, pnts.length)
 	
   return max.pnt > pnts.length / 2 && max.pnt > max.pnc ? true : false
 }
@@ -41,7 +45,7 @@ function checkUserIsPNTWithCache() {
   Meteor.users.update(this.userId, {
     $set: {
       isPNT: {
-        checkedAt: +new Date(),
+        checkedAt: Date.now(),
         value: _isPNT
       }
     }
@@ -79,7 +83,7 @@ export const forceCheckUserIsPNT = new ValidatedMethod({
     Meteor.users.update(this.userId, {
       $set: {
         isPNT: {
-          checkedAt: +new Date(),
+          checkedAt: Date.now(),
           value: _isPNT
         }
       }
