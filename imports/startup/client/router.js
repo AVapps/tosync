@@ -8,12 +8,14 @@ import '/imports/ui/pages/new-password.js'
 import '/imports/ui/pages/reinit-mdp.js'
 
 
-FlowRouter.route('/', {
-  name: 'index',
-  action() {
-    this.render('main', 'mainPage')
-  }
-})
+
+
+// FlowRouter.route('/', {
+//   name: 'index',
+//   action() {
+//     this.render('main', 'mainPage')
+//   }
+// })
 
 FlowRouter.route('/inscription', {
   name: 'inscription',
@@ -71,6 +73,13 @@ FlowRouter.route('/verif-email/:token', {
       }
       FlowRouter.go('/')
     })
+    this.render('main', 'mainPage')
+  }
+})
+
+FlowRouter.route('/:month', {
+  name: 'index',
+  action() {
     this.render('main', 'mainPage')
   }
 })

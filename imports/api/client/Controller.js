@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor'
 import { Tracker } from 'meteor/tracker'
 import { ReactiveVar } from 'meteor/reactive-var'
 import { Session } from 'meteor/session'
+import { FlowRouter } from 'meteor/ostrio:flow-router-extra'
 
 import Planning from './lib/Planning.js'
 import RemuPNT from './lib/RemuPNT.js'
@@ -67,6 +68,19 @@ function getIsPNTState() {
   }
 }
 
+function getDisplayedMonth() {
+  const month = FlowRouter.getParam('month')
+  const date = /^\d\d\d\d-\d\d$/.test(month) ? DateTime.fromISO(month) : DateTime.local()
+  return {
+    year: date.year,
+    month: date.month
+  }
+}
+
+function toISOMonth(date) {
+  return date.toISODate().substring(0, 7)
+}
+
 Controller = {
 	eventsStart: DateTime.local(),
   eventsEnd: DateTime.local(),
@@ -116,7 +130,8 @@ Controller = {
   currentMonthAutorun() {
     Tracker.autorun(() => {
       // Construit le calendrier vide du mois
-      const currentMonth = this.currentMonth.get()
+      const currentMonth = getDisplayedMonth()
+      this.currentMonth.set(currentMonth)
       this.Calendar.buildCalendarDays(currentMonth)
 
       Events.stopSync()
@@ -386,16 +401,28 @@ Controller = {
 		events = _.sortBy(events, 'start')
 	},
 
+  gotToMonth(month) {
+    const date = DateTime.fromObject(month)
+    FlowRouter.go(`/${toISOMonth(date)}`)
+  },
+
 	prevMonth() {
-    const currentMonth = this._prevMonth(this.currentMonth.get())
-    this.currentMonth.set(currentMonth)
-    Session.set('currentMonth', currentMonth)
+    const prevMonth = this._prevMonth(getDisplayedMonth())
+    this.gotToMonth(prevMonth)
+	},
+
+  todayMonth() {
+    const today = DateTime.local()
+    const todayMonth = {
+      year: today.year,
+      month: today.month
+    }
+    this.gotToMonth(todayMonth)
 	},
 
 	nextMonth() {
-    const currentMonth = this._nextMonth(this.currentMonth.get())
-    this.currentMonth.set(currentMonth)
-    Session.set('currentMonth', currentMonth)
+    const nextMonth = this._nextMonth(getDisplayedMonth())
+    this.gotToMonth(nextMonth)
 	},
 
 	_prevMonth(date) {

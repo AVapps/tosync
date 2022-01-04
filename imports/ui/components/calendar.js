@@ -32,6 +32,10 @@ Template.calendar.events({
 		Controller.nextMonth()
 	},
 
+	'click button.fc-month': function (e, t) {
+		Controller.todayMonth()
+	},
+
 	'click button.fc-style': function (e, t) {
 		switch (Config.get('calendarMode')) {
 			case 'table':
@@ -69,6 +73,10 @@ Template.calendar.helpers({
 
 	monthTitle() {
 		return DateTime.fromObject(Controller.currentMonth.get()).toLocaleString({ year: 'numeric', month: 'long' })
+	},
+
+	isoMonth() {
+		return DateTime.fromObject(Controller.currentMonth.get()).toISODate().substring(0, 7)
 	},
 
 	remu() {
