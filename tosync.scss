@@ -26,6 +26,7 @@ html, body {
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
+  user-select: none;
   background-color: $success;
 }
 
@@ -35,7 +36,7 @@ html, body {
 }
 
 #noty_layout__top {
-  padding-top: calc(env(safe-area-inset-top) + 2px);
+  padding-top: calc(env(safe-area-inset-top) + 2px) !important;
 }
 
 .table-row {
