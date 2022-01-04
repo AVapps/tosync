@@ -9,7 +9,7 @@ export default class Planning {
     this._groupedEvents = {}
 
 		if (this._checkDuplicates()) {
-      Controller.askForPlanningReparsing("Votre planning comporte des doublons. Cliquez sur OK pour les supprimer.")
+      Controller.askForPlanningReparsing("Votre planning comporte des doublons. Cliquez sur OK pour les supprimer.", currentMonth)
 		}
 
 		this._groupEvents()
@@ -26,9 +26,9 @@ export default class Planning {
 			.forEach(rot => {
 				_.forEach(rot.sv, sv => {
 					if (sv.countVol > 5) {
-						Controller.askForPlanningReparsing("Un service de vol comporte plus de 5 étapes. Si cela n'est pas correct, cliquez sur OK pour recalculer votre planning.")
+						Controller.askForPlanningReparsing("Un service de vol comporte plus de 5 étapes. Si cela n'est pas correct, cliquez sur OK pour recalculer votre planning.", currentMonth)
 					} else if (sv.TR > 15 || (sv.real && sv.real.TR > 15)) {
-						Controller.askForPlanningReparsing("Un temps de service de vol est supérieur à 15h : cliquez sur OK pour recalculer votre planning.")
+						Controller.askForPlanningReparsing("Un temps de service de vol est supérieur à 15h : cliquez sur OK pour recalculer votre planning.", currentMonth)
 					}
 				})
 			})
@@ -99,7 +99,7 @@ export default class Planning {
   				} else {
   					console.log('Rotation introuvable !', rotationId, evts)
   					Meteor.defer(() => {
-  						Controller.reparseEventsOfCurrentMonth()
+  						Controller.reparseEventsOfMonth(this.currentMonth)
   					})
   				}
   			})

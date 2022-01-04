@@ -81,14 +81,12 @@ Controller = {
 	Remu: null,
 
   _stopPlanningCompute: false,
-  _isLoading: new ReactiveVar(true),
+  _eventsSubReady: new ReactiveVar(false),
   _bareme: null,
   _salaire: new ReactiveVar({ AF: {}, TO: {} }),
 	_statsRemu: new ReactiveVar({ HC: 0.0, eHS: 0.0, tv: 0.0 }),
 
 	init() {
-    this.reparseEventsOfCurrentMonth = _.debounce(this._reparseEventsOfCurrentMonth, 3000, { leading: true, trailing: false })
-
     this.Calendar = Calendar
     this.Calendar.init()
 
@@ -128,6 +126,7 @@ Controller = {
       this.eventsEnd = cmonth.endOf('month').plus({ month: 1 })
 
       console.time('EventsSubs.ready')
+      this._eventsSubReady.set(false)
       this.EventsSubs = Meteor.subscribe('cloud_events',
         this.eventsStart.toMillis(),
         this.eventsEnd.toMillis(),
@@ -141,6 +140,7 @@ Controller = {
               end: { $gte: this.eventsStart.toMillis() },
               start: { $lte: this.eventsEnd.toMillis() }
             })
+            this._eventsSubReady.set(true)
           },
           onStop: (err) => {
             if (err) {
@@ -289,7 +289,11 @@ Controller = {
   },
 
   loading() {
-    return this._isLoading.get()
+    return !this._eventsSubReady.get()
+  },
+
+  ready() {
+    return this._eventsSubReady.get()
   },
 
 	setSelectedDay(day) {
@@ -318,30 +322,40 @@ Controller = {
 		this.selectedDay.set(null)
   },
   
-  forceSync() {
-    Events.removeLocalOnlyFrom({
-      userId: Meteor.userId(),
-      end: { $gte: this.eventsStart.toMillis() },
-      start: { $lte: this.eventsEnd.toMillis() }
+  async forceSync() {
+    return new Promise((resolve, reject) => {
+      Tracker.autorun(c => {
+        if (this.ready()) {
+          Events.removeLocalOnlyFrom({
+            userId: Meteor.userId(),
+            end: { $gte: this.eventsStart.toMillis() },
+            start: { $lte: this.eventsEnd.toMillis() }
+          })
+          c.stop()
+          resolve()
+        }
+      })
     })
   },
 
-  async _reparseEventsOfCurrentMonth() {
-    this._stopPlanningCompute = true
-    console.log('Controller._reparseEventsOfCurrentMonth')
-    this.forceSync()
-    try {
-      const eventsOfMonth = await PifyMeteor.call('getAllEventsOfMonth', this.currentMonth.get())
-      Sync.reparseEvents(eventsOfMonth)
-    } catch (error) {
-      console.log(error)
-    } finally {
-      forceCheckIsPNT()
-      this._stopPlanningCompute = false
-    }
+  async reparseEventsOfCurrentMonth() {
+    await this.reparseEventsOfMonth(this.currentMonth.get())
   },
 
-  askForPlanningReparsing(message, cb) {
+  reparseEventsOfMonth: _.debounce(async (month) => {
+    console.log('Controller._reparseEventsOfMonth', month)
+    try {
+      await Controller.forceSync()
+      const eventsOfMonth = await PifyMeteor.call('getAllEventsOfMonth', month)
+      Sync.reparseEvents(eventsOfMonth)
+      forceCheckIsPNT()
+    } catch (e) {
+      console.log(e)
+      Notify.error(e)
+    }
+  }, 3000, { leading: true, trailing: false }),
+
+  askForPlanningReparsing(message, month, cb) {
 		Swal.fire({
 		  title: 'Erreur de planning',
 		  text: message,
@@ -356,14 +370,14 @@ Controller = {
 			cancelButtonText: 'Annuler'
 		}).then(async (result) => {
       if (result.value) {
-        await this.reparseEventsOfCurrentMonth()
+        await this.reparseEventsOfMonth(month)
         Swal.fire(
           'Terminé !',
           'Votre planning a été recalculé.',
           'success'
         )
       } else {
-        if (_.isFunction(cb)) cb(dismiss)
+        if (_.isFunction(cb)) cb()
       }
 		})
 	},
