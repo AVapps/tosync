@@ -145,7 +145,7 @@ Ground.Collection = class GroundCollection {
 
                     // Add the document to minimongo
                     if (!this._collection._docs.has(id)) {
-                      this._collection._docs._map.set(id,EJSON.fromJSONValue(doc));
+                      this._collection._docs.set(id,EJSON.fromJSONValue(doc));
 
                       // Invalidate the observers pr. document
                       // this call is throttled
@@ -211,9 +211,9 @@ Ground.Collection = class GroundCollection {
   setDocument(doc, remove) {
     doc._id = strId(doc._id);
     if (remove) {
-      this._collection._docs._map.delete(doc._id);
+      this._collection._docs.remove(doc._id);
     } else {
-      this._collection._docs._map.set(doc._id,EJSON.clone(doc));
+      this._collection._docs.set(doc._id,EJSON.clone(doc));
     }
     this.invalidate();
   }
@@ -321,7 +321,7 @@ Ground.Collection = class GroundCollection {
 
   clear() {
     this.storage.clear();
-    this._collection._docs._map = new Map();
+    this._collection._docs.clear();
     this.invalidate();
   }
 
@@ -338,7 +338,7 @@ Ground.Collection = class GroundCollection {
     // Remove all other documents from the collection
     difference(currentIds, keepIds).forEach((id) => {
       // Remove it from in memory
-      this._collection._docs._map.delete(id);
+      this._collection._docs.remove(id);
       // Remove it from storage
       this.saveDocument({ _id: id }, true);
     });

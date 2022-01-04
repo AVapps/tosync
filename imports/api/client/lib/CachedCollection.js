@@ -70,7 +70,7 @@ export class CachedCollection extends Mongo.Collection {
     // Remove all other documents from the collection
     _.each(_.difference(currentIds, keepIds), (_id) => {
       // Remove it from in memory
-      delete this._cacheCollection._collection._docs._map[_id]
+      this._cacheCollection._collection._docs.remove(_id)
       // Remove it from storage
       this._cacheCollection.saveDocument({ _id }, true)
     })
