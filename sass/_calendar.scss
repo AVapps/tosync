@@ -18,6 +18,22 @@
     margin: .5em 0;
 }
 
+.calendar-header {
+  .calendar-header-left {
+    display: flex;
+    justify-content: flex-start;
+  }
+  .calendar-header-right {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .btn-spinner {
+    display: flex;
+    align-items: center;
+  }
+}
+
 .fc-controls {
   .fc-month {
     width: 66%;

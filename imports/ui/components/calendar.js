@@ -79,6 +79,10 @@ Template.calendar.helpers({
 		return DateTime.fromObject(Controller.currentMonth.get()).toISODate().substring(0, 7)
 	},
 
+	isLoading() {
+		return Controller.loading()
+	},
+
 	remu() {
     const stats = Controller.statsRemu()
     const eHSconfig = Config.get('eHS')
