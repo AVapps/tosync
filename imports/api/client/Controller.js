@@ -111,7 +111,7 @@ Controller = {
     Events.once('loaded', () => {
       const twoYearsAgo = NOW.startOf('month').minus({ years: 2 }).toMillis()
       Events.removeFromCacheBefore(twoYearsAgo)
-      this.onEventsLoadedAutoruns()
+      this.onCachedEventsLoadedAutoruns()
     })
   },
   
@@ -127,8 +127,30 @@ Controller = {
       this.eventsStart = cmonth.minus({ month: 1 })
       this.eventsEnd = cmonth.endOf('month').plus({ month: 1 })
 
-      console.time('Events.loaded & EventsSubs.ready')
-      this.EventsSubs = Meteor.subscribe('cloud_events', this.eventsStart.toMillis(), this.eventsEnd.toMillis(), Meteor.userId())
+      console.time('EventsSubs.ready')
+      this.EventsSubs = Meteor.subscribe('cloud_events',
+        this.eventsStart.toMillis(),
+        this.eventsEnd.toMillis(),
+        Meteor.userId(), 
+        {
+          onReady: () => {
+            // Synchronise la base de données locale avec les données du serveur
+            console.timeEnd('EventsSubs.ready')
+            Events.sync({
+              userId: Meteor.userId(),
+              end: { $gte: this.eventsStart.toMillis() },
+              start: { $lte: this.eventsEnd.toMillis() }
+            })
+          },
+          onStop: (err) => {
+            if (err) {
+              console.log('EventsSubs.stop', err)
+              Notify.error(err)
+            }
+          }
+        }
+      )
+      console.log('EventsSubId started', this.EventsSubs.subscriptionId)
     })
   },
 
@@ -165,9 +187,9 @@ Controller = {
     })
   },
 
-  onEventsLoadedAutoruns() {
+  onCachedEventsLoadedAutoruns() {
     Tracker.autorun(() => {
-      // Rempli le calendrier avec les évènements du mois
+      // Rempli le calendrier avec les évènements du mois en cache
       console.time('Controller.updateCalendarEventsObserver')
       const currentMonth = this.currentMonth.get()
       const userId = Meteor.userId()
@@ -184,18 +206,6 @@ Controller = {
       })
 
       console.timeEnd('Controller.updateCalendarEventsObserver')
-    })
-
-    Tracker.autorun(() => {
-      if (this.EventsSubs.ready()) {
-        // Synchronise la base de données locale avec les données du serveur
-        console.timeEnd('Events.loaded & EventsSubs.ready')
-        Events.sync({
-          userId: Meteor.userId(),
-          end: { $gte: this.eventsStart.toMillis() },
-          start: { $lte: this.eventsEnd.toMillis() }
-        })
-      }
     })
 
 		Tracker.autorun(async () => {
