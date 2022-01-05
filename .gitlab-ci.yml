@@ -59,6 +59,7 @@ build-meteor:
     refs:
       - master
       - dev
+      - dev-end
   tags:
     - docker
     - cache
@@ -84,6 +85,7 @@ build-alpine:
   only:
     - master
     - dev
+    - dev-end
   tags:
     - docker
 
@@ -100,6 +102,7 @@ kaniko-build:
   only:
     - master
     - dev
+    - dev-end
   tags:
     - docker
 
@@ -125,3 +128,4 @@ deploy-dev:
     url: https://tosync.dev.avapps.fr
   only:
     - dev
+    - dev-end
