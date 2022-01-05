@@ -75,11 +75,12 @@ export const forceCheckUserIsPNT = new ValidatedMethod({
   run() {
     check(this.userId, Match.OneOf(String, Object))
 
+    const _isPNT = isPNT(this.userId)
+
     if (this.isSimulation) {
-      return isPNT(this.userId)
+      return _isPNT
     }
 
-    const _isPNT = isPNT(this.userId)
     Meteor.users.update(this.userId, {
       $set: {
         isPNT: {

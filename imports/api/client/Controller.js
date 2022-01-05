@@ -36,18 +36,15 @@ function checkIsPnt() {
   })
 }
 
-function forceCheckIsPNT() {
+async function forceCheckIsPNT() {
   console.time('Controller.forceCheckIsPNT')
-  forceCheckUserIsPNT.call((e, r) => {
-    if (!e && _.isBoolean(r)) {
-      isPNT.set(r)
-      console.log('Controller.forceCheckIsPNT', r)
-      saveIsPNTState(r)
-    } else {
-      isPNT.set(false)
-    }
-    console.timeEnd('Controller.forceCheckIsPNT')
-  })
+  const result = await forceCheckUserIsPNT.callPromise()
+  console.log('Controller.forceCheckIsPNT', result)
+  if (_.isBoolean(result)) {
+    isPNT.set(result)
+    saveIsPNTState(result)
+  }
+  console.timeEnd('Controller.forceCheckIsPNT')
 }
 
 function saveIsPNTState(state) {
@@ -63,8 +60,18 @@ function saveIsPNTState(state) {
 function getIsPNTState() {
   if (window.localStorage) {
     const key = [ Meteor.userId(), 'isPNT' ].join('.')
-    const cachedIsPNT = JSON.parse(localStorage.getItem(key))
     return JSON.parse(localStorage.getItem(key))
+  }
+}
+
+async function firstForceCheckIsPNTState() {
+  if (window.localStorage) {
+    const key = [ Meteor.userId(), 'isPNT.forceChecked' ].join('.')
+    const forceChecked = JSON.parse(localStorage.getItem(key))
+    if (!forceChecked) {
+      await forceCheckIsPNT()
+      localStorage.setItem(key, JSON.stringify(true))
+    }
   }
 }
 
@@ -186,8 +193,14 @@ Controller = {
   },
 
   isPNTAutorun() {
-    Tracker.autorun(() => {
+    Tracker.autorun(async () => {
       if (Meteor.userId()) {
+        try {
+          await firstForceCheckIsPNTState()
+        } catch (err) {
+          console.log('isPNTAutorun.firstForceCheckIsPNTState', err)
+          Notify.error(err)
+        }
         const cachedIsPNT = getIsPNTState()
         if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
           const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
@@ -363,7 +376,7 @@ Controller = {
       await Controller.forceSync()
       const eventsOfMonth = await PifyMeteor.call('getAllEventsOfMonth', month)
       Sync.reparseEvents(eventsOfMonth)
-      forceCheckIsPNT()
+      await forceCheckIsPNT()
     } catch (e) {
       console.log(e)
       Notify.error(e)
