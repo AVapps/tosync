@@ -17,34 +17,35 @@ export default function (str) {
 			.compact()
 			.forEach((data) => {
 				if (data.indexOf(':') !== -1) {
-					let [key, ...value] = data.split(':')
+					let [ key, ...value ] = data.split(':')
 					value = value.join(':')
 					if (key.indexOf(';') !== -1) {
 						key = key.split(';').shift()
 					}
 					key = key.trim()
-					raw[key] = value.trim()
+					raw[ key ] = value.trim()
 				}
 			})
 			.value()
 
-    if (raw.STATUS == 'CANCELLED' || raw.SUMMARY.indexOf('UNKNOWN') !== -1) return
+		if (raw.STATUS == 'CANCELLED' || raw.SUMMARY.indexOf('UNKNOWN') !== -1) return
 
 		const evt = {
 			// category,
 			// tag,
-			start: DateTime.fromISO(raw.DTSTART, {setZone: true}).valueOf(),
-			end: DateTime.fromISO(raw.DTEND, {setZone: true}).valueOf(),
+			start: DateTime.fromISO(raw.DTSTART, { setZone: true }).valueOf(),
+			end: DateTime.fromISO(raw.DTEND, { setZone: true }).valueOf(),
 			summary: raw.SUMMARY,
 			description: raw.DESCRIPTION,
 			uid: raw.UID
 		}
 
-		console.log(raw)
+		// console.log(raw)
 
 		if (raw.CATEGORIES) {
 			const category = raw.CATEGORIES.toUpperCase()
 			const tag = Utils.findTag(category)
+			// console.log('TAG', raw.CATEGORIES, `${category} => ${tag}`)
 
 			_.assign(evt, { category, tag })
 
@@ -53,36 +54,36 @@ export default function (str) {
 					// Fonction
 					let m = raw.DESCRIPTION.match(/FCT : (\w{3})/)
 					if (m && m.length > 1) {
-						evt.fonction = m[1]
+						evt.fonction = m[ 1 ]
 					}
 
 					// Type avion
 					m = raw.DESCRIPTION.match(/A\/C : (\S+)\\n/)
 					if (m && m.length > 1) {
-						evt.type = m[1]
+						evt.type = m[ 1 ]
 					}
 
 					// Equipage
 					console.log(raw.DESCRIPTION)
 					m = raw.DESCRIPTION.match(/Crew Member : T:(\S+)\\nC:(\S+)\\n/)
 					if (m && m.length === 3) {
-						evt.pnt = m[1].split('-')
-						evt.pnc = m[2].split('-')
+						evt.pnt = m[ 1 ].split('-')
+						evt.pnc = m[ 2 ].split('-')
 					}
 
 					// Remarques
 					m = raw.DESCRIPTION.match(/Remark : (.+)$/)
 					if (m && m.length > 1) {
-						evt.remark = m[1]
+						evt.remark = m[ 1 ]
 					}
 
 					// Numéro de vol, Origine, Destination, Décalage horaire
 					m = raw.SUMMARY.match(/^([A-Z][A-Z]\d{3,4}) ([A-Z]{3})-([A-Z]{3})\((.\d{4})\)/)
 					if (m && m.length === 5) {
-						evt.num = m[1]
-						evt.from = m[2]
-						evt.to = m[3]
-						evt.tz = m[4]
+						evt.num = m[ 1 ]
+						evt.from = m[ 2 ]
+						evt.to = m[ 3 ]
+						evt.tz = m[ 4 ]
 					}
 
 					return _.defaults(evt, {
@@ -102,9 +103,9 @@ export default function (str) {
 
 					if (match && match.length === 4) {
 						_.extend(evt, {
-							title: match[1],
-							from: match[2],
-							to: match[3]
+							title: match[ 1 ],
+							from: match[ 2 ],
+							to: match[ 3 ]
 						})
 					}
 
@@ -114,7 +115,7 @@ export default function (str) {
 						})
 					}
 
-					return  _.defaults(evt, {
+					return _.defaults(evt, {
 						title: 'MEP',
 						from: '',
 						to: ''
