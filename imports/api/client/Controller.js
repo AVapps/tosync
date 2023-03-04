@@ -49,7 +49,7 @@ async function forceCheckIsPNT() {
 
 function saveIsPNTState(state) {
   if (window.localStorage) {
-    const key = [Meteor.userId(), 'isPNT'].join('.')
+    const key = [ Meteor.userId(), 'isPNT' ].join('.')
     localStorage.setItem(key, JSON.stringify({
       lastCheckAt: Date.now(),
       value: state
@@ -89,25 +89,25 @@ function toISOMonth(date) {
 }
 
 Controller = {
-	eventsStart: DateTime.local(),
+  eventsStart: DateTime.local(),
   eventsEnd: DateTime.local(),
 
   currentMonth: new ReactiveVar(Session.get('currentMonth'), _.isEqual),
 
-	selectedDay: new ReactiveVar(null, _.isEqual),
-	currentEventsCount: new ReactiveVar(0),
+  selectedDay: new ReactiveVar(null, _.isEqual),
+  currentEventsCount: new ReactiveVar(0),
 
-	Calendar: null,
+  Calendar: null,
   Planning: null,
-	Remu: null,
+  Remu: null,
 
   _stopPlanningCompute: false,
   _eventsSubReady: new ReactiveVar(false),
-  _bareme: null,
+  _bareme: new ReactiveVar(null),
   _salaire: new ReactiveVar({ AF: {}, TO: {} }),
-	_statsRemu: new ReactiveVar({ HC: 0.0, eHS: 0.0, tv: 0.0 }),
+  _statsRemu: new ReactiveVar({ HC: 0.0, eHS: 0.0, tv: 0.0 }),
 
-	init() {
+  init() {
     this.Calendar = Calendar
     this.Calendar.init()
 
@@ -133,7 +133,7 @@ Controller = {
       this.onCachedEventsLoadedAutoruns()
     })
   },
-  
+
   currentMonthAutorun() {
     Tracker.autorun(() => {
       // Construit le calendrier vide du mois
@@ -152,7 +152,7 @@ Controller = {
       this.EventsSubs = Meteor.subscribe('cloud_events',
         this.eventsStart.toMillis(),
         this.eventsEnd.toMillis(),
-        Meteor.userId(), 
+        Meteor.userId(),
         {
           onReady: () => {
             // Synchronise la base de données locale avec les données du serveur
@@ -227,7 +227,7 @@ Controller = {
           userId,
           end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
           start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
-        }, { sort: [['start', 'asc'], ['end', 'desc']] })
+        }, { sort: [ [ 'start', 'asc' ], [ 'end', 'desc' ] ] })
 
         this.Calendar.observeEvents(eventsCursor)
         this.Calendar.addBlancs()
@@ -236,13 +236,13 @@ Controller = {
       console.timeEnd('Controller.updateCalendarEventsObserver')
     })
 
-		Tracker.autorun(async () => {
+    Tracker.autorun(async () => {
       const currentMonth = this.currentMonth.get()
       const eventsCursor = Events.find({
         userId: Meteor.userId(),
         end: { $gte: DateTime.fromObject(currentMonth).startOf('month').startOf('week').toMillis() },
         start: { $lte: DateTime.fromObject(currentMonth).endOf('month').endOf('week').toMillis() }
-      }, { sort: [['start', 'asc'], ['end', 'desc']] })
+      }, { sort: [ [ 'start', 'asc' ], [ 'end', 'desc' ] ] })
       const events = eventsCursor.fetch()
 
       this.currentEventsCount.set(events.length)
@@ -257,45 +257,57 @@ Controller = {
         Tracker.autorun(() => {
           const isPNT = this.isPNT()
 
-          // console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
+          console.log('Controller.isPNT changed or HV100 & HV100AF ready', isPNT)
 
           if (isPNT) {
             if (HV100AF.ready() && HV100.ready()) {
+              Tracker.nonreactive(() => {
+                this.loadPayscale()
+              })
               this.Remu = new RemuPNT(this.Planning.groupedEvents(), currentMonth)
               this._statsRemu.set(this.Remu.stats)
               Tracker.autorun(() => {
                 if (Config.ready()) {
                   const profil = Config.get('profil')
                   // console.log('Controller.profilChanged', profil)
-                  if (_.has(this._bareme, 'AF') && _.has(this._bareme, 'TO')) {
-                    this.calculSalaire(this.Remu.stats, profil)
-                  } else {
-                    getPayscale.call((e, r) => {
-                      if (!e && _.has(r, 'AF') && _.has(r, 'TO')) {
-                        this._bareme = r
-                        this.calculSalaire(this.Remu.stats, profil)
-                      }
-                    })
-                  }
-                } else {
-                  this._bareme = null
+                  this.calculSalaire(this.Remu.stats, profil)
                 }
               })
             }
           } else if (HV100.ready()) {
             this.Remu = new RemuPNC(this.Planning.groupedEventsThisMonth(), currentMonth)
             this._statsRemu.set(this.Remu.stats)
+            this._bareme.set(null)
           }
         })
       }
-		})
+    })
+  },
+
+  loadPayscale() {
+    if (window.localStorage) {
+      const bareme = JSON.parse(localStorage.getItem('TOSYNC.baremePNT'))
+      if (bareme && _.has(bareme, 'AF') && _.has(bareme, 'TO')) {
+        console.log('Controller.loadPayscale from localStorage', bareme)
+        this._bareme.set(bareme)
+      }
+    }
+    getPayscale.call((e, resp) => {
+      if (!e && _.has(resp, 'AF') && _.has(resp, 'TO')) {
+        console.log('Controller.loadPayscale from server', resp)
+        this._bareme.set(resp)
+        if (window.localStorage) {
+          localStorage.setItem('TOSYNC.baremePNT', JSON.stringify(resp))
+        }
+      }
+    })
   },
 
   calculSalaire(statsRemu, profil) {
-    if (this.Remu) {
+    if (this.Remu && this._bareme.get()) {
       this._salaire.set({
-        AF: this.Remu.calculSalaireAF(this._bareme, profil),
-        TO: this.Remu.calculSalaireTO(this._bareme, profil)
+        AF: this.Remu.calculSalaireAF(this._bareme.get(), profil),
+        TO: this.Remu.calculSalaireTO(this._bareme.get(), profil)
       })
     }
   },
@@ -324,10 +336,10 @@ Controller = {
     return this._eventsSubReady.get()
   },
 
-	setSelectedDay(day) {
+  setSelectedDay(day) {
     if (day.tag && !day.allday) {
       if (day.tag === 'rotation') {
-        day.events = _.map(day.events, evt => evt ? this.Remu.findEvent(evt): null)
+        day.events = _.map(day.events, evt => evt ? this.Remu.findEvent(evt) : null)
         day.etapes = _.filter(day.events, evt => _.has(evt, 'tag') && (evt.tag === 'vol' || evt.tag === 'mep'))
         day.rotation = _.find(day.events, { tag: 'rotation' })
         if (day.rotation) {
@@ -342,14 +354,14 @@ Controller = {
         _.extend(day, _.pick(data, 'HcsAF', 'PVAF', 'majoNuitPVAF', 'HcsTO', 'HcsiTO', 'HcsrTO', 'HcSimuInstTO'))
       }
     }
-		this.selectedDay.set(day)
+    this.selectedDay.set(day)
     console.log('Controller.setSelectedDay', day)
-	},
-
-	resetSelectedDay() {
-		this.selectedDay.set(null)
   },
-  
+
+  resetSelectedDay() {
+    this.selectedDay.set(null)
+  },
+
   async forceSync() {
     return new Promise((resolve, reject) => {
       Tracker.autorun(c => {
@@ -384,19 +396,19 @@ Controller = {
   }, 3000, { leading: true, trailing: false }),
 
   askForPlanningReparsing(message, month, cb) {
-		Swal.fire({
-		  title: 'Erreur de planning',
-		  text: message,
-		  icon: 'warning',
-		  showCancelButton: true,
-			// buttonsStyling: false,
-			// confirmButtonClass: 'btn btn-primary',
-			// cancelButtonClass: 'btn btn-danger',
-		  confirmButtonColor: '#2800a0',
-		  cancelButtonColor: '#ff3268',
-		  confirmButtonText: 'Ok',
-			cancelButtonText: 'Annuler'
-		}).then(async (result) => {
+    Swal.fire({
+      title: 'Erreur de planning',
+      text: message,
+      icon: 'warning',
+      showCancelButton: true,
+      // buttonsStyling: false,
+      // confirmButtonClass: 'btn btn-primary',
+      // cancelButtonClass: 'btn btn-danger',
+      confirmButtonColor: '#2800a0',
+      cancelButtonColor: '#ff3268',
+      confirmButtonText: 'Ok',
+      cancelButtonText: 'Annuler'
+    }).then(async (result) => {
       if (result.value) {
         await this.reparseEventsOfMonth(month)
         Swal.fire(
@@ -407,22 +419,22 @@ Controller = {
       } else {
         if (_.isFunction(cb)) cb()
       }
-		})
-	},
+    })
+  },
 
   _sortEvents(events) {
-		events = _.sortBy(events, 'start')
-	},
+    events = _.sortBy(events, 'start')
+  },
 
   gotToMonth(month) {
     const date = DateTime.fromObject(month)
     FlowRouter.go(`/${toISOMonth(date)}`)
   },
 
-	prevMonth() {
+  prevMonth() {
     const prevMonth = this._prevMonth(getDisplayedMonth())
     this.gotToMonth(prevMonth)
-	},
+  },
 
   todayMonth() {
     const today = DateTime.local()
@@ -431,38 +443,38 @@ Controller = {
       month: today.month
     }
     this.gotToMonth(todayMonth)
-	},
+  },
 
-	nextMonth() {
+  nextMonth() {
     const nextMonth = this._nextMonth(getDisplayedMonth())
     this.gotToMonth(nextMonth)
-	},
+  },
 
-	_prevMonth(date) {
-		if (date.month === 1) {
-			return {
-				month: 12,
-				year: date.year - 1
-			}
-		} else {
-			return {
-				month: date.month - 1,
-				year: date.year
-			}
-		}
-	},
+  _prevMonth(date) {
+    if (date.month === 1) {
+      return {
+        month: 12,
+        year: date.year - 1
+      }
+    } else {
+      return {
+        month: date.month - 1,
+        year: date.year
+      }
+    }
+  },
 
-	_nextMonth(date) {
-		if (date.month === 12) {
-			return {
-				month: 1,
-				year: parseInt(date.year) + 1
-			}
-		} else {
-			return {
-				month: parseInt(date.month) + 1,
-				year: date.year
-			}
-		}
-	}
+  _nextMonth(date) {
+    if (date.month === 12) {
+      return {
+        month: 1,
+        year: parseInt(date.year) + 1
+      }
+    } else {
+      return {
+        month: parseInt(date.month) + 1,
+        year: date.year
+      }
+    }
+  }
 }
