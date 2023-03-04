@@ -10,16 +10,16 @@
 		</thead>
 		<tbody>
 			{{#each this.events}}
-				<tr>
-					<td class="summary">
-						{{ summary }}
-					</td>
-					<td class="start">{{ format start 'HH:mm' }}</td>
-					<td class="end">{{ format end 'HH:mm' }}</td>
-					<td  class="description">
-						<pre>{{ pre description }}</pre>
-					</td>
-				</tr>
+			<tr>
+				<td class="summary">
+					{{ summary }}
+				</td>
+				<td class="start">{{ format start 'HH:mm' }}</td>
+				<td class="end">{{ format end 'HH:mm' }}</td>
+				<td class="description">
+					<pre>[{{ event.category }}] {{ pre description }}</pre>
+				</td>
+			</tr>
 			{{/each}}
 		</tbody>
 	</table>

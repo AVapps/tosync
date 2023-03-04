@@ -1,60 +1,38 @@
 <template name="defaultModalContent">
   <div class="modal-tootlbar">
     {{#if state.editing }}
-      <button type="button" class="btn btn-sm btn-link cancel pull-left">Annuler</button>
-      <button type="button" class="btn btn-sm btn-link save pull-right">Ok</button>
+    <button type="button" class="btn btn-sm btn-link cancel pull-left">Annuler</button>
+    <button type="button" class="btn btn-sm btn-link save pull-right">Ok</button>
     {{ else }}
-      <button type="button" class="btn btn-sm btn-link editing pull-right">Modifier</button>
+    <button type="button" class="btn btn-sm btn-link editing pull-right">Modifier</button>
     {{/if}}
   </div>
   <div class="table-responsive">
-  	<table class="events table table-bordered table-sm table-striped">
-  		<thead>
-  			<tr>
-  				<th>Activité</th>
-  				<th>Début</th>
-  				<th>Fin</th>
-  				<th>Informations</th>
-  			</tr>
-  		</thead>
-  		<tbody>
-  			{{#each evt in this.day.events}}
-  				{{#if showEvent evt }}
-  					{{> defaultModalEvent event=evt state=this.state }}
-  				{{/if}}
-  			{{/each}}
-  		</tbody>
-  	</table>
+    <table class="events table table-bordered table-sm table-striped">
+      <thead>
+        <tr>
+          <th>Activité</th>
+          <th>Début</th>
+          <th>Fin</th>
+          <th>Informations</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each evt in this.day.events}}
+        {{#if showEvent evt }}
+        {{> defaultModalEvent event=evt state=this.state }}
+        {{/if}}
+        {{/each}}
+      </tbody>
+    </table>
   </div>
 
   {{#if showValueTable }}
-    {{#if isPNT }}
-      <div class="row">
-        <div class="col-md-6">
-          <table class="remu table table-bordered table-sm">
-            <caption>Rémunération A</caption>
-            <tbody>
-              {{> defaultModalValueRow day=this.day key='HcsTO' }}
-              {{> defaultModalValueRow day=this.day key='HcsiTO' }}
-              {{> defaultModalValueRow day=this.day key='HcSimuInstTO' }}
-              {{> defaultModalValueRow day=this.day key='HcsrTO' }}
-            </tbody>
-          </table>
-        </div>
-        <div class="col-md-6">
-          <table class="remu table table-bordered table-sm">
-            <caption>Rémunération B & C</caption>
-            <tbody>
-              {{> defaultModalValueRow day=this.day key='HcsAF' }}
-              {{> defaultModalValueRow day=this.day key='PVAF' }}
-              {{> defaultModalValueRow day=this.day key='majoNuitPVAF' }}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    {{ else }}
+  {{#if isPNT }}
+  <div class="row">
+    <div class="col-md-6">
       <table class="remu table table-bordered table-sm">
-        <caption>Rémunération</caption>
+        <caption>Rémunération A</caption>
         <tbody>
           {{> defaultModalValueRow day=this.day key='HcsTO' }}
           {{> defaultModalValueRow day=this.day key='HcsiTO' }}
@@ -62,39 +40,62 @@
           {{> defaultModalValueRow day=this.day key='HcsrTO' }}
         </tbody>
       </table>
-    {{/if}}
+    </div>
+    <div class="col-md-6">
+      <table class="remu table table-bordered table-sm">
+        <caption>Rémunération B & C</caption>
+        <tbody>
+          {{> defaultModalValueRow day=this.day key='HcsAF' }}
+          {{> defaultModalValueRow day=this.day key='PVAF' }}
+          {{> defaultModalValueRow day=this.day key='majoNuitPVAF' }}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{ else }}
+  <table class="remu table table-bordered table-sm">
+    <caption>Rémunération</caption>
+    <tbody>
+      {{> defaultModalValueRow day=this.day key='HcsTO' }}
+      {{> defaultModalValueRow day=this.day key='HcsiTO' }}
+      {{> defaultModalValueRow day=this.day key='HcSimuInstTO' }}
+      {{> defaultModalValueRow day=this.day key='HcsrTO' }}
+    </tbody>
+  </table>
+  {{/if}}
   {{/if}}
 </template>
 
 <template name="defaultModalValueRow">
   {{#if hasKey }}
-    <tr>
-      <td>{{ title }}</td>
-      <td>{{ numFormat getKey }}</td>
-    </tr>
+  <tr>
+    <td>{{ title }}</td>
+    <td>{{ numFormat getKey }}</td>
+  </tr>
   {{/if}}
 </template>
 
 <template name="defaultModalEvent">
-	<tr>
-		<td class="summary">
-			{{#if state.editing }}
-				<button type="button" class="btn btn-sm btn-link remove-button">
-			    <i class="fas fa-minus-square"></i>
-			  </button>
-				<select name="tag" class="custom-select custom-select-sm w-auto">
-					{{#each tag in (tags event) }}
-						<option value="{{ tag }}" {{ isSelected tag }}>{{ tagLabel tag }}</option>
-					{{/each}}
-				</select>
-			{{ else }}
-				{{> eventLabel event }}
-			{{/if}}
-			{{ event.summary }}</td>
-		<td class="start">{{ format event.start 'HH:mm' }}</td>
-		<td class="end">{{ format event.end 'HH:mm' }}</td>
-		<td  class="description">
-			<pre>{{ pre event.description }}</pre>
-		</td>
-	</tr>
+  <tr>
+    <td class="summary">
+      {{#if state.editing }}
+      <button type="button" class="btn btn-sm btn-link remove-button">
+        <i class="fas fa-minus-square"></i>
+      </button>
+      <select name="tag" class="custom-select custom-select-sm w-auto">
+        {{#each tag in (tags event) }}
+        <option value="{{ tag }}" {{ isSelected tag }}>{{ tagLabel tag }}</option>
+        {{/each}}
+      </select>
+      {{ else }}
+      {{> eventLabel event }}
+      {{/if}}
+      {{ event.summary }}
+    </td>
+    <td class="start">{{ format event.start 'HH:mm' }}</td>
+    <td class="end">{{ format event.end 'HH:mm' }}</td>
+    <td class="description">
+      <pre>[{{ event.category }}] {{ pre event.description }}</pre>
+    </td>
+  </tr>
 </template>
