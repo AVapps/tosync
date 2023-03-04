@@ -4,19 +4,23 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title">Décompte mensuel</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
 				</div>
 				<div class="modal-body">
-          {{#if isPNT }}
-					  {{> monthModalContentPNT }}
-          {{ else }}
-            {{> monthModalContentPNC }}
+					{{#if isPNT }}
+					{{> monthModalContentPNT }}
+					{{ else }}
+					{{> monthModalContentPNC }}
 					{{/if}}
 					<hr>
+					{{#LaddaButton class="btn-secondary mb-2" onClick=onRefreshClick }}
+					<i class="fas fa-redo"></i>&nbsp;Actualiser
+					{{/LaddaButton}}
+					<br>
 					{{#LaddaButton class="btn-danger" onClick=onReparseClick }}
-						<i class="fas fa-calculator"></i>&nbsp;Recalculer mon planning
+					<i class="fas fa-calculator"></i>&nbsp;Recalculer mon planning
 					{{/LaddaButton}}
 				</div>
 				<div class="modal-footer">

@@ -24,7 +24,7 @@ Session.setDefault('currentMonth', { year: NOW.year, month: NOW.month })
 
 function checkIsPnt() {
   console.time('Controller.isPNT')
-  isUserPNT.call((e, r) => {
+  forceCheckUserIsPNT.call((e, r) => {
     if (!e && _.isBoolean(r)) {
       isPNT.set(r)
       console.log('Controller.isPNT', r)
@@ -202,9 +202,9 @@ Controller = {
           Notify.error(err)
         }
         const cachedIsPNT = getIsPNTState()
-        if (cachedIsPNT && _.has(cachedIsPNT, 'lastCheckAt')) {
+        if (cachedIsPNT !== null && _.has(cachedIsPNT, 'lastCheckAt')) {
           const lastCheckAt = DateTime.fromMillis(_.get(cachedIsPNT, 'lastCheckAt'))
-          if (NOW.diff(lastCheckAt).as('days') < 7) {
+          if (NOW.diff(lastCheckAt).as('days') <= 8) {
             return isPNT.set(_.get(cachedIsPNT, 'value'))
           }
         }
@@ -380,6 +380,11 @@ Controller = {
 
   async reparseEventsOfCurrentMonth() {
     await this.reparseEventsOfMonth(this.currentMonth.get())
+  },
+
+  async checkIsPNT() {
+    await forceCheckIsPNT()
+    return this.isPNT()
   },
 
   reparseEventsOfMonth: _.debounce(async (month) => {

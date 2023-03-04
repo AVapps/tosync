@@ -8,30 +8,30 @@ import _ from 'lodash'
 
 function isPNT(userId) {
   const events = Events
-		.find({
-			userId,
-			tag: 'vol'
-		}, {
-			limit: 30,
-			sort: [['updated', 'desc']],
-			fields: { userId: 1, updated: 1, pnt: 1, pnc: 1 }
-		})
-		.fetch()
-  
+    .find({
+      userId,
+      tag: 'vol'
+    }, {
+      limit: 30,
+      sort: [ [ 'updated', 'desc' ] ],
+      fields: { userId: 1, updated: 1, pnt: 1, pnc: 1 }
+    })
+    .fetch()
+
   const pnts = events.filter(evt => evt.pnt?.length).map(evt => evt.pnt)
   const pncs = events.filter(evt => evt.pnc?.length).map(evt => evt.pnc)
 
   // console.log('[isPNT]', userId, pnts, pnts.length, pncs, pncs.length)
-	
-	if (pnts.length < 3) return false
-	
-	const max = {
+
+  if (pnts.length < 3) return false
+
+  const max = {
     pnt: _.chain(pnts).flatten().countBy().values().sortBy().last().value(),
     pnc: _.chain(pncs).flatten().countBy().values().sortBy().last().value(),
   }
 
   // console.log('[isPNT]', userId, max, pnts.length)
-	
+
   return max.pnt > pnts.length / 2 && max.pnt > max.pnc ? true : false
 }
 
@@ -55,7 +55,7 @@ function checkUserIsPNTWithCache() {
 
 export const isUserPNT = new ValidatedMethod({
   name: 'tosync.isUserPNT',
-  mixins: [CallPromiseMixin],
+  mixins: [ CallPromiseMixin ],
   validate: null,
   run() {
     check(this.userId, Match.OneOf(String, Object))
@@ -70,7 +70,7 @@ export const isUserPNT = new ValidatedMethod({
 
 export const forceCheckUserIsPNT = new ValidatedMethod({
   name: 'tosync.forceCheckUserIsPNT',
-  mixins: [CallPromiseMixin],
+  mixins: [ CallPromiseMixin ],
   validate: null,
   run() {
     check(this.userId, Match.OneOf(String, Object))
@@ -95,12 +95,15 @@ export const forceCheckUserIsPNT = new ValidatedMethod({
 
 export const getPayscale = new ValidatedMethod({
   name: 'tosync.getPayscale',
-  mixins: [CallPromiseMixin],
+  mixins: [ CallPromiseMixin ],
   validate: null,
   run() {
     check(this.userId, Match.OneOf(String, Object))
 
     if (this.isSimulation) {
+      if (window.localStorage) {
+        return JSON.parse(localStorage.getItem('TOSYNC.baremePNT'))
+      }
       return null
     }
 
@@ -119,7 +122,7 @@ export const getPayscale = new ValidatedMethod({
 
 export const batchEventsRemove = new ValidatedMethod({
   name: 'tosync.Events.batchRemove',
-  mixins: [CallPromiseMixin],
+  mixins: [ CallPromiseMixin ],
   validate: new SimpleSchema({
     ids: [ String ]
   }).validator(),
@@ -142,7 +145,7 @@ export const batchEventsRemove = new ValidatedMethod({
 
 export const getEventsInterval = new ValidatedMethod({
   name: 'tosync.Events.getInterval',
-  mixins: [CallPromiseMixin],
+  mixins: [ CallPromiseMixin ],
   validate: new SimpleSchema({
     start: { type: SimpleSchema.Integer },
     end: {
@@ -165,7 +168,7 @@ export const getEventsInterval = new ValidatedMethod({
       userId: this.userId,
       start: { $lt: start },
       end: { $gte: start }
-    }, { sort: [['start', 'asc']], fields: { start: 1, end: 1 }})
+    }, { sort: [ [ 'start', 'asc' ] ], fields: { start: 1, end: 1 } })
 
     const query = {
       userId: this.userId,
@@ -178,13 +181,13 @@ export const getEventsInterval = new ValidatedMethod({
         userId: this.userId,
         start: { $lte: end },
         end: { $gt: end }
-      }, { sort: [['end', 'desc']], fields: { start: 1, end: 1 }})
+      }, { sort: [ [ 'end', 'desc' ] ], fields: { start: 1, end: 1 } })
 
       query.start = { $lte: overlapEnd ? overlapEnd.end : end }
     }
 
     return Events.find(query, {
-      sort: [['start', 'asc'], ['end', 'desc']]
+      sort: [ [ 'start', 'asc' ], [ 'end', 'desc' ] ]
     }).fetch()
   }
 })
@@ -196,7 +199,7 @@ export const subscribeUser = new ValidatedMethod({
   }).validator(),
   run({ email }) {
     if (this.isSimulation) return
-    
+
     const pn = PN.findOne({ email })
     if (pn) {
       const user = Accounts.findUserByUsername(pn.trigramme, { _id: 1, emails: 1 })
@@ -236,7 +239,7 @@ export const subscribeUser = new ValidatedMethod({
         throw new Meteor.Error('tosync.subscribeUser.alreadySubscribed', 'Un compte existe déjà pour cette adresse email.')
       } else {
         console.log('tosync.subscribeUser', `Création d'un nouveau compte pour : ${email}`)
-        const [ prenom, nom ] = email.split('@')[0].split('.')
+        const [ prenom, nom ] = email.split('@')[ 0 ].split('.')
         Accounts.createUserVerifyingEmail({
           username: email,
           email,
@@ -302,7 +305,7 @@ export const adminSubscribeUser = new ValidatedMethod({
             fonction: pn.fonction,
             nom: pn.nom,
             prenom: pn.prenom,
-            name: [pn.prenom, pn.nom].join(' ')
+            name: [ pn.prenom, pn.nom ].join(' ')
           })
         }
         const userId = Accounts.createUser(newUser)
@@ -348,7 +351,7 @@ export const disableGoogleAuth = new ValidatedMethod({
     }
 
     if (!this.isSimulation && _.has(Meteor.user(), 'services.google')) {
-      Meteor.users.update(this.userId, { $unset: { 'services.google': '' }})
+      Meteor.users.update(this.userId, { $unset: { 'services.google': '' } })
     }
   }
 })
