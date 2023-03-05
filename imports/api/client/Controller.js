@@ -284,7 +284,7 @@ Controller = {
     })
   },
 
-  loadPayscale() {
+  async loadPayscale() {
     if (window.localStorage) {
       const bareme = JSON.parse(localStorage.getItem('TOSYNC.baremePNT'))
       if (bareme && _.has(bareme, 'AF') && _.has(bareme, 'TO')) {
@@ -292,15 +292,14 @@ Controller = {
         this._bareme.set(bareme)
       }
     }
-    getPayscale.call((e, resp) => {
-      if (!e && _.has(resp, 'AF') && _.has(resp, 'TO')) {
-        console.log('Controller.loadPayscale from server', resp)
-        this._bareme.set(resp)
-        if (window.localStorage) {
-          localStorage.setItem('TOSYNC.baremePNT', JSON.stringify(resp))
-        }
+    const resp = await getPayscale.callPromise()
+    if (_.has(resp, 'AF') && _.has(resp, 'TO')) {
+      console.log('Controller.loadPayscale from server', resp)
+      this._bareme.set(resp)
+      if (window.localStorage) {
+        localStorage.setItem('TOSYNC.baremePNT', JSON.stringify(resp))
       }
-    })
+    }
   },
 
   calculSalaire(statsRemu, profil) {

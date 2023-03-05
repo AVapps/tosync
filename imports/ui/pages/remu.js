@@ -19,6 +19,8 @@ Template.remu.helpers({
 			try {
 				await Controller.reparseEventsOfCurrentMonth()
 				Notify.success('Votre planning a été recalculé.')
+			} catch (e) {
+				Notify.error(e)
 			} finally {
 				doneCb()
 			}
@@ -28,8 +30,13 @@ Template.remu.helpers({
 	onRefreshClick() {
 		return async (doneCb) => {
 			try {
-				await Controller.checkIsPNT()
+				const isPNT = await Controller.checkIsPNT()
+				if (isPNT) {
+					await Controller.loadPayscale()
+				}
 				Notify.success('Actualisation terminée.')
+			} catch (e) {
+				Notify.error(e)
 			} finally {
 				doneCb()
 			}
