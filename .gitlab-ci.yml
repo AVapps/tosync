@@ -32,7 +32,7 @@ build-meteor:
         echo ${INFO} Updating apt;
         apt-get -qq update;
         echo ${INFO} Installing tools;
-        apt-get -qq install curl procps python g++ make sudo >/dev/null
+        apt-get -qq install curl procps python3 g++ make sudo >/dev/null
         echo ${INFO} Copying files
         sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
       fi
