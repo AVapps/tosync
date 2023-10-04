@@ -1,15 +1,15 @@
 module.exports = {
-	hdn: {
-		nightEnd: { hour: 9, minute: 0 }, // o'clock LT
-		nightStart: { hour: 21, minute: 0 } // o'clock LT
-	},
+  hdn: {
+    nightEnd: { hour: 9, minute: 0 }, // o'clock LT
+    nightStart: { hour: 21, minute: 0 } // o'clock LT
+  },
 
   hdnSimuInstruction: {
-		nightEnd: { hour: 6, minute: 0 }, // o'clock LT
-		nightStart: { hour: 22, minute: 0 } // o'clock LT
-	},
+    nightEnd: { hour: 6, minute: 0 }, // o'clock LT
+    nightStart: { hour: 22, minute: 0 } // o'clock LT
+  },
 
-	hcaParJour: 4.0,
+  hcaParJour: 4.0,
   hcParNJ: 5.0,
 
   preTSVr: 1.0,
@@ -34,18 +34,18 @@ module.exports = {
   PVSimuInstruction: 9,
   PVDemiSimuInstruction: 5.5,
 
-	coefMajoNuit: 0.50,
-  coefPVCDB: 0.20,
+  coefMajoNuit: 0.50,
+  coefPVCDB: 0.25, // 0.25 à compter du 1er septembre 2023
 
-	bonusEtape: 15/60,
-  bonusEtape2100NM: 35/60,
+  bonusEtape: 15 / 60,
+  bonusEtape2100NM: 35 / 60,
 
-	tsvMini: 5.74,
+  tsvMini: 5.74,
 
   hcPogo: 1.05,
 
-	coefTSV: 1/1.64,
-  coefTSV10: 1/1.45,
+  coefTSV: 1 / 1.64,
+  coefTSV10: 1 / 1.45,
 
   coefPVHC: 1.13,
 
@@ -64,7 +64,7 @@ module.exports = {
     10: 2.00
   },
 
-  echelonParAnciennete: { 0: 1, 1:1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5, 10: 6, 11: 6, 12: 7, 13: 7, 14: 7, 15: 8, 16: 8, 17: 8, 18: 9, 19: 9, 20: 9, 21: 10 },
+  echelonParAnciennete: { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5, 10: 6, 11: 6, 12: 7, 13: 7, 14: 7, 15: 8, 16: 8, 17: 8, 18: 9, 19: 9, 20: 9, 21: 10 },
 
   classes: {
     CDB: [ 0, 1.55, 1.45, 1.35, 1.30, 1.25 ],
