@@ -17,7 +17,7 @@ Accounts.beforeExternalLogin((type, data, user) => {
     const userId = Meteor.userId()
     if (userId && type === 'google' && data.email && data.id) {
       // Vérifie si le compte google n'est pas déjà utilisé par un autre compte utilisateur TO.sync
-      const googleUser = Meteor.users.findOne({ 'services.google.id': data.id }, { fields: { _id: 1 }})
+      const googleUser = Meteor.users.findOne({ 'services.google.id': data.id }, { fields: { _id: 1 } })
       if (googleUser) {
         throw new Meteor.Error('tosync.googleAccountAlreadyUsed', `Un autre compte TO.sync utilise déjà ce compte google pour s'authentifier !`)
       }
@@ -25,16 +25,16 @@ Accounts.beforeExternalLogin((type, data, user) => {
       // Ajoute les serviceData à l'utilisateur
       const setAttrs = {}
       Object.keys(data).forEach(key => {
-        let value = data[key]
+        let value = data[ key ]
         if (OAuthEncryption && OAuthEncryption.isSealed(value)) {
           value = OAuthEncryption.seal(OAuthEncryption.open(value), userId)
         }
-        setAttrs[`services.google.${key}`] = value
+        setAttrs[ `services.google.${key}` ] = value
       })
       Meteor.users.update(userId, { $set: setAttrs })
-      
+
       Accounts.addEmail(userId, data.email, !!data.verified_email)
-      console.log(`-> Google OAuth credentials for ${ data.email } added to user ${ userId }.`)
+      console.log(`-> Google OAuth credentials for ${data.email} added to user ${userId}.`)
       throw new Meteor.Error('tosync.googleServiceAdded', data.email)
     }
     return true
@@ -72,11 +72,11 @@ Accounts.emailTemplates.enrollAccount = {
     return `Bienvenue sur TO.sync !`
   },
   text(user, url) {
-    return `Bonjour ${user.profile.prenom },
+    return `Bonjour ${user.profile.prenom},
 
 Pour poursuivre votre inscription ou votre récupération de compte il vous suffit de cliquer sur le lien ci-dessous puis de créer un nouveau mot de passe spécifique TO.sync :
 
-${ url }
+${url}
 
 Si vous n'êtes pas à l'origne de cette demande, veuillez ignorer ce message.
 
@@ -96,7 +96,7 @@ Pour réinitialiser votre mot de passe il vous suffit de cliquer sur le lien ci-
 
 ${url}
 
-Si vous n'avez pas effectué de demande de réinitialisation de mot de passe sur ${ Meteor.absoluteUrl() }, veuillez ignorer ce message.
+Si vous n'avez pas effectué de demande de réinitialisation de mot de passe sur ${Meteor.absoluteUrl()}, veuillez ignorer ce message.
 
 À bientôt sur TO.sync,
 AdrienV`
