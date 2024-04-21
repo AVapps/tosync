@@ -61,7 +61,6 @@ build-meteor:
       - dev
       - dev-end
   tags:
-    - fast
     - docker
     - cache
 
@@ -88,7 +87,6 @@ build-alpine:
     - dev
     - dev-end
   tags:
-    - fast
     - docker
 
 kaniko-build:
@@ -108,7 +106,6 @@ kaniko-build:
     - dev
     - dev-end
   tags:
-    - fast
     - docker
 
 deploy-prod:
