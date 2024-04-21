@@ -61,6 +61,7 @@ build-meteor:
       - dev
       - dev-end
   tags:
+    - fast
     - docker
     - cache
 
@@ -87,6 +88,7 @@ build-alpine:
     - dev
     - dev-end
   tags:
+    - fast
     - docker
 
 kaniko-build:
@@ -101,9 +103,12 @@ kaniko-build:
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${IMAGE_TAG}"
-  rules:
-    - if: $CI_COMMIT_TAG
+  only:
+    - master
+    - dev
+    - dev-end
   tags:
+    - fast
     - docker
 
 deploy-prod:
