@@ -32,12 +32,11 @@ kaniko-build:
 
 deploy-prod:
   stage: deploy
-  script:
-    - curl --request POST \
-     --form token=$CI_JOB_TOKEN \
-     --form ref=main \
-     --form variables[CHART_IMAGE_TAG]="${IMAGE_TAG}" \
-     "https://gitlab.example.com/api/v4/projects/73/trigger/pipeline"
+  trigger:
+    project: kubernetes/avapps/tosync-meteor-chart
+    strategy: depend
+  variables:
+    CHART_IMAGE_TAG: $IMAGE_TAG
   environment:
     name: production
     url: https://tosync.avapps.fr
@@ -47,12 +46,11 @@ deploy-prod:
 
 deploy-dev:
   stage: deploy
-  script:
-    - curl --request POST \
-     --form token=$CI_JOB_TOKEN \
-     --form ref=main \
-     --form variables[CHART_IMAGE_TAG]="${IMAGE_TAG}" \
-     "https://gitlab.example.com/api/v4/projects/73/trigger/pipeline"
+  trigger:
+    project: kubernetes/avapps/tosync-meteor-chart
+    strategy: depend
+  variables:
+    CHART_IMAGE_TAG: $IMAGE_TAG
   environment:
     name: staging
     url: https://tosync.dev.avapps.fr
