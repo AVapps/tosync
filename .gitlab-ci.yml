@@ -1,6 +1,4 @@
 stages:
-  - meteor-build
-  - alpine-build
   - kaniko
   - deploy
 
@@ -9,85 +7,10 @@ variables:
   DOMAIN: "avapps.fr"
   ROOT_URL: "https://${APPNAME}.${DOMAIN}"
   IMAGE_TAG: "${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
-  MONGO_URL: "mongodb://mongodb:27017/${APPNAME}"
   INFO: "[meteor-docker]"
-  USERNAME: "user"
-  USERHOME: "/home/user"
 
 before_script:
   - if [[ ${CI_COMMIT_REF_NAME} = "master" && $CI_COMMIT_TAG ]]; then IMAGE_TAG="stable-${CI_COMMIT_TAG}"; fi
-  - if [[ ${CI_COMMIT_REF_NAME} != "master" ]]; then ROOT_URL="https://${APPNAME}.dev.${DOMAIN}"; fi
-
-build-meteor:
-  stage: meteor-build
-  image: debian
-  script:
-    - echo ${INFO} Meteor container started
-    - useradd -m $USERNAME
-    - chown -R $USERNAME .
-    - |
-      if ! test -x "$USERHOME/.meteor/meteor"
-      then
-        echo ${INFO} Installing meteor;
-        echo ${INFO} Updating apt;
-        apt-get -qq update;
-        echo ${INFO} Installing tools;
-        apt-get -qq install curl procps python3 g++ make sudo >/dev/null
-        echo ${INFO} Copying files
-        sudo -u ${USERNAME} curl -sL https://install.meteor.com | sed s/^RELEASE=.*/RELEASE=$(cat .meteor/release | cut -d'@' -f 2)/ | sed s/--progress-bar/-sL/g | sudo -u ${USERNAME} /bin/sh
-      fi
-    - echo ${INFO} Installing NPM build dependencies
-    - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor npm --loglevel=silent install
-    - echo ${INFO} Performing Meteor build
-    - mkdir meteor-build
-    - chown -R ${USERNAME} meteor-build
-    - sudo -u ${USERNAME} ${USERHOME}/.meteor/meteor build --directory ./meteor-build
-    - echo ${INFO} Meteor build container finished
-  cache:
-    key:
-      files:
-        - .meteor/release
-    paths:
-      - $USERHOME/.meteor/
-      - node_modules/
-    policy: pull-push
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - meteor-build
-  only:
-    refs:
-      - master
-      - dev
-      - dev-end
-  tags:
-    - docker
-    - cache
-
-build-alpine:
-  stage: alpine-build
-  image: mhart/alpine-node:14
-  script:
-    - echo ${INFO} Alpine container started, installing tools
-    - apk add --no-cache make gcc g++ python sudo
-    - adduser -D -h ${USERHOME} ${USERNAME}
-    - mkdir alpine-build
-    - cp -r meteor-build/bundle alpine-build
-    - chown -R ${USERNAME} alpine-build
-    - echo ${INFO} Installing NPM build dependencies
-    - cd alpine-build/bundle/programs/server
-    - sudo -u ${USERNAME} npm install
-    - echo ${INFO} Alpine build container finished
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - alpine-build
-  only:
-    - master
-    - dev
-    - dev-end
-  tags:
-    - docker
 
 kaniko-build:
   stage: kaniko
@@ -95,8 +18,7 @@ kaniko-build:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
-    - echo ${INFO} Starting docker image build with Kaniko for ${CI_COMMIT_REF_NAME}
-    - echo ${INFO} Setting application ROOT_URL as ${ROOT_URL} and pushing to ${IMAGE_TAG}
+    - echo ${INFO} Starting docker image build with Kaniko for ${CI_COMMIT_REF_NAME} and pushing to ${IMAGE_TAG}
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
@@ -110,9 +32,12 @@ kaniko-build:
 
 deploy-prod:
   stage: deploy
-  image: cdrx/rancher-gitlab-deploy
   script:
-    - upgrade --stack ${APPNAME} --service ${APPNAME}-server --new-image ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --finish-upgrade
+    - curl --request POST \
+     --form token=$CI_JOB_TOKEN \
+     --form ref=main \
+     --form variables[CHART_IMAGE_TAG]="${IMAGE_TAG}" \
+     "https://gitlab.example.com/api/v4/projects/73/trigger/pipeline"
   environment:
     name: production
     url: https://tosync.avapps.fr
@@ -122,11 +47,14 @@ deploy-prod:
 
 deploy-dev:
   stage: deploy
-  image: cdrx/rancher-gitlab-deploy
   script:
-    - upgrade --stack ${APPNAME} --service ${APPNAME}-server-dev --new-image ${CI_REGISTRY}/tosync/to.sync-meteor:${IMAGE_TAG} --finish-upgrade
+    - curl --request POST \
+     --form token=$CI_JOB_TOKEN \
+     --form ref=main \
+     --form variables[CHART_IMAGE_TAG]="${IMAGE_TAG}" \
+     "https://gitlab.example.com/api/v4/projects/73/trigger/pipeline"
   environment:
-    name: dev
+    name: staging
     url: https://tosync.dev.avapps.fr
   only:
     - dev
