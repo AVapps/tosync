@@ -36,7 +36,8 @@ deploy-prod:
     project: kubernetes/avapps/tosync-meteor-chart
     strategy: depend
   variables:
-    CHART_IMAGE_TAG: $IMAGE_TAG
+    CHART_IMAGE_REGISTRY: "${CI_REGISTRY_IMAGE}"
+    CHART_IMAGE_TAG: "${IMAGE_TAG}"
   environment:
     name: production
     url: https://tosync.avapps.fr
@@ -50,7 +51,8 @@ deploy-dev:
     project: kubernetes/avapps/tosync-meteor-chart
     strategy: depend
   variables:
-    CHART_IMAGE_TAG: $IMAGE_TAG
+    CHART_IMAGE_REGISTRY: "${CI_REGISTRY_IMAGE}"
+    CHART_IMAGE_TAG: "${IMAGE_TAG}"
   environment:
     name: staging
     url: https://tosync.dev.avapps.fr
