@@ -298,6 +298,7 @@ export default {
 		OFFG: 'repos',
 		OFFHS: 'maladie',
 		OFFR: 'repos',
+		PART: 'sanssolde',
 		PHC: 'sanssolde',
 		PMR: 'sol',
 		PPV: 'sol',
