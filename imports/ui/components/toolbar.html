@@ -1,46 +1,50 @@
 <template name="toolbar">
-	<div id="toolbar">
+  <div id="toolbar">
     <div class="row justify-content-center">
       <div class="col-lg-3 col-sm-6 mt-0">
         <button type="button" class="js-icalendar-import btn btn-success btn-block">
-  				<i class="fas fa-file-import"></i>
-  				<span class="label">Importer un fichier ics</span>
-  			</button>
-			  <input id="filereader" type="file" class="d-none" accept=".ics,text/calendar,.pdf,application/pdf" />
+          <i class="fas fa-file-import"></i>
+          <span class="label">Importer un fichier ics</span>
+        </button>
+        <input id="filereader" type="file" class="d-none" accept=".ics,text/calendar,.pdf,application/pdf" />
       </div>
       <div class="col-lg-3 col-sm-6 mt-sm-0 mt-2">
         <div class="btn-group btn-block" role="group">
-    	    <button type="button" class="js-icalendar-export btn btn-primary ladda-button ellipsis flex-grow-1" data-style="zoom-out" {{ disabledIfNoEvents }}>
-    				<i class="fas fa-calendar-plus"></i>
-    				<span class="label">Exportation iCalendar</span>
-    			</button>
+          <button type="button" class="js-icalendar-export btn btn-primary ladda-button ellipsis flex-grow-1"
+            data-style="zoom-out" {{ disabledIfNoEvents }}>
+            <i class="fas fa-calendar-plus"></i>
+            <span class="label">Exportation iCalendar</span>
+          </button>
           <button type="button" class="js-icalendar-settings btn btn-primary flex-grow-0">
             <i class="fas fa-filter"></i>
           </button>
         </div>
       </div>
       <div class="col-lg-3 col-sm-6 mt-lg-0 mt-2">
-  			{{> GoogleButton disabled=disabledIfNoEvents }}
+        {{> GoogleButton disabled=disabledIfNoEvents }}
       </div>
       <div class="col-lg-3 col-sm-6 mt-lg-0 mt-2">
         <button type="button" class="js-csv-export btn btn-secondary btn-block" {{ disabledIfNoEvents }}>
-  				<i class="fas fa-file-csv"></i>
-  				<span class="label">Heures de vol</span>
-  			</button>
+          <i class="fas fa-file-csv"></i>
+          <span class="label">Heures de vol</span>
+        </button>
       </div>
     </div>
 
     <div class="custom-control custom-switch mt-3 text-md-center">
       <input type="checkbox" class="custom-control-input" id="exportFormat" checked={{ crewMobileFormatChecked }}>
-      <label class="custom-control-label" for="exportFormat">Utiliser le format CREW Mobile pour les rotations et les vols exportés (ex: TO3434 (ORY-LIS) 73H).</label>
+      <label class="custom-control-label" for="exportFormat">Utiliser le format CREW Mobile pour les rotations et les
+        vols exportés (ex: TO3434 (ORY-LIS) 73H).</label>
     </div>
 
     <div class="card bg-dark text-muted mt-4" style="max-width: 800px; margin-left: auto; margin-right: auto;">
       <div class="card-body">
-        <strong>Suite à la fermeture définitive de TO.connect, l'importation automatique de votre planning n'est plus possible.</strong><br>
+        <strong>Suite à la fermeture définitive de TO.connect, l'importation automatique de votre planning n'est plus
+          possible.</strong><br>
         Seule l'importation manuelle reste disponible :
         <ol>
-          <li>téléchargez votre planning au format iCalendar sur <a href="https://planning.to.aero/FlightProgram/GetICS" target="blank">CrewWeb Plus</a> (lien « Mail Calendar » de la page roster),</li>
+          <li>téléchargez votre planning au format iCalendar sur <a href="https://planning.to.aero/FlightProgram/GetICS"
+              target="blank">CrewWeb Plus</a> (lien « Mail Calendar » de la page roster),</li>
           <li>cliquez sur le bouton « Importer un fichier ics » ci-dessous et sélectionnez le fichier téléchargé.</li>
         </ol>
       </div>
@@ -51,7 +55,7 @@
     {{> authServices }}
 
     {{#if isAdmin }}
-      <hr>{{> adminPNImport }}
+    <hr>{{> adminPNImport }}
     {{/if}}
 
     <div class="modal fade" id="iCalendarModal" tabindex="-1" role="dialog">
@@ -67,11 +71,11 @@
             <h5>Evènements à exporter</h5>
             <div class="row">
               {{#with tags=iCalendarTags categories=categories }}
-                {{#each tag in categories }}
-                  <div class="col-sm-6 text-left">
-                    {{> iCalendarCategoryTagSwitch tag=tag checked=(checked tags tag) }}
-                  </div>
-                {{/each}}
+              {{#each tag in categories }}
+              <div class="col-sm-6 text-left">
+                {{> iCalendarCategoryTagSwitch tag=tag checked=(checked tags tag) }}
+              </div>
+              {{/each}}
               {{/with}}
             </div>
             <hr>

@@ -1,7 +1,8 @@
 <head>
-	<meta charset="utf-8">
+  <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport"
+    content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="apple-mobile-web-app-title" content="TO.sync">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -64,11 +65,14 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="mask-icon" href="mask_icon.svg" color="#00D66C">
   <link rel="manifest" type="application/json" href="tosync-manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&family=Roboto&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&family=Roboto&family=Source+Code+Pro:wght@400;600&display=swap"
+    rel="stylesheet">
 </head>
 
 <body class="tosync">
-  <script async defer src="https://apis.google.com/js/api.js"
-      onload="this.onload=function(){};handleGapiClientLoad()"
-      onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
+
+  <script async defer src="https://apis.google.com/js/api.js" onload="handleGapiClientLoad()"></script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="handleGsiClientLoad()"></script>
+
 </body>

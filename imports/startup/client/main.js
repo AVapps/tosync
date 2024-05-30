@@ -41,10 +41,4 @@ Session.setDefault('showLogin', false)
 Config.init()
 Connect.init()
 Controller.init()
-
-window.handleGapiClientLoad = function () {
-  console.log('GAPI.handleGapiClientLoad')
-	Meteor.defer(() => {
-    Gapi.loadClient()
-  })
-}
+Gapi.registerHandlers()

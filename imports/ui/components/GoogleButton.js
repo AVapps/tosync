@@ -13,7 +13,7 @@ Template.GoogleButton.onRendered(function () {
   if (!this.ladda) {
     this.ladda = Ladda.create(this.find('.js-google-button'))
     this.setProgress = (value) => {
-      this.ladda.setProgress(value/100)
+      this.ladda.setProgress(value / 100)
     }
   }
   if (!this.laddaComp) {
@@ -39,15 +39,15 @@ Template.GoogleButton.helpers({
 })
 
 Template.GoogleButton.events({
-  'click button.js-google-button': function (e,t) {
+  'click button.js-google-button': function (e, t) {
     t.state.set('loading', true)
-		if (Gapi.isSignedIn()) {
-  		Gapi.syncEvents(App.eventsToSync(), t.setProgress).then(
+    if (Gapi.isSignedIn()) {
+      Gapi.syncEvents(App.eventsToSync(), t.setProgress).then(
         results => {
           Modals.Google.close()
           t.setProgress(0)
           t.state.set('loading', false)
-    		},
+        },
         error => {
           if (error.error == 'sync-warning') {
             App.warn(error.reason)
@@ -60,21 +60,24 @@ Template.GoogleButton.events({
         }
       )
     } else {
-      Gapi.signIn().then(
+      Gapi.signIn({
+        prompt: ''
+      }).then(
         value => {
           Modals.Google.open()
-    			t.state.set('loading', false)
+          t.state.set('loading', false)
         },
         reason => {
           console.log(reason)
-    			t.state.set('loading', false)
+          App.error(reason)
+          t.state.set('loading', false)
         }
       )
     }
-	},
+  },
 
 
-    'click button.js-google-settings': function (e,t) {
-  		Modals.Google.open()
-  	}
+  'click button.js-google-settings': function (e, t) {
+    Modals.Google.open()
+  }
 })

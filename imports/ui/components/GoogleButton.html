@@ -1,13 +1,14 @@
 <template name="GoogleButton">
   <div id="GoogleButton" class="btn-group btn-block" role="group">
-    <button type="button" class="js-google-button btn btn-light btn-google btn-block ladda-button ellipsis" data-style="zoom-out" {{ disabled }}>
+    <button type="button" class="js-google-button btn btn-light btn-google btn-block ladda-button ellipsis"
+      data-style="zoom-out" {{ disabled }}>
       <span class="ladda-label">
         {{#if isSignedIn }}
         <span class="icon"><i class="fas fa-sync-alt"></i></span>
         <span class="label">Synchroniser Google</span>
         {{ else }}
-        <img src="./google_logo.svg" alt="G"/>
-        <span class="label">Connexion avec Google</span>
+        <img src="./google_logo.svg" alt="G" />
+        <span class="label">Se connecter avec Google</span>
         {{/if}}
       </span>
     </button>
