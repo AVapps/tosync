@@ -36,28 +36,28 @@ function sumBy(collection, key) {
 function sumByMonth(collection, key, month, startKey = 'debut') {
   return _.reduce(collection, (sum, object) => {
     // L'objet a un objet split
-    if (_.has(object, ['split', month, key].join('.'))) {
+    if (_.has(object, [ 'split', month, key ].join('.'))) {
       // if (isNaN(_.get(object, ['split', month, key].join('.')))) {
       //   console.log(object, ['split', month, key].join('.'))
-        // throw new Error("NaN")
+      // throw new Error("NaN")
       // }
-      return sum + (_.get(object, ['split', month, key].join('.')) || 0)
+      return sum + (_.get(object, [ 'split', month, key ].join('.')) || 0)
 
-    // L'objet a un DateTime Luxon de début
+      // L'objet a un DateTime Luxon de début
     } else if (_.has(object, key) && _.has(object, startKey) && _.get(object, startKey).month === month) {
       // if (isNaN(_.get(object, key))) {
       //   console.log(object, key)
-        // throw new Error("NaN")
+      // throw new Error("NaN")
       // }
       return sum + (_.get(object, key) || 0)
 
-    // L'objet a un Moment de début
+      // L'objet a un Moment de début
     } else if (_.has(object, key) && _.has(object, 'start')
       && _.get(object, 'start')._isAMomentObject
-      &&_.get(object, 'start').month() + 1 === month) {
+      && _.get(object, 'start').month() + 1 === month) {
       // if (isNaN(_.get(object, key))) {
       //   console.log(object, key)
-        // throw new Error("NaN")
+      // throw new Error("NaN")
       // }
       return sum + (_.get(object, key) || 0)
     } else {
@@ -67,23 +67,23 @@ function sumByMonth(collection, key, month, startKey = 'debut') {
 }
 
 const findHV100TO = _.memoize(function (vol) {
-	const mois = toDateTime(vol.start).toFormat('yyyy-MM');
-	const hv = HV100.findOne({src: vol.from, dest: vol.to, mois: { $lte : mois }}, { sort: [["mois", "desc"]]});
-	return hv ? hv.tr : undefined;
+  const mois = toDateTime(vol.start).toFormat('yyyy-MM');
+  const hv = HV100.findOne({ src: vol.from, dest: vol.to, mois: { $lte: mois } }, { sort: [ [ "mois", "desc" ] ] });
+  return hv ? hv.tr : undefined;
 }, function (vol) {
-	return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
+  return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
 })
 
 const findHV100AF = _.memoize(function (vol) {
-	const mois = toDateTime(vol.start).toFormat('yyyy-MM');
-	const hv = HV100AF.findOne({src: vol.from, dest: vol.to, mois: { $lte : mois }}, { sort: [["mois", "desc"]]});
-	return hv ? hv.tr : undefined;
+  const mois = toDateTime(vol.start).toFormat('yyyy-MM');
+  const hv = HV100AF.findOne({ src: vol.from, dest: vol.to, mois: { $lte: mois } }, { sort: [ [ "mois", "desc" ] ] });
+  return hv ? hv.tr : undefined;
 }, function (vol) {
-	return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
+  return [ vol.from, vol.to, toDateTime(vol.start).toFormat('yyyy-MM') ].join('-');
 })
 
 export default class RemuPNT {
-  constructor(eventsByTag, month) {
+  constructor (eventsByTag, month) {
     this.eventsByTag = eventsByTag
     this.month = _.clone(month)
 
@@ -101,7 +101,7 @@ export default class RemuPNT {
 
   findEvent(evt) {
     if (_.has(this.eventsByTag, evt.tag)) {
-      return _.find(this.eventsByTag[evt.tag], { _id: evt._id })
+      return _.find(this.eventsByTag[ evt.tag ], { _id: evt._id })
     }
     return null
   }
@@ -151,7 +151,7 @@ export default class RemuPNT {
     const month = this.month.month
 
     _.forEach(_.omit(Utils.tags, 'stage', 'sol', 'simu', 'instructionSol', 'instructionSimu', 'reserve', 'delegation', 'vol', 'mep'), tag => {
-      stats.count[tag] = _.has(data, tag) ? _.sumBy(data[tag], evt => (toDateTime(evt.start).month === month) ? 1 : 0) : 0
+      stats.count[ tag ] = _.has(data, tag) ? _.sumBy(data[ tag ], evt => (toDateTime(evt.start).month === month) ? 1 : 0) : 0
     })
 
     if (_.has(this.eventsByTag, 'stage') && _.get(this.eventsByTag, 'stage').length) {
@@ -162,7 +162,7 @@ export default class RemuPNT {
         if (stageInterval.contains(day.debut) && day.tag !== 'stage') {
           day.tag = 'stage'
           day.HcsAF = this._isDemiJournée(day, 13) ? CONFIG_AF.demiHcs : CONFIG_AF.Hcs
-          day.HcsTO = 65/30
+          day.HcsTO = 65 / 30
         }
       })
 
@@ -230,16 +230,16 @@ export default class RemuPNT {
     stats.AF.trentiemes = 30 - stats.AF.NJabs
     stats.AF.seuilHS = Math.max(75 * stats.AF.trentiemes / 30, 16)
 
-    _.forEach(['tv', 'tvp', 'mep', 'countVol'], key => {
-      stats[key] = sumByMonth(data.rotation, key, month)
+    _.forEach([ 'tv', 'tvp', 'mep', 'countVol' ], key => {
+      stats[ key ] = sumByMonth(data.rotation, key, month)
     })
 
-    _.forEach(['HVnuit', 'H2TO'], key => {
-      stats.TO[key.replace('TO', '')] = sumByMonth(data.rotation, key, month)
+    _.forEach([ 'HVnuit', 'H2TO' ], key => {
+      stats.TO[ key.replace('TO', '') ] = sumByMonth(data.rotation, key, month)
     })
 
-    _.forEach(['TSVnuit', 'H2AF', 'H2rAF'], key => {
-      stats.AF[key.replace('AF', '')] = sumByMonth(data.rotation, key, month)
+    _.forEach([ 'TSVnuit', 'H2AF', 'H2rAF' ], key => {
+      stats.AF[ key.replace('AF', '') ] = sumByMonth(data.rotation, key, month)
     })
 
     stats.AF.PVrm += stats.AF.H2r * CONFIG_AF.coefPVHC
@@ -294,14 +294,14 @@ export default class RemuPNT {
     const stats = this.stats
 
     const salaire = {
-      fixe: _.get(bareme, ['TO', profil.grille, profil.anciennete, 0].join('.')),
-      PV: _.get(bareme, ['TO', profil.grille, profil.anciennete, 1].join('.')),
-      PV75HC: _.get(bareme, ['TO', profil.grille, profil.anciennete, 2].join('.')),
-      SMMG: _.get(bareme, ['TO', profil.grille, profil.anciennete, 3].join('.'))
+      fixe: _.get(bareme, [ 'TO', profil.grille, profil.anciennete, 0 ].join('.')),
+      PV: _.get(bareme, [ 'TO', profil.grille, profil.anciennete, 1 ].join('.')),
+      PV75HC: _.get(bareme, [ 'TO', profil.grille, profil.anciennete, 2 ].join('.')),
+      SMMG: _.get(bareme, [ 'TO', profil.grille, profil.anciennete, 3 ].join('.'))
     }
 
     const pvSMMGTO = stats.TO.trentiemes * CONFIG_TO.PVSMMG / 30
-    const nbPVCompTO = stats.TO.HCrm > pvSMMGTO ? Math.min(stats.TO.HCrm - pvSMMGTO, stats.TO.seuilHS - pvSMMGTO): 0
+    const nbPVCompTO = stats.TO.HCrm > pvSMMGTO ? Math.min(stats.TO.HCrm - pvSMMGTO, stats.TO.seuilHS - pvSMMGTO) : 0
     const tauxHSTO = (1.25 * salaire.PV75HC) + (1.25 * salaire.fixe) / 75
     const taux30eSMMGTO = salaire.SMMG / 30
 
@@ -309,7 +309,7 @@ export default class RemuPNT {
       PVSMMG: pvSMMGTO,
       tauxSMMG: taux30eSMMGTO,
       retraitTrentiemes: (-stats.TO.NJabs) * taux30eSMMGTO,
-      maladie: stats.count.maladie *taux30eSMMGTO,
+      maladie: stats.count.maladie * taux30eSMMGTO,
       stage: stats.TO.NJstage * taux30eSMMGTO,
       nbPVcomp: nbPVCompTO,
       PVcomp: nbPVCompTO * salaire.PV,
@@ -331,11 +331,13 @@ export default class RemuPNT {
     return salaire
   }
 
-  calculSalaireAF(bareme, profil) {
+  calculSalaireAF(bareme, profil, month) {
     _.defaults(profil, PROFIL_DEFAULTS)
     const stats = this.stats
 
-    const coefClasse = (_.get(CONFIG_AF.classes, [profil.fonction, profil.classe].join('.')) + ((profil.fonction != 'CDB' && profil.atpl) ? CONFIG_AF.bonificationATPL : 0)) * _.get(CONFIG_AF.coefCategorie, profil.categorie)
+    console.log('RemuPNT.calculSalaireAF', month)
+
+    const coefClasse = (_.get(CONFIG_AF.classes, [ profil.fonction, profil.classe ].join('.')) + ((profil.fonction != 'CDB' && profil.atpl) ? CONFIG_AF.bonificationATPL : 0)) * _.get(CONFIG_AF.coefCategorie, profil.categorie)
 
     const remu = {
       fixe: bareme.AF.fixeCDBA1 * _.get(CONFIG_AF.coefEchelon, profil.echelon) * (profil.fonction != 'CDB' ? CONFIG_AF.coefFixeOPL : 1),
@@ -343,18 +345,24 @@ export default class RemuPNT {
       coefClasse
     }
 
-    const PVMGA100 = CONFIG_AF.PVMGA * remu.PVEI
+    let nbPVMGA = CONFIG_AF.PVMGA
+    if (month.year > 2024 || (month.year === 2024 && month.month >= 7)) {
+      nbPVMGA = 85
+    }
+
+    const PVMGA100 = nbPVMGA * remu.PVEI
     const MGA100 = remu.fixe + PVMGA100
     const taux30eMGA = MGA100 / 30
-    const PVMGA = stats.AF.trentiemes * CONFIG_AF.PVMGA / 30
+    const PVMGA = stats.AF.trentiemes * nbPVMGA / 30
     const PVCDB = (profil.fonction == 'CDB') ? stats.AF.PVCDB : 0
     const totalPV = stats.AF.PV + stats.AF.PVNuit + PVCDB
     const nbPVcomp = Math.max(totalPV - PVMGA, 0)
 
     const tauxHSTF = 1.25 * remu.fixe / 75
-    const tauxHSPV = remu.PVEI * 0.25 * totalPV / stats.AF.HC
+    const tauxHSPV = stats.AF.HC > 0 ? remu.PVEI * 0.25 * totalPV / stats.AF.HC : 0
 
     _.extend(remu, {
+      nbPVMGA,
       PVMGA100,
       PVMGA,
       tauxMGA: taux30eMGA,
@@ -372,7 +380,7 @@ export default class RemuPNT {
 
     const totalBrutHorsConges = MGA100 + remu.deductionAbsence + remu.maladie + remu.montantPVcomp + remu.montantHSTF + remu.montantHSPV
 
-    const tauxConges = (totalBrutHorsConges / (30 - stats.count.conges)) * 30/28
+    const tauxConges = (totalBrutHorsConges / (30 - stats.count.conges)) * 30 / 28
     const montantConges = stats.count.conges * tauxConges
 
     _.extend(remu, {
@@ -387,12 +395,12 @@ export default class RemuPNT {
   }
 
   groupJoursSol() {
-    const solTags = ['sol', 'simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve']
+    const solTags = [ 'sol', 'simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve' ]
 
     const eventsByDay = {}
     _.forEach(solTags, tag => {
-      if (_.has(this.eventsByTag, tag) && _.isArray(this.eventsByTag[tag])) {
-        _.forEach(this.eventsByTag[tag], evt => {
+      if (_.has(this.eventsByTag, tag) && _.isArray(this.eventsByTag[ tag ])) {
+        _.forEach(this.eventsByTag[ tag ], evt => {
           if (evt.tag === 'simu' || evt.tag === 'instructionSimu') {
             evt.debut = toDateTime(evt.start).minus({ hours: 1 })
             evt.fin = toDateTime(evt.end).plus({ hours: 0.5 })
@@ -402,9 +410,9 @@ export default class RemuPNT {
           }
           const day = evt.debut.toISODate()
           if (_.has(eventsByDay, day)) {
-            eventsByDay[day].push(evt)
+            eventsByDay[ day ].push(evt)
           } else {
-            eventsByDay[day] = [evt]
+            eventsByDay[ day ] = [ evt ]
           }
         })
       }
@@ -419,7 +427,7 @@ export default class RemuPNT {
       day.debut = _.first(day.events).debut
       day.fin = _.last(day.events).fin
 
-      const specialCategoryEvent = _.find(day.events, evt => _.includes(['simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve'], evt.tag))
+      const specialCategoryEvent = _.find(day.events, evt => _.includes([ 'simu', 'instructionSol', 'instructionSimu', 'stage', 'delegation', 'reserve' ], evt.tag))
       if (specialCategoryEvent) {
         day.tag = specialCategoryEvent.tag
       } else {
@@ -427,15 +435,15 @@ export default class RemuPNT {
       }
 
       if (day.tag === 'simu' || day.tag === 'instructionSimu') {
-        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h+s.fin.diff(s.debut).as('hours') : h , 0)
+        const Hsimu = _.reduce(day.events, (h, s) => (s.tag === 'simu' || s.tag === 'instructionSimu') ? h + s.fin.diff(s.debut).as('hours') : h, 0)
 
         if (day.tag === 'instructionSimu') {
           day.HcsAF = Hsimu > 2 ? CONFIG_AF.HcSimuInstruction : CONFIG_AF.HcDemiSimuInstruction
           day.PVAF = Hsimu > 2 ? CONFIG_AF.PVSimuInstruction : CONFIG_AF.PVDemiSimuInstruction
-          day.majoNuitPVAF = _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h+this._hdn(s.debut, s.fin, CONFIG_AF.hdnSimuInstruction) : h , 0) * CONFIG_AF.coefMajoNuit
+          day.majoNuitPVAF = _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h + this._hdn(s.debut, s.fin, CONFIG_AF.hdnSimuInstruction) : h, 0) * CONFIG_AF.coefMajoNuit
           // TODO : majoration de 6,5% des séances intégration et lâcher CDB
 
-          day.HcSimuInstTO = CONFIG_TO.HcSimuInst + _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h+this._hdn(s.debut, s.fin, CONFIG_TO.hdn) : h , 0) * CONFIG_TO.coefMajoNuit // TODO : nuit sur temps de simu briefings inclus ou non ?
+          day.HcSimuInstTO = CONFIG_TO.HcSimuInst + _.reduce(day.events, (h, s) => s.tag === 'instructionSimu' ? h + this._hdn(s.debut, s.fin, CONFIG_TO.hdn) : h, 0) * CONFIG_TO.coefMajoNuit // TODO : nuit sur temps de simu briefings inclus ou non ?
         }
 
         if (day.tag === 'simu') {
@@ -472,7 +480,7 @@ export default class RemuPNT {
 
   _isDemiJournée(day, splitHour = 12) {
     if (_.some(day.events, evt => /CEMPN/i.test(evt.summary))) return false
-    if (day.fin.diff(day.debut).as('hours') > 4 ) return false
+    if (day.fin.diff(day.debut).as('hours') > 4) return false
 
     const mijournée = day.debut.set({ hour: splitHour, minute: 0 })
     if (day.debut >= mijournée || day.fin <= mijournée) return true
@@ -525,18 +533,18 @@ export default class RemuPNT {
 
       if (debut.month !== fin.month) {
         rot.split = {
-          [debut.month]: {
+          [ debut.month ]: {
             TSVnuit: sumByMonth(rot.sv, 'TSVnuit', debut.month, 'debutTR'),
-            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === debut.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === debut.month) ? count + 1 : count, 0),
             tv: sumByMonth(rot.vols, 'tv', debut.month),
             tvp: sumByMonth(rot.vols, 'tvp', debut.month),
             mep: sumByMonth(rot.events, 'mep', debut.month),
             HVnuit: sumByMonth(rot.vols, 'HVnuit', debut.month),
             nbjours: debut.endOf('month').diff(debut.endOf('day')).as('days') + 1
           },
-          [fin.month]: {
+          [ fin.month ]: {
             TSVnuit: sumByMonth(rot.sv, 'TSVnuit', fin.month),
-            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === fin.month) ? count+1 : count , 0),
+            countVol: _.reduce(rot.vols, (count, s) => (s.debutR.month === fin.month) ? count + 1 : count, 0),
             tv: sumByMonth(rot.vols, 'tv', fin.month),
             tvp: sumByMonth(rot.vols, 'tvp', fin.month),
             mep: sumByMonth(rot.events, 'mep', fin.month),
@@ -546,20 +554,20 @@ export default class RemuPNT {
         }
 
         const prorata = {
-          [debut.month]: (rot.split[debut.month].tv + (rot.split[debut.month].mep / 2)) / (rot.tv + (rot.mep / 2)),
-          [fin.month]: (rot.split[fin.month].tv + (rot.split[fin.month].mep / 2)) / (rot.tv + (rot.mep / 2))
+          [ debut.month ]: (rot.split[ debut.month ].tv + (rot.split[ debut.month ].mep / 2)) / (rot.tv + (rot.mep / 2)),
+          [ fin.month ]: (rot.split[ fin.month ].tv + (rot.split[ fin.month ].mep / 2)) / (rot.tv + (rot.mep / 2))
         }
 
-        _.assign(rot.split[debut.month], {
-          H2TO: rot.H2TO * prorata[debut.month],
-          H2AF: rot.H2AF * prorata[debut.month],
-          H2rAF: rot.H2rAF * prorata[debut.month]
+        _.assign(rot.split[ debut.month ], {
+          H2TO: rot.H2TO * prorata[ debut.month ],
+          H2AF: rot.H2AF * prorata[ debut.month ],
+          H2rAF: rot.H2rAF * prorata[ debut.month ]
         })
 
-        _.assign(rot.split[fin.month], {
-          H2TO: rot.H2TO * prorata[fin.month],
-          H2AF: rot.H2AF * prorata[fin.month],
-          H2rAF: rot.H2rAF * prorata[fin.month]
+        _.assign(rot.split[ fin.month ], {
+          H2TO: rot.H2TO * prorata[ fin.month ],
+          H2AF: rot.H2AF * prorata[ fin.month ],
+          H2rAF: rot.H2rAF * prorata[ fin.month ]
         })
       }
     })
@@ -578,44 +586,44 @@ export default class RemuPNT {
     })
 
     sv.tme = counts.vol ? sv.tv / sv.countVol : 0
-    sv.cmt = counts.vol ? Math.max(70 / ( 21 * Math.max(sv.tme, 1) + 30), 1) : 0
+    sv.cmt = counts.vol ? Math.max(70 / (21 * Math.max(sv.tme, 1) + 30), 1) : 0
 
     const first = _.first(sv.events),
-			last = _.last(sv.events),
-			lastVol = _.last(groups.vol);
-		let preTs, preTsv, postTs, postTsv;
+      last = _.last(sv.events),
+      lastVol = _.last(groups.vol);
+    let preTs, preTsv, postTs, postTsv;
 
-		//Calcul TR, TS et TSV
-		if (first.tag === 'mep') {
-			// Le service de vol commence par une MEP
-			preTs = CONFIG_RU.preTsMep;
-			preTsv = CONFIG_RU.preTsvMep;
-		} else if (first.from === 'ORY') {
-			// Le service de vol commence en base
-			preTs = CONFIG_RU.preTsBase;
-			preTsv = CONFIG_RU.preTsvBase;
-		} else {
-			// Le service de vol commence en escale
-			preTs = CONFIG_RU.preTsEscale;
-			preTsv = CONFIG_RU.preTsvEscale;
-		}
+    //Calcul TR, TS et TSV
+    if (first.tag === 'mep') {
+      // Le service de vol commence par une MEP
+      preTs = CONFIG_RU.preTsMep;
+      preTsv = CONFIG_RU.preTsvMep;
+    } else if (first.from === 'ORY') {
+      // Le service de vol commence en base
+      preTs = CONFIG_RU.preTsBase;
+      preTsv = CONFIG_RU.preTsvBase;
+    } else {
+      // Le service de vol commence en escale
+      preTs = CONFIG_RU.preTsEscale;
+      preTsv = CONFIG_RU.preTsvEscale;
+    }
 
-		if (last.tag === 'mep') {
-			// Le service de vol termine par une MEP
-			postTs = CONFIG_RU.postTsMep;
-			postTsv = CONFIG_RU.postTsvMep;
-		} else {
-			// Le service de vol termine par un vol
-			postTs = CONFIG_RU.postTs;
-			postTsv = CONFIG_RU.postTsv;
-		}
+    if (last.tag === 'mep') {
+      // Le service de vol termine par une MEP
+      postTs = CONFIG_RU.postTsMep;
+      postTsv = CONFIG_RU.postTsvMep;
+    } else {
+      // Le service de vol termine par un vol
+      postTs = CONFIG_RU.postTs;
+      postTsv = CONFIG_RU.postTsv;
+    }
 
     _.extend(sv, {
       tsStart: first.debut.minus({ hours: preTs }),
-			tsvStart: first.debut.minus({ hours: preTsv }),
-			tsEnd: last.tag === 'vol' ? last.finR.plus({ hours: postTs }) : last.fin.plus({ hours: postTs }),
+      tsvStart: first.debut.minus({ hours: preTsv }),
+      tsEnd: last.tag === 'vol' ? last.finR.plus({ hours: postTs }) : last.fin.plus({ hours: postTs }),
       tsvEnd: sv.countVol ? lastVol.finR.plus({ hours: postTsv }) : first.debut.minus({ hours: preTsv })
-		})
+    })
 
     if (sv.type === 'vol') {
       sv.debut = toDateTime((first.tag === 'vol' ? first.real : first).start)
@@ -664,26 +672,26 @@ export default class RemuPNT {
         const splitMEPnuit = sv.countMEP ? _.reduce(sv.events, (split, evt) => {
           if (evt.tag === 'mep') {
             const debut = toDateTime(evt.start),
-                  fin = toDateTime(evt.end)
+              fin = toDateTime(evt.end)
             if (debut.month !== fin.month) {
-              split[debut.month] += this._hdn(debut, debut.endOf('month'), CONFIG_AF.hdn)
-              split[fin.month] += this._hdn(fin.startOf('month'), fin, CONFIG_AF.hdn)
+              split[ debut.month ] += this._hdn(debut, debut.endOf('month'), CONFIG_AF.hdn)
+              split[ fin.month ] += this._hdn(fin.startOf('month'), fin, CONFIG_AF.hdn)
               return split
             } else {
-              split[debut.month] += this._hdn(debut, fin, CONFIG_AF.hdn)
+              split[ debut.month ] += this._hdn(debut, fin, CONFIG_AF.hdn)
               return split
             }
           } else {
             return split
           }
-        }, {[sv.debutTR.month]: 0, [sv.finTSVrAF.month]: 0}) : 0
+        }, { [ sv.debutTR.month ]: 0, [ sv.finTSVrAF.month ]: 0 }) : 0
 
         sv.split = {
-          [sv.debutTR.month]: {
-            TSVnuit: this._hdn(sv.debutTR, sv.debutTR.endOf('month'), CONFIG_AF.hdn) - splitMEPnuit[sv.debutTR.month]
+          [ sv.debutTR.month ]: {
+            TSVnuit: this._hdn(sv.debutTR, sv.debutTR.endOf('month'), CONFIG_AF.hdn) - splitMEPnuit[ sv.debutTR.month ]
           },
-          [sv.finTSVrAF.month]: {
-            TSVnuit: this._hdn(sv.finTSVrAF.startOf('month'), sv.finTSVrAF, CONFIG_AF.hdn) - splitMEPnuit[sv.finTSVrAF.month]
+          [ sv.finTSVrAF.month ]: {
+            TSVnuit: this._hdn(sv.finTSVrAF.startOf('month'), sv.finTSVrAF, CONFIG_AF.hdn) - splitMEPnuit[ sv.finTSVrAF.month ]
           }
         }
       }
@@ -696,7 +704,7 @@ export default class RemuPNT {
       if (!_.has(s, 'real')) {
         s.real = {}
       }
-      
+
       _.defaults(s.real, {
         start: s.start,
         end: s.end
@@ -731,12 +739,12 @@ export default class RemuPNT {
 
       if (debutR.month !== finR.month) {
         s.split = {
-          [debutR.month]: {
+          [ debutR.month ]: {
             HVnuit: this._hdn(debutNuit, debutR.endOf('month'), CONFIG_TO.hdn),
             tv: debutR.endOf('month').diff(debutR).as('hours'),
             tvp: debutR.endOf('month').diff(debut).as('hours')
           },
-          [finR.month]: {
+          [ finR.month ]: {
             HVnuit: this._hdn(finR.startOf('month'), finNuit, CONFIG_TO.hdn),
             tv: finR.diff(finR.startOf('month')).as('hours'),
             tvp: fin.diff(finR.startOf('month')).as('hours')
@@ -754,14 +762,14 @@ export default class RemuPNT {
       s.mep = s.category == "ENGS" ? 0 : fin.diff(debut).as('hours')
       s.tv = 0
       s.tvp = 0
-      s.HVnuit= 0
+      s.HVnuit = 0
 
       if (debut.month !== fin.month) {
         s.split = {
-          [debut.month]: {
+          [ debut.month ]: {
             mep: debut.endOf('month').diff(debut).as('hours')
           },
-          [fin.month]: {
+          [ fin.month ]: {
             mep: fin.diff(fin.startOf('month')).as('hours')
           }
         }
@@ -790,7 +798,7 @@ export default class RemuPNT {
   }
 
   _hdn(debut, fin, configHDN) {
-  	debut = debut.setZone(TIMEZONE)
+    debut = debut.setZone(TIMEZONE)
     fin = fin.setZone(TIMEZONE)
     const interval = Interval.fromDateTimes(debut, fin)
     const nightEnd = debut.set(configHDN.nightEnd), nightStart = debut.set(configHDN.nightStart)
@@ -800,6 +808,6 @@ export default class RemuPNT {
     const prevInt = interval.intersection(prevNight)
     const nextInt = interval.intersection(nextNight)
 
-  	return (prevInt ? prevInt.length('hours'): 0) + (nextInt ? nextInt.length('hours') : 0)
+    return (prevInt ? prevInt.length('hours') : 0) + (nextInt ? nextInt.length('hours') : 0)
   }
 }

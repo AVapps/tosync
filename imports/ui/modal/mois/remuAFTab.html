@@ -23,7 +23,7 @@
       </tr>
       <tr>
         <td>PV MGA</td>
-        <td>{{ numFormat 80 }}</td>
+        <td>{{ numFormat s.nbPVMGA }}</td>
         <td>{{ numFormat s.PVEI }}</td>
         <td>{{ numFormat s.PVMGA100 }}</td>
       </tr>
@@ -193,7 +193,8 @@
   <hr>
   <div class="custom-control custom-switch mt-3">
     <input type="checkbox" class="custom-control-input" id="eHSconfigB" checked={{ eHSchecked }}>
-    <label class="custom-control-label" for="eHSconfigB">Afficher l'écart aux heures supplémentaires du calendrier (eHS) selon les règles de rémunération « B »</label>
+    <label class="custom-control-label" for="eHSconfigB">Afficher l'écart aux heures supplémentaires du calendrier (eHS)
+      selon les règles de rémunération « B »</label>
   </div>
 </template>
 
@@ -218,7 +219,7 @@
           </div>
           <select id="categorie" class="custom-select custom-select-sm" {{ categoriesDisabled }}>
             {{#each option in categories }}
-              <option value="{{ option }}" {{ selectedCategory option }}>{{ option }}</option>
+            <option value="{{ option }}" {{ selectedCategory option }}>{{ option }}</option>
             {{/each}}
           </select>
         </div>
@@ -228,7 +229,8 @@
           <div class="input-group-prepend">
             <label for="echelon" class="input-group-text">Echelon</label>
           </div>
-          <input type="number" id="echelon" class="form-control form-control-sm text-center" min="1" max="10" value="{{ profil.echelon }}">
+          <input type="number" id="echelon" class="form-control form-control-sm text-center" min="1" max="10"
+            value="{{ profil.echelon }}">
         </div>
       </div>
       <div class="col-6 col-lg-3 mt-2 mt-lg-0">
@@ -236,7 +238,8 @@
           <div class="input-group-prepend">
             <label class="input-group-text" for="classe">Classe</label>
           </div>
-          <input type="number" id="classe" class="form-control form-control-sm text-center" min="1" max="5" value="{{ profil.classe }}">
+          <input type="number" id="classe" class="form-control form-control-sm text-center" min="1" max="5"
+            value="{{ profil.classe }}">
         </div>
       </div>
     </div>

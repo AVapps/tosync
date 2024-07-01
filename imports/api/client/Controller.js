@@ -270,7 +270,7 @@ Controller = {
                 if (Config.ready()) {
                   const profil = Config.get('profil')
                   // console.log('Controller.profilChanged', profil)
-                  this.calculSalaire(this.Remu.stats, profil)
+                  this.calculSalaire(this.Remu.stats, profil, currentMonth)
                 }
               })
             }
@@ -302,11 +302,11 @@ Controller = {
     }
   },
 
-  calculSalaire(statsRemu, profil) {
+  calculSalaire(statsRemu, profil, month) {
     if (this.Remu && this._bareme.get()) {
       this._salaire.set({
-        AF: this.Remu.calculSalaireAF(this._bareme.get(), profil),
-        TO: this.Remu.calculSalaireTO(this._bareme.get(), profil)
+        AF: this.Remu.calculSalaireAF(this._bareme.get(), profil, month),
+        TO: this.Remu.calculSalaireTO(this._bareme.get(), profil, month)
       })
     }
   },
