@@ -1,6 +1,9 @@
-import Utils from '../../client/lib/Utils.js'
+import Utils from './Utils.js'
 import { DateTime } from 'luxon'
 import _ from 'lodash'
+
+const MEP_REG = /^(?<title>[\w\s]+) (?<from>[A-Z]{3})\*(?<to>[A-Z]{3})$/
+const FLIGHT_REG = /^([A-Z][A-Z]\d{3,4}) ([A-Z]{3})-([A-Z]{3})\((.\d{4})\)/
 
 export default function (str) {
 	let start = str.indexOf('BEGIN:VEVENT')
@@ -64,7 +67,7 @@ export default function (str) {
 					}
 
 					// Equipage
-					console.log(raw.DESCRIPTION)
+					// console.log(raw.DESCRIPTION)
 					m = raw.DESCRIPTION.match(/Crew Member : T:(\S+)\\nC:(\S+)\\n/)
 					if (m && m.length === 3) {
 						evt.pnt = m[ 1 ].split('-')
@@ -78,7 +81,7 @@ export default function (str) {
 					}
 
 					// Numéro de vol, Origine, Destination, Décalage horaire
-					m = raw.SUMMARY.match(/^([A-Z][A-Z]\d{3,4}) ([A-Z]{3})-([A-Z]{3})\((.\d{4})\)/)
+					m = raw.SUMMARY.match(FLIGHT_REG)
 					if (m && m.length === 5) {
 						evt.num = m[ 1 ]
 						evt.from = m[ 2 ]
@@ -99,7 +102,7 @@ export default function (str) {
 					})
 
 				case 'mep':
-					const match = raw.SUMMARY.match(/^(\w+) ([A-Z]{3})\*([A-Z]{3})/)
+					const match = raw.SUMMARY.match(MEP_REG)
 
 					if (match && match.length === 4) {
 						_.extend(evt, {
